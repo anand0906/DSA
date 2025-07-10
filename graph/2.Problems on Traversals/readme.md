@@ -218,3 +218,115 @@ def solution_optimized(adj_matrix):
 - **Space Complexity**: O(V²) for the adjacency list and visited array
 
 
+# Number of Islands
+
+## Problem Statement
+
+Given a grid of size N x M (N is the number of rows and M is the number of columns in the grid) consisting of '0's (Water) and '1's (Land), find the number of islands.
+
+An island is surrounded by water and is formed by connecting adjacent lands horizontally, vertically, or diagonally (i.e., in all 8 directions).
+
+## Examples
+
+### Example 1
+<img src="https://static.takeuforward.org/content/ProblemSetter-cQJHsEaI" />
+
+```
+Input: grid = [
+    ["1", "1", "1", "0", "1"],
+    ["1", "0", "0", "0", "0"],
+    ["1", "1", "1", "0", "1"],
+    ["0", "0", "0", "1", "1"]
+]
+Output: 2
+```
+**Explanation**: This grid contains 2 islands. Each '1' represents a piece of land, and the islands are formed by connecting adjacent lands in all 8 directions. Despite some islands having a common edge, they are considered separate islands because there is no land connectivity between them.
+
+### Example 2
+```
+Input: grid = [
+    ["1", "0", "0", "0", "1"],
+    ["0", "1", "0", "1", "0"],
+    ["0", "0", "1", "0", "0"],
+    ["0", "1", "0", "1", "0"]
+]
+Output: 1
+```
+**Explanation**: In the given grid, there's only one island as all the '1's are connected either horizontally, vertically, or diagonally, forming a single contiguous landmass surrounded by water on all sides.
+
+## Intuition
+
+### Graph Representation
+- Think of all cells in the grid as nodes/vertices
+- Each cell is connected to its 8 neighbors through edges
+- Land cells ('1') that are connected form a connected component (island)
+
+### 8-Directional Traversal
+The 8 neighbors of any cell (row, col) can be accessed using:
+- **Row variations**: row-1, row, row+1 (deltaRow: -1, 0, 1)
+- **Column variations**: col-1, col, col+1 (deltaCol: -1, 0, 1)
+
+<img src="https://static.takeuforward.org/premium/Graphs/Traversal%20Problems/Number%20of%20islands/nieghbors-PCKbhKGS" />
+
+## Approach
+
+1. **Initialize**: Determine grid dimensions and create a 2D visited array
+2. **Traverse Grid**: Loop through each cell in the grid
+3. **Find New Islands**: If cell is land ('1') and not visited, start BFS/DFS
+4. **Explore Island**: Use BFS to visit all connected land cells in 8 directions
+5. **Count Islands**: Increment counter for each new island found
+
+## Implementation
+
+```python
+def solution(grid):
+    n, m = len(grid), len(grid[0])
+    visited = [[False] * m for _ in range(n)]
+    
+    def bfs(row, col):
+        """Perform BFS to explore all connected land cells"""
+        visited[row][col] = True
+        queue = [(row, col)]
+        
+        while queue:
+            r, c = queue.pop(0)
+            
+            # Check all 8 directions
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    adj_row = r + i
+                    adj_col = c + j
+                    
+                    # Check bounds
+                    if (adj_row >= 0 and adj_col >= 0 and 
+                        adj_row < n and adj_col < m):
+                        
+                        # If it's land and not visited
+                        if (grid[adj_row][adj_col] == '1' and 
+                            not visited[adj_row][adj_col]):
+                            visited[adj_row][adj_col] = True
+                            queue.append((adj_row, adj_col))
+    
+    count = 0
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == '1' and not visited[i][j]:
+                count += 1
+                bfs(i, j)
+    
+    return count
+
+# Test the solution
+grid = [
+    ["1", "0", "0", "0", "1"],
+    ["0", "1", "0", "1", "0"],
+    ["0", "0", "1", "0", "0"],
+    ["0", "1", "0", "1", "0"]
+]
+print(solution(grid))  # Output: 1
+```
+
+## Algorithm Details
+
+- **Time Complexity**: O(N × M) where N is rows and M is columns
+- **Space Complexity**: O(N × M) for the visited array and queue
