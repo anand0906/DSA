@@ -514,3 +514,175 @@ E = Enclave (3 total)
 - **Space Complexity**: O(N × M) for the visited array and queue
 - **Method**: Breadth-First Search (BFS) from boundary cells
 
+---
+
+# Surrounded Regions
+
+## Problem Statement
+
+Given a matrix mat of size N x M where every element is either 'O' or 'X'. Replace all 'O' with 'X' that is surrounded by 'X'.
+
+An 'O' (or a set of 'O') is considered to be surrounded by 'X' if there are 'X' at locations just below, above, left, and right of it.
+
+## Examples
+
+### Example 1
+```
+Input: mat = [
+    ["X", "X", "X", "X"],
+    ["X", "O", "O", "X"],
+    ["X", "X", "O", "X"],
+    ["X", "O", "X", "X"]
+]
+
+Output: [
+    ["X", "X", "X", "X"],
+    ["X", "X", "X", "X"],
+    ["X", "X", "X", "X"],
+    ["X", "O", "X", "X"]
+]
+```
+**Explanation**: 
+<img src="https://static.takeuforward.org/content/ProblemSetter-sA3BL8cs" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-jd2Z8EHv" />
+- The 'O' cells at positions (1,1), (1,2), and (2,2) are completely surrounded by 'X' cells, so they are replaced with 'X'
+- The 'O' at position (3,1) is adjacent to the boundary, so it cannot be completely surrounded and remains unchanged
+
+### Example 2
+```
+Input: mat = [
+    ["X", "X", "X"],
+    ["X", "O", "X"],
+    ["X", "X", "X"]
+]
+
+Output: [
+    ["X", "X", "X"],
+    ["X", "X", "X"],
+    ["X", "X", "X"]
+]
+```
+**Explanation**: The only 'O' cell at position (1,1) is completely surrounded by 'X' cells in all directions, so it is replaced with 'X'.
+
+## Intuition
+
+**Key Insight**: Boundary elements cannot be replaced with 'X' as they are not surrounded by 'X' from all 4 directions. If an 'O' (or a set of 'O') is connected to a boundary 'O', then it cannot be replaced with 'X'.
+
+**Strategy**: Instead of finding surrounded regions directly, we can:
+1. Find all 'O' cells that are connected to the boundary
+2. Mark these cells as "safe" (cannot be replaced)
+3. Replace all remaining 'O' cells with 'X'
+
+## Approach
+
+1. **Initialize**: Create a visited array and direction vectors for 4-directional movement
+2. **Boundary Traversal**: Start BFS/DFS from all boundary 'O' cells
+3. **Mark Connected**: Mark all 'O' cells connected to boundary as visited (safe)
+4. **Replace Surrounded**: Convert all unvisited 'O' cells to 'X'
+
+## Implementation
+
+```python
+def solution(grid):
+    n, m = len(grid), len(grid[0])
+    visited = [[False] * m for _ in range(n)]
+    
+    def bfs(row, col):
+        """BFS to mark all 'O' cells connected to boundary"""
+        visited[row][col] = True
+        queue = [(row, col)]
+        
+        while queue:
+            r, c = queue.pop(0)
+            
+            # Check 4 directions: right, left, up, down
+            for i, j in zip([0, 0, -1, 1], [1, -1, 0, 0]):
+                adj_row = r + i
+                adj_col = c + j
+                
+                # Check bounds
+                if (adj_row >= 0 and adj_col >= 0 and 
+                    adj_row < n and adj_col < m):
+                    
+                    # If it's 'O' and not visited
+                    if (grid[adj_row][adj_col] == 'O' and 
+                        not visited[adj_row][adj_col]):
+                        visited[adj_row][adj_col] = True
+                        queue.append((adj_row, adj_col))
+    
+    # Mark all boundary-connected 'O' cells
+    for i in range(n):
+        for j in range(m):
+            # Check if cell is on boundary
+            if i == 0 or i == n-1 or j == 0 or j == m-1:
+                if grid[i][j] == 'O' and not visited[i][j]:
+                    bfs(i, j)
+    
+    # Replace all unvisited 'O' cells with 'X'
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 'O' and not visited[i][j]:
+                grid[i][j] = 'X'
+    
+    return grid
+
+# Test the solution
+mat = [
+    ["X", "X", "X", "X"],
+    ["X", "O", "O", "X"],
+    ["X", "X", "O", "X"],
+    ["X", "O", "X", "X"]
+]
+print(solution(mat))
+```
+
+## Space-Optimized Implementation
+
+```python
+def solution_optimized(grid):
+    """
+    Modify the grid in-place to avoid extra space for visited array
+    """
+    n, m = len(grid), len(grid[0])
+    
+    def dfs(row, col):
+        if (row < 0 or col < 0 or row >= n or col >= m or 
+            grid[row][col] != 'O'):
+            return
+        
+        # Mark as safe by changing to a temporary character
+        grid[row][col] = '#'
+        
+        # Explore 4 directions
+        directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]
+        for dr, dc in directions:
+            dfs(row + dr, col + dc)
+    
+    # Mark all boundary-connected 'O' cells as safe
+    for i in range(n):
+        for j in range(m):
+            if i == 0 or i == n-1 or j == 0 or j == m-1:
+                if grid[i][j] == 'O':
+                    dfs(i, j)
+    
+    # Process the grid: replace 'O' with 'X' and '#' back to 'O'
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 'O':
+                grid[i][j] = 'X'  # Surrounded region
+            elif grid[i][j] == '#':
+                grid[i][j] = 'O'  # Safe region
+    
+    return grid
+```
+
+## Algorithm Details
+
+- **Time Complexity**: O(N × M) where N is rows and M is columns
+- **Space Complexity**: O(N × M) for the visited array and recursion stack
+  
+---
+
+
+
+
