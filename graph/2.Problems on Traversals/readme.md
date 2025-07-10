@@ -356,6 +356,9 @@ Input: grid = [
 ]
 Output: 3
 ```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-BX7diqs5" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-4DMweAfF" />
 **Explanation**: The land cells at positions (1,2), (2,1), and (2,2) are completely surrounded and cannot reach the boundary. Therefore, there are 3 enclaves.
 
 ### Example 2
@@ -369,6 +372,9 @@ Input: grid = [
 ]
 Output: 3
 ```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-JKtYrVqX" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-zgfKADbg" />
 **Explanation**: The land cells that cannot reach the boundary form the enclaves. The highlighted cells represent these enclosed land cells.
 
 ## Intuition
