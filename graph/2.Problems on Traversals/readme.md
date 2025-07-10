@@ -89,6 +89,8 @@ print(solution(v, edges))  # Output: 3
 - **Time Complexity**: O(V + E) where V is the number of vertices and E is the number of edges
 - **Space Complexity**: O(V + E) for the adjacency list and visited array
 
+---
+
 # Number of Provinces
 
 ## Problem Statement
@@ -217,6 +219,7 @@ def solution_optimized(adj_matrix):
 - **Time Complexity**: O(V²) where V is the number of vertices (due to adjacency matrix traversal)
 - **Space Complexity**: O(V²) for the adjacency list and visited array
 
+---
 
 # Number of Islands
 
@@ -330,3 +333,178 @@ print(solution(grid))  # Output: 1
 
 - **Time Complexity**: O(N × M) where N is rows and M is columns
 - **Space Complexity**: O(N × M) for the visited array and queue
+
+---
+
+# Number of Enclaves
+
+## Problem Statement
+
+Given an N x M binary matrix grid, where 0 represents a sea cell and 1 represents a land cell. A move consists of walking from one land cell to another adjacent (4-directionally) land cell or walking off the boundary of the grid.
+
+Find the number of land cells in the grid for which we cannot walk off the boundary of the grid in any number of moves.
+
+## Examples
+
+### Example 1
+```
+Input: grid = [
+    [0, 0, 0, 0],
+    [1, 0, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0]
+]
+Output: 3
+```
+**Explanation**: The land cells at positions (1,2), (2,1), and (2,2) are completely surrounded and cannot reach the boundary. Therefore, there are 3 enclaves.
+
+### Example 2
+```
+Input: grid = [
+    [0, 0, 0, 1],
+    [0, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 0]
+]
+Output: 3
+```
+**Explanation**: The land cells that cannot reach the boundary form the enclaves. The highlighted cells represent these enclosed land cells.
+
+## Intuition
+
+The problem requires finding land cells that are completely surrounded by other land cells and cannot connect to the boundary of the grid by moving in 4 directions (up, down, left, right).
+
+**Key Insight**: Any land cell directly connected to the boundary or indirectly connected via other land cells should not be counted as an enclave. Therefore, we can:
+1. Identify and mark all land cells reachable from the boundary
+2. Count the remaining unmarked land cells as enclaves
+
+## Approach
+
+1. **Setup**: Create arrays for 4-directional movement and boundary checking
+2. **BFS Implementation**: Create a function to traverse connected land cells
+3. **Boundary Marking**: Start BFS from all boundary land cells to mark reachable cells
+4. **Count Enclaves**: Count all unmarked land cells as they represent enclaves
+
+## Implementation
+
+```python
+def solution(grid):
+    n, m = len(grid), len(grid[0])
+    visited = [[False] * m for _ in range(n)]
+    
+    def bfs(row, col):
+        """Perform BFS to mark all land cells connected to boundary"""
+        visited[row][col] = True
+        queue = [(row, col)]
+        
+        while queue:
+            r, c = queue.pop(0)
+            
+            # Check 4 directions: right, left, up, down
+            for i, j in zip([0, 0, -1, 1], [1, -1, 0, 0]):
+                adj_row = r + i
+                adj_col = c + j
+                
+                # Check bounds
+                if (adj_row >= 0 and adj_col >= 0 and 
+                    adj_row < n and adj_col < m):
+                    
+                    # If it's land and not visited
+                    if (grid[adj_row][adj_col] == 1 and 
+                        not visited[adj_row][adj_col]):
+                        visited[adj_row][adj_col] = True
+                        queue.append((adj_row, adj_col))
+    
+    # Mark all boundary-connected land cells
+    for i in range(n):
+        for j in range(m):
+            # Check if cell is on boundary
+            if i == 0 or i == n-1 or j == 0 or j == m-1:
+                if grid[i][j] == 1 and not visited[i][j]:
+                    bfs(i, j)
+    
+    # Count unvisited land cells (enclaves)
+    count = 0
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 1 and not visited[i][j]:
+                count += 1
+    
+    return count
+
+# Test the solution
+grid = [
+    [0, 0, 0, 0],
+    [1, 0, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0]
+]
+print(solution(grid))  # Output: 3
+```
+
+## Optimized Implementation (In-place Modification)
+
+```python
+def solution_optimized(grid):
+    """
+    Modify the grid in-place to avoid extra space for visited array
+    """
+    n, m = len(grid), len(grid[0])
+    
+    def dfs(row, col):
+        if (row < 0 or col < 0 or row >= n or col >= m or 
+            grid[row][col] != 1):
+            return
+        
+        # Mark as visited by changing to 2
+        grid[row][col] = 2
+        
+        # Explore 4 directions
+        directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]
+        for dr, dc in directions:
+            dfs(row + dr, col + dc)
+    
+    # Mark all boundary-connected land cells
+    for i in range(n):
+        for j in range(m):
+            if i == 0 or i == n-1 or j == 0 or j == m-1:
+                if grid[i][j] == 1:
+                    dfs(i, j)
+    
+    # Count remaining land cells (enclaves)
+    count = 0
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 1:
+                count += 1
+    
+    # Optional: Restore the grid
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 2:
+                grid[i][j] = 1
+    
+    return count
+```
+
+## Step-by-Step Visualization
+
+For the first example:
+```
+Original Grid:          After Boundary BFS:      Enclaves Count:
+[0, 0, 0, 0]           [0, 0, 0, 0]            [0, 0, 0, 0]
+[1, 0, 1, 0]    →      [V, 0, 1, 0]     →      [-, 0, E, 0]
+[0, 1, 1, 0]           [0, 1, 1, 0]            [0, E, E, 0]
+[0, 0, 0, 0]           [0, 0, 0, 0]            [0, 0, 0, 0]
+
+V = Visited (boundary-connected)
+E = Enclave (3 total)
+```
+
+## Algorithm Details
+
+- **Time Complexity**: O(N × M) where N is rows and M is columns
+- **Space Complexity**: O(N × M) for the visited array and queue
+- **Method**: Breadth-First Search (BFS) from boundary cells
+
