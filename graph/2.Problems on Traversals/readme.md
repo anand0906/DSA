@@ -684,5 +684,459 @@ def solution_optimized(grid):
 ---
 
 
+# Flood Fill Algorithm - Complete Guide
+
+## Problem Statement
+
+An image is represented by a 2-D array of integers, where each integer represents the pixel value of the image. Given a coordinate `(sr, sc)` representing the starting pixel (row and column) of the flood fill, and a pixel value `newColor`, perform a "flood fill" operation on the image.
+
+### What is Flood Fill?
+
+To perform a flood fill:
+1. Consider the starting pixel
+2. Find all pixels connected **4-directionally** to the starting pixel that have the **same color** as the starting pixel
+3. Continue finding pixels connected 4-directionally to those pixels (also with the same color)
+4. Replace the color of all these connected pixels with the `newColor`
+
+## Examples
+
+### Example 1
+<img src="https://static.takeuforward.org/content/ProblemSetter-1vytgU1a" />
+
+**Input:**
+```
+image = [[1, 1, 1], 
+         [1, 1, 0], 
+         [1, 0, 1]]
+sr = 1, sc = 1, newColor = 2
+```
+
+**Output:**
+```
+[[2, 2, 2], 
+ [2, 2, 0], 
+ [2, 0, 1]]
+```
+
+**Explanation:** Starting from position (1, 1) with value 1, all connected pixels with value 1 are changed to 2. The bottom-right corner (2, 2) is not changed because it's not 4-directionally connected to the starting pixel.
+
+### Example 2
+**Input:**
+```
+image = [[0, 1, 0], 
+         [1, 1, 0], 
+         [0, 0, 1]]
+sr = 2, sc = 2, newColor = 3
+```
+
+**Output:**
+```
+[[0, 1, 0], 
+ [1, 1, 0], 
+ [0, 0, 3]]
+```
+
+**Explanation:** Starting from position (2, 2) with value 1, only this single pixel needs to be changed since no adjacent pixels have the same color.
+
+## Intuition
+
+### Graph Perspective
+- Think of all pixels in the image as **nodes/vertices**
+- Each pixel is connected to its 4 neighbors (up, right, down, left) via **edges**
+- Use any traversal algorithm (DFS/BFS) to find all neighbors with the same pixel value
+- During traversal, change each pixel's value to the new color
+
+### Efficient Neighbor Traversal
+The 4 neighbors of any cell can be accessed using direction vectors:
+```
+delRow = [-1, 0, 1, 0]  # up, right, down, left
+delCol = [0, 1, 0, -1]  # up, right, down, left
+```
+
+## Approach
+
+1. **Initialize:** Create a new image to store the flood-filled result (optional - can modify original)
+2. **Direction Vectors:** Define vectors for moving up, right, down, and left
+3. **Boundary Check:** Create helper function to ensure pixels are within image bounds
+4. **Traversal:** Starting from the given pixel, perform DFS/BFS traversal
+5. **Color Change:** During traversal, mark all pixels with the same initial color using the new color
+6. **Return:** Once traversal terminates, return the flood-filled image
+
+## Implementation
+
+### BFS Approach
+
+```python
+def flood_fill(grid, srcRow, srcCol, newColor):
+    n, m = len(grid), len(grid[0])
+    queue = [(srcRow, srcCol)]
+    initColor = grid[srcRow][srcCol]
+    
+    # If new color is same as initial color, no change needed
+    if newColor == initColor:
+        return grid
+    
+    # Mark starting pixel with new color
+    grid[srcRow][srcCol] = newColor
+    
+    # BFS traversal
+    while queue:
+        r, c = queue.pop(0)
+        
+        # Check all 4 directions
+        for i, j in zip([0, 0, -1, 1], [1, -1, 0, 0]):
+            adj_row = r + i
+            adj_col = c + j
+            
+            # Check bounds and color match
+            if (adj_row >= 0 and adj_col >= 0 and 
+                adj_row < n and adj_col < m):
+                if grid[adj_row][adj_col] == initColor:
+                    grid[adj_row][adj_col] = newColor
+                    queue.append((adj_row, adj_col))
+    
+    return grid
+
+# Test the algorithm
+grid = [[1, 1, 1], 
+        [1, 1, 0], 
+        [1, 0, 1]]
+sr, sc = 1, 1
+newColor = 2
+result = flood_fill(grid, sr, sc, newColor)
+print(result)
+```
+
+### DFS Approach
+
+```python
+def flood_fill_dfs(grid, srcRow, srcCol, newColor):
+    n, m = len(grid), len(grid[0])
+    initColor = grid[srcRow][srcCol]
+    
+    if newColor == initColor:
+        return grid
+    
+    def dfs(row, col):
+        # Check bounds and color match
+        if (row < 0 or row >= n or col < 0 or col >= m or 
+            grid[row][col] != initColor):
+            return
+        
+        # Change color
+        grid[row][col] = newColor
+        
+        # Recursively fill 4 directions
+        dfs(row - 1, col)  # up
+        dfs(row + 1, col)  # down
+        dfs(row, col - 1)  # left
+        dfs(row, col + 1)  # right
+    
+    dfs(srcRow, srcCol)
+    return grid
+```
+
+## Algorithm Details
+
+- **Time Complexity:** O(n × m) where n and m are the dimensions of the image
+- **Space Complexity:** 
+  - BFS: O(n × m) for the queue in worst case
+  - DFS: O(n × m) for the recursion stack in worst case
+
+
+---
+
+# Rotten Oranges
+
+## Problem Statement
+
+Given an n x m grid, where each cell has the following values:
+- **2** - represents a rotten orange
+- **1** - represents a fresh orange  
+- **0** - represents an empty cell
+
+Every minute, if a fresh orange is adjacent to a rotten orange in 4-direction (upward, downwards, right, and left) it becomes rotten.
+
+Return the minimum number of minutes required such that none of the cells has a fresh orange. If it's not possible, return -1.
+
+## Examples
+
+### Example 1
+**Input:**
+```
+grid = [[2, 1, 1], 
+        [0, 1, 1], 
+        [1, 0, 1]]
+```
+
+**Output:**
+```
+-1
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-NWsocTcc"/>
+**Explanation:** Orange at (2,0) cannot be rotten because it's not connected to any rotten orange through adjacent cells.
+
+### Example 2
+**Input:**
+```
+grid = [[2, 1, 1], 
+        [1, 1, 0], 
+        [0, 1, 1]]
+```
+
+**Output:**
+```
+4
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-yuB56suz"/>
+**Explanation:** 
+- Minute 0: Initial state with one rotten orange at (0,0)
+- Minute 1: Orange at (0,1) and (1,0) become rotten
+- Minute 2: Orange at (0,2) and (1,1) become rotten  
+- Minute 3: Orange at (2,1) becomes rotten
+- Minute 4: Orange at (2,2) becomes rotten
+
+## Intuition
+
+The key insight is that for each rotten orange, fresh oranges in its 4 directions will become rotten in the next minute. This creates a **multi-source BFS** problem where:
+
+- Each minute represents a **level** in BFS traversal
+- All oranges at the same level rot simultaneously
+- We need to track the maximum time taken for any orange to rot
+
+**Multi-Source BFS Strategy:**
+1. Start with all initially rotten oranges in the queue
+2. Process level by level (minute by minute)
+3. For each rotten orange, spread rot to adjacent fresh oranges
+4. Continue until no more oranges can be rotten
+
+## Approach
+
+1. **Initialize:** Create a queue for BFS and count total fresh oranges
+2. **Find Initial Rotten:** Traverse grid to find all initially rotten oranges and add them to queue with time = 0
+3. **BFS Traversal:** Process queue level by level:
+   - For each rotten orange, check its 4 neighbors
+   - If neighbor is fresh, make it rotten and add to queue with incremented time
+   - Track maximum time encountered
+4. **Validation:** Check if all fresh oranges became rotten
+5. **Return:** Return maximum time if all rotten, else -1
+
+## Implementation
+
+```python
+def solution(grid):
+    n, m = len(grid), len(grid[0])
+    queue = []
+    fresh = 0
+    ans = 0
+    
+    # Find all initially rotten oranges and count fresh ones
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 2:
+                queue.append((i, j, 0))  # (row, col, time)
+            elif grid[i][j] == 1:
+                fresh += 1
+    
+    # BFS to spread rot
+    while queue:
+        r, c, time = queue.pop(0)
+        
+        # Check all 4 directions
+        for i, j in zip([0, 0, -1, 1], [1, -1, 0, 0]):
+            adj_row = r + i
+            adj_col = c + j
+            
+            # Check bounds
+            if (adj_row >= 0 and adj_col >= 0 and 
+                adj_row < n and adj_col < m):
+                
+                # If adjacent cell has fresh orange
+                if grid[adj_row][adj_col] == 1:
+                    grid[adj_row][adj_col] = 2  # Make it rotten
+                    fresh -= 1  # Decrease fresh count
+                    queue.append((adj_row, adj_col, time + 1))
+                    ans = max(ans, time + 1)  # Update max time
+    
+    # Check if all oranges are rotten
+    if fresh > 0:
+        return -1
+    return ans
+
+# Test the algorithm
+grid = [[2, 1, 1], 
+        [1, 1, 0], 
+        [0, 1, 1]]
+print(solution(grid))  # Output: 4
+```
+
+## Algorithm Details
+
+- **Time Complexity:** O(n × m) where n and m are the dimensions of the grid
+- **Space Complexity:** O(n × m) for the queue in worst case (when all cells are rotten initially)
+
+
+# Distance of Nearest Cell Having One
+
+## Problem Statement
+
+Given a binary grid of N x M. Find the distance of the nearest 1 in the grid for each cell.
+
+The distance is calculated as |i1 - i2| + |j1 - j2|, where i1, j1 are the row number and column number of the current cell, and i2, j2 are the row number and column number of the nearest cell having value 1.
+
+## Examples
+
+### Example 1
+**Input:**
+```
+grid = [[0, 1, 1, 0], 
+        [1, 1, 0, 0], 
+        [0, 0, 1, 1]]
+```
+
+**Output:**
+```
+[[1, 0, 0, 1], 
+ [0, 0, 1, 1], 
+ [1, 1, 0, 0]]
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-RW6Xyxa0" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-b0o2o0hT" />
+**Explanation:** 
+- 0's at (0,0), (0,3), (1,2), (1,3), (2,0) and (2,1) are at a distance of 1 from 1's at (0,1), (0,2), (0,2), (2,3), (1,0) and (1,1) respectively.
+
+### Example 2
+**Input:**
+```
+grid = [[1, 0, 1], 
+        [1, 1, 0], 
+        [1, 0, 0]]
+```
+
+**Output:**
+```
+[[0, 1, 0], 
+ [0, 0, 1], 
+ [0, 1, 2]]
+```
+
+**Explanation:** 
+- 0's at (0,1), (1,2), (2,1) and (2,2) are at a distance of 1, 1, 1 and 2 from 1's at (0,0), (0,2), (2,0) and (1,1) respectively.
+
+## Intuition
+
+To find the nearest 1 in the grid for each cell, the **multi-source BFS** algorithm is perfect. The key insight is:
+
+- Start BFS from all cells containing '1' simultaneously
+- BFS naturally explores cells in order of increasing distance
+- The first time we reach any cell, it's guaranteed to be via the shortest path
+
+**Why BFS over DFS?**
+BFS ensures that when we first visit a cell, we do so via the shortest possible path. This is because BFS explores all cells at distance 1 before moving to distance 2, and so on.
+
+**Multi-Source BFS Strategy:**
+1. Add all '1' cells to the queue with distance 0
+2. Process level by level (distance by distance)
+3. For each cell, explore its 4 neighbors
+4. First time we reach a '0' cell determines its minimum distance
+
+## Approach
+
+1. **Initialize:** Create a queue for BFS and mark all '1' cells as visited
+2. **Multi-Source Start:** Add all '1' cells to queue with distance 0
+3. **BFS Traversal:** Process queue level by level:
+   - For each cell, check its 4 neighbors
+   - If neighbor is unvisited '0', mark it with current distance + 1
+   - Add the neighbor to queue for further exploration
+4. **Result:** The grid now contains minimum distances for each cell
+
+## Implementation
+
+```python
+def solution(grid):
+    n, m = len(grid), len(grid[0])
+    queue = []
+    
+    # Add all '1' cells to queue and mark them as visited
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 1:
+                queue.append((i, j, 0))  # (row, col, distance)
+                grid[i][j] = -1  # Mark as visited (will be restored to 0 later)
+    
+    # BFS to find minimum distances
+    while queue:
+        r, c, time = queue.pop(0)
+        
+        # Check all 4 directions
+        for i, j in zip([0, 0, -1, 1], [1, -1, 0, 0]):
+            adj_row = r + i
+            adj_col = c + j
+            
+            # Check bounds
+            if (adj_row >= 0 and adj_col >= 0 and 
+                adj_row < n and adj_col < m):
+                
+                # If unvisited '0' cell
+                if grid[adj_row][adj_col] == 0:
+                    grid[adj_row][adj_col] = time + 1
+                    queue.append((adj_row, adj_col, time + 1))
+    
+    # Restore '1' cells (marked as -1) back to distance 0
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == -1:
+                grid[i][j] = 0
+    
+    return grid
+
+# Test the algorithm
+grid = [[0, 1, 1, 0], 
+        [1, 1, 0, 0], 
+        [0, 0, 1, 1]]
+print(solution(grid))
+```
+
+## Alternative Implementation (Using Separate Distance Matrix)
+
+```python
+def solution_separate_matrix(grid):
+    n, m = len(grid), len(grid[0])
+    distance = [[float('inf')] * m for _ in range(n)]
+    queue = []
+    
+    # Initialize distance matrix and queue
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == 1:
+                distance[i][j] = 0
+                queue.append((i, j))
+    
+    directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]
+    
+    # BFS traversal
+    while queue:
+        r, c = queue.pop(0)
+        
+        for dr, dc in directions:
+            nr, nc = r + dr, c + dc
+            
+            if (0 <= nr < n and 0 <= nc < m and 
+                distance[nr][nc] > distance[r][c] + 1):
+                distance[nr][nc] = distance[r][c] + 1
+                queue.append((nr, nc))
+    
+    return distance
+```
+
+
+
+## Algorithm Details
+
+- **Time Complexity:** O(n × m) where n and m are the dimensions of the grid
+- **Space Complexity:** O(n × m) for the queue in worst case
 
 
