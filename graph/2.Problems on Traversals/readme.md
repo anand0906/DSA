@@ -89,3 +89,132 @@ print(solution(v, edges))  # Output: 3
 - **Time Complexity**: O(V + E) where V is the number of vertices and E is the number of edges
 - **Space Complexity**: O(V + E) for the adjacency list and visited array
 
+# Number of Provinces
+
+## Problem Statement
+
+Given an undirected graph with V vertices represented as an n x n adjacency matrix, find the number of provinces in the graph.
+
+Two vertices u and v belong to a single province if there is a path from u to v or v to u. The graph is given as an n x n matrix `adj` where `adj[i][j] = 1` if the ith city and the jth city are directly connected, and `adj[i][j] = 0` otherwise.
+
+**Definition**: A province is a group of directly or indirectly connected cities and no other cities outside of the group.
+
+## Examples
+
+### Example 1
+```
+Input: adj = [
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [1, 0, 0, 1]
+]
+Output: 2
+```
+<img src="https://static.takeuforward.org/content/ProblemSetter-WdAmb0xn" />
+**Explanation**: 
+- Province 1: Cities [0, 3] - City 0 and city 3 have a path between them
+- Province 2: Cities [1, 2] - City 1 and city 2 have a path between them
+- There is no path between any city in province 1 and any city in province 2
+
+### Example 2
+```
+Input: adj = [
+    [1, 0, 1],
+    [0, 1, 0],
+    [1, 0, 1]
+]
+Output: 2
+```
+**Explanation**: 
+- Province 1: Cities [0, 2] - City 0 and city 2 have a path between them
+- Province 2: City [1] - City 1 has no path to city 0 or city 2, so it forms its own province
+
+## Approach
+
+1. **Convert Adjacency Matrix to List**: Transform the given adjacency matrix into an adjacency list representation for easier traversal
+2. **Initialize Data Structures**: 
+   - Create a visited array to mark nodes as visited
+   - Initialize a counter to count the number of provinces
+3. **Traverse Provinces**: 
+   - For each unvisited node, increment the counter (new province found)
+   - Perform BFS to visit all nodes in the current province
+4. **Return Result**: The counter gives us the total number of provinces
+
+## Implementation
+
+```python
+def solution(adj_matrix):
+    n = len(adj_matrix)
+    nodes = [i for i in range(n)]
+    
+    # Convert adjacency matrix to adjacency list
+    graph = {i: set() for i in nodes}
+    for i in range(n):
+        for j in range(n):
+            if adj_matrix[i][j] == 1:
+                graph[i].add(j)
+    
+    # Initialize visited array
+    visited = {i: False for i in nodes}
+    
+    def bfs(graph, node):
+        """Perform BFS to visit all nodes in current province"""
+        visited[node] = True
+        queue = [node]
+        
+        while queue:
+            temp = queue.pop(0)
+            for adj in graph[temp]:
+                if not visited[adj]:
+                    queue.append(adj)
+                    visited[adj] = True
+    
+    # Count provinces
+    count = 0
+    for node in nodes:
+        if not visited[node]:
+            count += 1
+            bfs(graph, node)
+    
+    return count
+
+# Test the solution
+adj_matrix = [
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [1, 0, 0, 1]
+]
+print(solution(adj_matrix))  # Output: 2
+```
+
+## Optimized Implementation (Direct Matrix Traversal)
+
+```python
+def solution_optimized(adj_matrix):
+    n = len(adj_matrix)
+    visited = [False] * n
+    
+    def dfs(node):
+        """Perform DFS directly on adjacency matrix"""
+        visited[node] = True
+        for neighbor in range(n):
+            if adj_matrix[node][neighbor] == 1 and not visited[neighbor]:
+                dfs(neighbor)
+    
+    count = 0
+    for i in range(n):
+        if not visited[i]:
+            count += 1
+            dfs(i)
+    
+    return count
+```
+
+## Algorithm Details
+
+- **Time Complexity**: O(V²) where V is the number of vertices (due to adjacency matrix traversal)
+- **Space Complexity**: O(V²) for the adjacency list and visited array
+
+
