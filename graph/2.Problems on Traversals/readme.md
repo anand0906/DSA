@@ -1140,3 +1140,156 @@ def solution_separate_matrix(grid):
 - **Space Complexity:** O(n × m) for the queue in worst case
 
 
+---
+
+# Cycle Detection in Undirected Graphs
+
+## Problem Statement
+
+Given an undirected graph with V vertices labeled from 0 to V-1, determine if the graph contains any cycles. The graph is represented using an adjacency list where `adj[i]` lists all nodes connected to node `i`.
+
+**Note**: The graph does not contain any self-edges (edges where a vertex is connected to itself).
+
+## Examples
+
+### Example 1
+<img src="https://static.takeuforward.org/content/ProblemSetter-Eymk2V2R" />
+
+```
+Input: V = 6, adj = [[1, 3], [0, 2, 4], [1, 5], [0, 4], [1, 3, 5], [2, 4]]
+Output: True
+Explanation: The graph contains a cycle: 0 → 1 → 2 → 5 → 4 → 1
+```
+
+### Example 2
+<img src="https://static.takeuforward.org/content/ProblemSetter-ddy9fw2d" />
+
+```
+Input: V = 4, adj = [[1, 2], [0], [0, 3], [2]]
+Output: False
+Explanation: The graph does not contain any cycles
+```
+
+## Intuition
+
+In an undirected graph, a cycle is formed when a path exists that returns to the starting vertex without reusing an edge. The key insight is:
+
+**During traversal, if we encounter a vertex that has already been visited and is not the immediate parent of the current vertex, a cycle exists.**
+
+This works because:
+- If we visit a node that's already been visited
+- AND it's not our immediate parent (which would just be backtracking)
+- Then we've found an alternative path to reach that node, forming a cycle
+
+## Approach 1: Depth-First Search (DFS)
+
+### Algorithm
+1. Create an adjacency list representation of the graph using sets
+2. Initialize a visited dictionary to track visited nodes
+3. For each unvisited node, perform DFS
+4. During DFS, if we encounter a visited node that's not the parent, return True (cycle found)
+5. If no cycles found after checking all components, return False
+
+### Implementation
+
+```python
+#Using depth first search
+def solution(n,edges):
+    nodes=[i for i in range(n)]
+    graph={node:set() for node in nodes}
+    for i,j in edges:
+        graph[i].add(j)
+        graph[j].add(i)
+    def dfs(node,parent):
+        visited[node]=True
+        for adj_node in graph[node]:
+            if(not visited[adj_node]):
+                check=dfs(adj_node,node)
+                if(check==True):
+                    return True
+            else:
+                if(adj_node!=parent):
+                    return True
+        return False
+    visited={i:False for i in nodes}
+    for node in nodes:
+        if(not visited[node]):
+            check=dfs(node,-1)
+            if(check==True):
+                return True
+    return False
+```
+
+### Time Complexity: O(V + E)
+- V: Number of vertices
+- E: Number of edges
+- We visit each vertex once and each edge twice (once from each endpoint)
+
+### Space Complexity: O(V)
+- Visited dictionary: O(V)
+- Recursion stack: O(V) in worst case
+- Adjacency list with sets: O(V + E)
+
+## Approach 2: Breadth-First Search (BFS)
+
+### Algorithm
+1. Create an adjacency list representation of the graph using sets
+2. Initialize a visited dictionary to track visited nodes
+3. For each unvisited node, perform BFS
+4. Use a deque to store (node, parent) pairs
+5. During BFS, if we encounter a visited node that's not the parent, return True
+6. If no cycles found after checking all components, return False
+
+### Implementation
+
+```python
+#Using breadth first search
+
+from collections import deque
+def solution(n,edges):
+    nodes=[i for i in range(n)]
+    graph={node:set() for node in nodes}
+    for i,j in edges:
+        graph[i].add(j)
+        graph[j].add(i)
+
+    def bfs(node):
+        visited[node]=True
+        queue=deque()
+        queue.append((node,-1))
+        while queue:
+            node,parent=queue.popleft()
+            for adj_node in graph[node]:
+                if(not visited[adj_node]):
+                    queue.append((adj_node,node))
+                    visited[adj_node]=True
+                else:
+                    if(adj_node!=parent):
+                        return True
+        return False
+
+    visited={i:False for i in nodes}
+    for node in nodes:
+        if(not visited[node]):
+            check=bfs(node)
+            if(check==True):
+                return True
+    return False
+```
+
+### Time Complexity: O(V + E)
+- Same as DFS approach
+
+### Space Complexity: O(V)
+- Visited dictionary: O(V)
+- Queue: O(V) in worst case
+- Adjacency list with sets: O(V + E)
+
+## Test Example
+
+```python
+n=6
+edges=[(0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5)]
+print(solution(n,edges))
+```
+
