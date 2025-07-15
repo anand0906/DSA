@@ -150,6 +150,8 @@ Given a directed graph with V vertices labeled from 0 to V-1. The graph is repre
 ## Examples
 
 ### Example 1:
+<img src="https://static.takeuforward.org/content/ProblemSetter-Do8SOPHS"/>
+
 **Input:** V = 6, adj = [[1], [2, 5], [3], [4], [1], []]
 **Output:** True
 
