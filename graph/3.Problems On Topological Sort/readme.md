@@ -277,5 +277,154 @@ def solution(nodes,graph):
 - **Time Complexity:** O(V + E) where V is the number of vertices and E is the number of edges
 - **Space Complexity:** O(V) for the in-degree dictionary, queue, and result list
 
+---
+# Find Eventual Safe States
 
+## Problem Statement
+Given a directed graph with V vertices labeled from 0 to V-1. The graph is represented using an adjacency list where adj[i] lists all nodes adjacent to node i, meaning there is an edge from node i to each node in adj[i]. A node is a terminal node if there are no outgoing edges. A node is a safe node if every possible path starting from that node leads to a terminal node. Return an array containing all the safe nodes of the graph in ascending order.
 
+## Examples
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-rrMbBwFC" />
+
+### Example 1:
+**Input:** V = 7, adj = [[1,2], [2,3], [5], [0], [5], [], []]
+**Output:** [2, 4, 5, 6]
+
+**Explanation:** 
+- From node 0: two paths are there 0->2->5 and 0->1->3->0. The second path does not end at a terminal node. So it is not a safe node.
+- From node 1: two paths exist: 1->3->0->1 and 1->2->5. But the first one does not end at a terminal node. So it is not a safe node.
+- From node 2: only one path: 2->5 and 5 is a terminal node. So it is a safe node.
+- From node 3: two paths: 3->0->1->3 and 3->0->2->5 but the first path does not end at a terminal node. So it is not a safe node.
+- From node 4: Only one path: 4->5 and 5 is a terminal node. So it is also a safe node.
+- From node 5: It is a terminal node. So it is a safe node as well.
+- From node 6: It is a terminal node. So it is a safe node as well.
+
+### Example 2:
+<img src="https://static.takeuforward.org/content/ProblemSetter-3KCPYxOn" />
+
+**Input:** V = 4, adj = [[1], [2], [0,3], []]
+**Output:** [3]
+
+**Explanation:** Node 3 itself is a terminal node and it is a safe node as well. But all the paths from other nodes do not lead to a terminal node. So they are excluded from the answer.
+
+## Solution 1: Using Topological Sort (Kahn's Algorithm)
+
+### Intuition
+Think of it like a river system flowing to the ocean. Safe nodes are like water sources that will eventually reach the ocean (terminal nodes) no matter which path they take. Unsafe nodes are like water sources that get stuck in whirlpools (cycles) and never reach the ocean.
+
+The trick: Instead of following water downstream, we trace backwards from the ocean! We reverse all the rivers (edges) so that terminal nodes become sources, and then we see which original nodes we can reach by flowing backwards. If we can reach a node by flowing backwards from terminal nodes, it means all paths from that node lead to terminal nodes.
+
+### Approach Steps
+1. **Reverse the graph**: Change all edges from A→B to B→A
+2. **Apply topological sort on reversed graph**:
+   - Terminal nodes (originally outdegree 0) become sources (indegree 0 in reversed graph)
+   - Start from these terminal nodes and work backwards
+   - Only nodes reachable from terminal nodes will be processed
+3. **Sort the result**: Return all processed nodes in ascending order
+
+### Code
+```python
+from collections import deque
+def solution(nodes,edges):
+    def topologicalSort(nodes,graph):
+        # Calculate in-degree for each node in reversed graph
+        inDegree={i:0 for i in nodes}
+        for node,adj_nodes in graph.items():
+            for i in adj_nodes:
+                inDegree[i]+=1
+        
+        # Add all nodes with in-degree 0 to queue (terminal nodes in original graph)
+        queue=deque()
+        for node,degree in inDegree.items():
+            if(degree==0):
+                queue.append(node)
+        
+        ans=[]
+        while queue:
+            node=queue.popleft()  # Process safe node
+            ans.append(node)
+            
+            # Reduce in-degree of adjacent nodes (nodes that lead to this safe node)
+            for adj_node in graph[node]:
+                inDegree[adj_node]-=1
+                if(inDegree[adj_node]==0):  # If all paths lead to safe nodes
+                    queue.append(adj_node)
+        return ans
+    
+    # Create reversed graph
+    graph={i:set() for i in nodes}
+    for i,j in edges:
+        graph[j].add(i)  # reverse edges: i->j becomes j->i
+    
+    topoSort=topologicalSort(nodes,graph)
+    topoSort.sort()  # Return in ascending order
+    return topoSort
+```
+
+### Time and Space Complexity
+- **Time Complexity:** O(V + E) for topological sort + O(V log V) for sorting = O(V + E + V log V)
+- **Space Complexity:** O(V + E) for the reversed graph and auxiliary data structures
+
+## Solution 2: Using Depth First Search (DFS)
+
+### Intuition
+Think of it like exploring a haunted house with multiple rooms. You want to find rooms that are "safe" - meaning no matter which door you take from that room, you'll eventually reach an exit (terminal node) and won't get trapped in a loop of scary rooms.
+
+The key insight: A room is unsafe if you can get stuck in a loop of rooms (cycle) or if any path from that room leads to such a loop. We explore each room and mark it as safe only if ALL paths from it lead to exits, not to loops.
+
+### Approach Steps
+1. **Track three states for each node**:
+   - `visited`: Have we explored this node before?
+   - `pathVisited`: Is this node part of our current exploration path?
+   - `safe`: Is this node confirmed to be safe?
+2. **For each unvisited node, perform DFS**:
+   - Mark current node as visited and add to current path
+   - Assume current node is unsafe initially
+   - Explore all adjacent nodes
+   - If any adjacent node leads to a cycle, current node is unsafe
+   - If all paths are safe, mark current node as safe
+   - Remove current node from path (backtrack)
+3. **Return all safe nodes in sorted order**
+
+### Code
+```python
+def solution(nodes, adj_list):
+    graph = adj_list
+    visited = {i: False for i in nodes}  # Track visited nodes
+    pathVisited = {i: False for i in nodes}  # Track nodes in current path
+    safe = {i: False for i in nodes}  # Track safe nodes
+    
+    def dfs(node):
+        visited[node] = True  # Mark as visited
+        pathVisited[node] = True  # Add to current path
+        
+        for adj_node in graph[node]:  # Explore all adjacent nodes
+            if not visited[adj_node]:  # If not visited, explore recursively
+                if not dfs(adj_node):  # If adjacent node is unsafe
+                    pathVisited[node] = False  # Remove from path
+                    return False  # Current node is also unsafe
+            elif pathVisited[adj_node]:  # If in current path, cycle detected
+                pathVisited[node] = False  # Remove from path
+                return False  # Current node is unsafe
+            elif not safe[adj_node]:  # If adjacent node is known to be unsafe
+                pathVisited[node] = False  # Remove from path
+                return False  # Current node is also unsafe
+        
+        pathVisited[node] = False  # Remove from current path (backtrack)
+        safe[node] = True  # Mark as safe
+        return True
+    
+    # Check each unvisited node
+    for i in nodes:
+        if not visited[i]:
+            dfs(i)
+    
+    # Return all safe nodes in sorted order
+    result = [node for node in nodes if safe[node]]
+    return result
+```
+
+### Time and Space Complexity
+- **Time Complexity:** O(V + E) where V is the number of vertices and E is the number of edges
+- **Space Complexity:** O(V) for the visited arrays and recursion stack
