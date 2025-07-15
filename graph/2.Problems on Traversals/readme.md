@@ -1293,3 +1293,156 @@ edges=[(0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5)]
 print(solution(n,edges))
 ```
 
+
+# Bipartite Graph Detection
+
+## Problem Statement
+
+Given an undirected graph with V vertices labeled from 0 to V-1, represented using an adjacency list where `adj[i]` lists all nodes connected to node `i`, determine if the graph is bipartite or not.
+
+**Definition**: A graph is bipartite if the nodes can be partitioned into two independent sets A and B such that every edge in the graph connects a node in set A and a node in set B.
+
+## Examples
+
+### Example 1
+<img src="https://static.takeuforward.org/content/ProblemSetter-qZ0gw2gd" />
+- **Input**: V=4, adj = [[1,3],[0,2],[1,3],[0,2]]
+- **Output**: True
+- **Explanation**: The given graph is bipartite since we can partition the nodes into two sets: {0, 2} and {1, 3}.
+
+### Example 2
+- **Input**: V=4, adj = [[1,2,3],[0,2],[0,1,3],[0,2]]
+- **Output**: False
+- **Explanation**: The graph is not bipartite. If we attempt to partition the nodes into two sets, we encounter an edge that connects two nodes within the same set, which violates the bipartite property.
+
+## Intuition
+
+A bipartite graph is a graph that can be colored using 2 colors such that no adjacent nodes have the same color. Key insights:
+
+- Any linear graph with no cycle is always a bipartite graph
+- With a cycle, any graph with an even cycle length can also be a bipartite graph
+- Any graph with an odd cycle length can never be a bipartite graph
+
+**Approach**: To check if the given graph is bipartite, we can verify if the nodes can be colored alternatingly. If alternate coloring of nodes is possible, the graph is bipartite, otherwise not.
+
+## Solution 1: Using Depth First Search (DFS)
+
+### Approach Steps:
+1. **Build Graph**: Create adjacency list representation from edge list
+2. **Initialize Data Structures**: Create visited and color tracking dictionaries
+3. **DFS Traversal**: For each unvisited node, start DFS with color 0
+4. **Color Assignment**: Mark current node as visited and assign given color
+5. **Recursive Exploration**: For each adjacent node:
+   - If unvisited: recursively call DFS with opposite color
+   - If visited: check for color conflict
+6. **Conflict Detection**: Return False if adjacent nodes have same color
+7. **Component Handling**: Process all disconnected components
+
+### Code Implementation:
+```python
+def solution(n,edges):
+    nodes=[i for i in range(n)]
+    graph={node:set() for node in nodes}
+    for i,j in edges:
+        graph[i].add(j)
+        graph[j].add(i)
+    
+    def dfs(node,current_color):
+        visited[node]=True
+        color[node]=current_color
+        for adj_node in graph[node]:
+            if(not visited[adj_node]):
+                check=dfs(adj_node,int(not current_color))
+                if(check==False):
+                    return False
+            else:
+                if(color[adj_node]==current_color):
+                    return False
+        return True
+    
+    visited={i:False for i in nodes}
+    color={i:-1 for i in nodes}
+    for node in nodes:
+        if(not visited[node]):
+            check=dfs(node,0)
+            if(check==False):
+                return False
+    return True
+```
+
+### Complexity Analysis:
+- **Time Complexity**: O(V + E)
+  - Each vertex is visited exactly once: O(V)
+  - Each edge is traversed exactly twice (once from each endpoint): O(E)
+  - Total: O(V + E)
+- **Space Complexity**: O(V)
+  - Visited dictionary: O(V)
+  - Color dictionary: O(V)
+  - Recursion stack: O(V) in worst case (linear graph)
+  - Graph storage: O(V + E) but not counted as it's input representation
+
+## Solution 2: Using Breadth First Search (BFS)
+
+### Approach Steps:
+1. **Build Graph**: Create adjacency list representation from edge list
+2. **Initialize Data Structures**: Create visited and color tracking dictionaries
+3. **BFS Traversal**: For each unvisited node, start BFS with color 0
+4. **Queue Processing**: Initialize queue with starting node and mark as visited
+5. **Level-by-Level Exploration**: While queue is not empty:
+   - Dequeue current node
+   - For each adjacent node:
+     - If unvisited: enqueue, mark visited, assign opposite color
+     - If visited: check for color conflict
+6. **Conflict Detection**: Return False if adjacent nodes have same color
+7. **Component Handling**: Process all disconnected components
+
+### Code Implementation:
+```python
+from collections import deque
+
+def solution(n,edges):
+    nodes=[i for i in range(n)]
+    graph={node:set() for node in nodes}
+    for i,j in edges:
+        graph[i].add(j)
+        graph[j].add(i)
+    
+    def bfs(node):
+        visited[node]=True
+        queue=deque()
+        queue.append(node)
+        color[node]=0
+        while queue:
+            node=queue.popleft()
+            for adj_node in graph[node]:
+                if(not visited[adj_node]):
+                    queue.append(adj_node)
+                    visited[adj_node]=True
+                    color[adj_node]=int(not color[node])
+                else:
+                    if(color[node]==color[adj_node]):
+                        return False
+        return True
+    
+    visited={i:False for i in nodes}
+    color={i:-1 for i in nodes}
+    for node in nodes:
+        if(not visited[node]):
+            check=bfs(node)
+            if(check==False):
+                return False
+    return True
+```
+
+### Complexity Analysis:
+- **Time Complexity**: O(V + E)
+  - Each vertex is visited exactly once: O(V)
+  - Each edge is processed exactly twice (once from each endpoint): O(E)
+  - Queue operations (enqueue/dequeue): O(1) per operation
+  - Total: O(V + E)
+- **Space Complexity**: O(V)
+  - Visited dictionary: O(V)
+  - Color dictionary: O(V)
+  - Queue storage: O(V) in worst case (when all nodes are at same level)
+  - Graph storage: O(V + E) but not counted as it's input representation
+
