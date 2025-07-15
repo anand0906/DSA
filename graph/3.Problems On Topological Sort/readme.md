@@ -428,3 +428,218 @@ def solution(nodes, adj_list):
 ### Time and Space Complexity
 - **Time Complexity:** O(V + E) where V is the number of vertices and E is the number of edges
 - **Space Complexity:** O(V) for the visited arrays and recursion stack
+
+---
+
+# Course Schedule I
+
+## Problem Statement
+There are a total of N tasks, labeled from 0 to N-1. Given an array arr where arr[i] = [a, b] indicates that you must take course b first if you want to take course a. Find if it is possible to finish all tasks.
+
+## Examples
+
+### Example 1:
+**Input:** N = 4, arr = [[1,0],[2,1],[3,2]]
+**Output:** True
+
+**Explanation:** It is possible to finish all the tasks in the order: 0 1 2 3.
+First, we will finish task 0. Then we will finish task 1, task 2, and task 3.
+
+### Example 2:
+**Input:** N = 4, arr = [[0,1],[3,2],[1,3],[3,0]]
+**Output:** False
+
+**Explanation:** It is impossible to finish all the tasks. Let's analyze the pairs:
+- For pair {0, 1} -> we need to finish task 1 first and then task 0. (order: 1 0).
+- For pair {3, 2} -> we need to finish task 2 first and then task 3. (order: 2 3).
+- For pair {1, 3} -> we need to finish task 3 first and then task 1. (order: 3 1).
+- But for pair {3, 0} -> we need to finish task 0 first and then task 3 but task 0 requires task 1 and task 1 requires task 3. So, it is not possible to finish all the tasks.
+
+## How this problem can be identified as a Graph problem?
+The problem suggests that some courses must be completed before other courses. This is analogous to Topological Sort Algorithm in graph which helps to find a ordering where a node must come before other nodes in the ordering.
+
+Hence, the courses can be represented as nodes of graphs and dependencies of courses can be shown as edges.
+
+Now, For the graph formed, if the Topological sort can be found containing all the nodes (courses), all the courses can be completed in the order returned by topological sort. Else it is not possible to complete all the courses.
+
+## How to form the graph?
+The pair [a,b] represents that the Course b must be completed before Course a.
+
+Hence in the graph, two nodes representing Course a and b can be created with a directed edge from Node b to Node a. This way the topological sort will return Node b before Node a.
+
+## Solution: Using Topological Sort (Kahn's Algorithm)
+
+### Intuition
+Think of it like planning your college courses where some courses have prerequisites. You can graduate (complete all courses) if and only if you can arrange all your courses in a valid order where you never take a course before completing its prerequisites.
+
+The key insight: If there's a circular dependency (like "Course A needs Course B, Course B needs Course C, Course C needs Course A"), then it's impossible to complete all courses - you'll be stuck in an endless loop of prerequisites!
+
+We use topological sort to try arranging all courses in a valid order. If we can arrange all N courses, then it's possible to complete them all. If some courses get stuck due to circular dependencies, it's impossible.
+
+### Approach Steps
+1. **Build the graph**: Create a directed graph where each course is a node, and there's an edge from prerequisite to course (b → a for dependency [a,b])
+2. **Apply topological sort using Kahn's algorithm**:
+   - Calculate in-degree for each course (how many prerequisites it has)
+   - Start with courses that have no prerequisites (in-degree = 0)
+   - Process courses one by one, removing them and updating prerequisites count
+   - Keep track of how many courses we successfully processed
+3. **Check if all courses can be completed**:
+   - If we processed all N courses, return True (possible to complete all)
+   - If some courses remain unprocessed, return False (circular dependency exists)
+
+### Code
+```python
+from collections import deque
+def solution(nodes,edges):
+    def topologicalSort(nodes,graph):
+        # Calculate in-degree for each node (number of prerequisites)
+        inDegree={i:0 for i in nodes}
+        for node,adj_nodes in graph.items():
+            for i in adj_nodes:
+                inDegree[i]+=1
+        
+        # Add all nodes with in-degree 0 to queue (no prerequisites)
+        queue=deque()
+        for node,degree in inDegree.items():
+            if(degree==0):
+                queue.append(node)
+        
+        ans=[]
+        while queue:
+            node=queue.popleft()  # Take a course with no remaining prerequisites
+            ans.append(node)
+            
+            # Remove this course as prerequisite for other courses
+            for adj_node in graph[node]:
+                inDegree[adj_node]-=1
+                if(inDegree[adj_node]==0):  # If all prerequisites completed
+                    queue.append(adj_node)
+        return ans
+    
+    # Build the graph: for [a,b], add edge b -> a
+    graph={i:set() for i in nodes}
+    for i,j in edges:
+        graph[j].add(i)  # j must come before i
+    
+    topoSort=topologicalSort(nodes,graph)
+    if(len(topoSort)==len(nodes)):  # If all courses can be arranged
+        return True
+    return False  # If some courses stuck due to circular dependencies
+```
+
+```python
+n=4
+edges= [[1,0],[2,1],[3,2]]
+nodes=[i for i in range(n)]
+print(solution(nodes,edges))
+```
+
+### Time and Space Complexity
+- **Time Complexity:** O(V + E) where V is the number of courses and E is the number of prerequisite relationships
+- **Space Complexity:** O(V + E) for the graph representation and auxiliary data structures
+
+---
+
+# Course Schedule II
+
+## Problem Statement
+There are a total of N tasks, labeled from 0 to N-1. Given an array arr where arr[i] = [a, b] indicates that you must take course b first if you want to take course a. Find the order of tasks you should pick to finish all tasks.
+If no such ordering exists, return an empty array.
+
+## Examples
+
+### Example 1:
+**Input:** N = 4, arr = [[1,0],[2,1],[3,2]]
+**Output:** [0, 1, 2, 3]
+
+**Explanation:** First, finish task 0, as it has no prerequisites. Then, finish task 1, since it depends only on task 0. After that, finish task 2, since it depends only on task 1. Finally, finish task 3, since it depends only on task 2.
+
+### Example 2:
+**Input:** N = 4, arr = [[0,1],[3,2],[1,3],[3,0]]
+**Output:** []
+
+**Explanation:** It is impossible to finish all the tasks. Let's analyze the pairs:
+- For pair {0, 1} → we need to finish task 1 first and then task 0 (order: 1 → 0).
+- For pair {3, 2} → we need to finish task 2 first and then task 3 (order: 2 → 3).
+- For pair {1, 3} → we need to finish task 3 first and then task 1 (order: 2 → 3 → 1 → 0).
+- But for pair {3, 0} → we need to finish task 0 first and then task 3, which contradicts the previous order. So, it is not possible to finish all the tasks.
+
+## Solution: Using Topological Sort (Kahn's Algorithm)
+
+### Intuition
+Think of it like creating a step-by-step study plan for your entire college curriculum. You need to figure out the exact order in which to take all your courses so that you never take a course before completing its prerequisites.
+
+This is exactly like Course Schedule I, but now instead of just asking "Can I graduate?", we're asking "Give me the exact semester-by-semester plan to graduate!"
+
+The approach is simple:
+1. Start with courses that have no prerequisites (you can take them right away)
+2. Take those courses and "unlock" the next set of courses 
+3. Keep going until you've planned all courses, or get stuck due to circular dependencies
+
+If you can plan all N courses, return the plan. If you get stuck (due to circular dependencies), return an empty plan to indicate it's impossible.
+
+### Approach Steps
+1. **Build the graph**: Create a directed graph where each course is a node, and there's an edge from prerequisite to course (b → a for dependency [a,b])
+2. **Apply topological sort using Kahn's algorithm**:
+   - Calculate in-degree for each course (how many prerequisites it has)
+   - Start with courses that have no prerequisites (in-degree = 0)
+   - Process courses one by one, adding them to our study plan
+   - For each course taken, reduce the prerequisite count of dependent courses
+   - Add newly available courses (those with no remaining prerequisites) to the queue
+3. **Return the result**:
+   - If we planned all N courses, return the complete study plan
+   - If some courses couldn't be planned (due to circular dependencies), return empty array
+
+### Code
+```python
+from collections import deque
+def solution(nodes,edges):
+    def topologicalSort(nodes,graph):
+        # Calculate in-degree for each node (number of prerequisites)
+        inDegree={i:0 for i in nodes}
+        for node,adj_nodes in graph.items():
+            for i in adj_nodes:
+                inDegree[i]+=1
+        
+        # Add all nodes with in-degree 0 to queue (no prerequisites)
+        queue=deque()
+        for node,degree in inDegree.items():
+            if(degree==0):
+                queue.append(node)
+        
+        ans=[]
+        while queue:
+            node=queue.popleft()  # Take next course with no remaining prerequisites
+            ans.append(node)  # Add to our study plan
+            
+            # Remove this course as prerequisite for other courses
+            for adj_node in graph[node]:
+                inDegree[adj_node]-=1
+                if(inDegree[adj_node]==0):  # If all prerequisites completed
+                    queue.append(adj_node)  # Course becomes available
+        return ans
+    
+    # Build the graph: for [a,b], add edge b -> a
+    graph={i:set() for i in nodes}
+    for i,j in edges:
+        graph[j].add(i)  # j must come before i
+    
+    topoSort=topologicalSort(nodes,graph)
+    if(len(topoSort)==len(nodes)):  # If all courses can be planned
+        return topoSort  # Return the complete study plan
+    return []  # Return empty array if impossible due to circular dependencies
+```
+
+## Test Case
+```python
+n=4
+edges= [[1,0],[2,1],[3,2]]
+nodes=[i for i in range(n)]
+print(solution(nodes,edges))
+```
+
+### Time and Space Complexity
+- **Time Complexity:** O(V + E) where V is the number of courses and E is the number of prerequisite relationships
+- **Space Complexity:** O(V + E) for the graph representation and auxiliary data structures
+
+
