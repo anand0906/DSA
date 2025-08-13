@@ -92,3 +92,108 @@ The MST concept is widely used in real-world problems where we need to **connect
 * **Minimum Spanning Tree:** The spanning tree with the smallest total weight.
 * **Algorithms:** Prim's, Kruskal's.
 * **Applications:** Networks, transportation, utilities.
+
+---
+
+# Prim's Algorithm Explained
+
+## **1. Introduction**
+
+**Prim's Algorithm** is a greedy algorithm used to find the **Minimum Spanning Tree (MST)** of a **connected, weighted, undirected graph**.
+
+The idea is to **start from a single node** and keep adding the **smallest edge** that connects a new node to the growing tree until all nodes are included.
+
+---
+
+## **2. Key Concepts**
+
+* **MST Goal:** Connect all nodes with minimum total edge weight.
+* **Greedy Choice:** Always choose the smallest weight edge that adds a new vertex to the tree.
+* **No Cycles:** The selected edges must not form cycles.
+
+---
+
+## **3. Steps of Prim's Algorithm**
+
+1. **Start** with any node (let's call it the starting vertex).
+2. **Mark** this node as part of the MST.
+3. From all edges that connect the MST to nodes not yet in the MST, **choose the edge with the smallest weight**.
+4. **Add** the selected edge and the new node to the MST.
+5. **Repeat** steps 3 and 4 until all nodes are included.
+
+---
+
+## **4. Example**
+
+Let’s say we have 5 nodes (A, B, C, D, E) with weighted edges:
+
+1. Start from A.
+2. Find the smallest edge from A to another node → (A, B) with weight 2.
+3. Now MST has A and B. Look for smallest edge connecting MST to new node → (B, C) with weight 3.
+4. Repeat until all nodes are connected.
+
+---
+
+## **5. Python Implementation**
+
+```python
+import heapq
+
+def prim_mst(nodes,graph):
+    MST=[]
+    MSTWeight=0
+    visited={node:False for node in nodes}
+    queue=[]
+    src=nodes[0]
+    visited[src]=True
+    edges=[(adj_weight,src,adj_node) for adj_node,adj_weight in graph[src]]
+    heapq.heapify(edges)
+    while edges:
+        weight,from_node,to_node=heapq.heappop(edges)
+        if(not visited[to_node]):
+            visited[to_node]=True
+            MST.append((from_node,to_node,weight))
+            MSTWeight+=weight
+            for adj_node,adj_weight in graph[to_node]:
+                if(not visited[adj_node]):
+                    heapq.heappush(edges,(adj_weight,to_node,adj_node))
+    return MST,MSTWeight
+
+nodes=['A','B','C','D','E']
+graph = {
+    'A': [('B', 2), ('C', 3)],
+    'B': [('A', 2), ('C', 1), ('D', 4)],
+    'C': [('A', 3), ('B', 1), ('D', 5), ('E', 6)],
+    'D': [('B', 4), ('C', 5), ('E', 7)],
+    'E': [('C', 6), ('D', 7)]
+}
+
+mst, cost = prim_mst(nodes,graph)
+print("MST Edges:", mst)
+print("Total Cost:", cost)
+
+```
+
+**Output:**
+
+```
+MST Edges: [('A', 'B', 2), ('B', 'C', 1), ('B', 'D', 4), ('C', 'E', 6)]
+Total Cost: 13
+```
+
+---
+
+## **6. Time Complexity**
+
+* Using a **min-heap/priority queue**: **O(E log V)**
+* Without priority queue (simple array): **O(V²)**
+
+Where:
+
+* **V** = number of vertices
+* **E** = number of edges
+
+---
+
+---
+
