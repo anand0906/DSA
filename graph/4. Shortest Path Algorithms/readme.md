@@ -892,3 +892,569 @@ def shortestPathOptimized(n, m, edges):
 - **Undirected graph**: Each edge is added in both directions
 
 ---
+
+# Cheapest Flights within K Stops
+
+## Problem Description
+Given n cities connected by flights, find the cheapest price to travel from source city to destination city with at most k stops. Each flight has a cost, and you need to minimize the total cost while respecting the maximum number of stops allowed. If no valid route exists, return -1.
+
+Think of it like booking the cheapest flight ticket with a layover limit - you want the lowest price but can't have too many connecting flights.
+
+## Examples
+
+### Input
+```
+n = 4, flights = [[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]], src = 0, dst = 3, k = 1
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-lTPXKKMA" />
+
+### Output
+```
+700
+```
+
+### Explanation
+- Path 0→1→3: Cost = 100 + 600 = 700 (1 stop, valid)
+- Path 0→1→2→3: Cost = 100 + 100 + 200 = 400 (2 stops, invalid as k=1)
+- The cheaper path is invalid due to stop limit, so answer is 700
+
+### Input
+```
+n = 3, flights = [[0,1,100],[1,2,100],[0,2,500]], src = 0, dst = 2, k = 1
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-CIPwuM01" />
+
+### Output
+```
+200
+```
+
+### Explanation
+- Direct path 0→2: Cost = 500 (0 stops)
+- Path with stop 0→1→2: Cost = 100 + 100 = 200 (1 stop)
+- The path with 1 stop is cheaper: 200
+
+## Solution
+Use a modified Dijkstra's algorithm that prioritizes by number of stops instead of distance. Since stops increase monotonically, we can use a simple queue instead of a priority queue for better time complexity.
+
+## Intuition
+This problem combines two constraints: minimizing cost and limiting stops. Regular Dijkstra's won't work directly because:
+
+1. **Standard Dijkstra's prioritizes minimum distance** - but a longer distance path might have fewer stops
+2. **We need to track both cost and stops** - not just the minimum cost
+
+**Key insight**: Since stops increase by exactly 1 at each level, we can use BFS-like traversal where we process paths level by level based on number of stops. This ensures we don't exceed the stop limit.
+
+**Why prioritize stops over cost?**
+- If we prioritize cost first, we might get stuck with expensive paths that have fewer stops
+- By processing paths with fewer stops first, we ensure we don't miss valid solutions due to exceeding the stop limit
+
+## Approach Steps
+
+1. **Build the graph**: Create adjacency list representation from flights
+2. **Initialize data structures**:
+   - Distance array to track minimum cost to reach each city
+   - Queue to store (stops, city, cost) tuples
+3. **BFS-like traversal**:
+   - Start from source with 0 stops and 0 cost
+   - For each city, explore all neighboring cities
+   - Only proceed if stops ≤ k and we found a cheaper path
+4. **Update distances**: Keep track of minimum cost to reach each city
+5. **Return result**: Return minimum cost to destination, or -1 if unreachable
+
+## Code
+
+### Method 1: Modified Dijkstra's (Based on Provided Code)
+```python
+import heapq
+
+def solution(nodes, graph, source, destination, k):
+    # Use priority queue: (stops, node, cost)
+    queue = []
+    distance = {i: float('inf') for i in nodes}
+    
+    # Start from source with 0 stops and 0 cost
+    heapq.heappush(queue, (0, source, 0))
+    distance[source] = 0
+    
+    while queue:
+        steps, node, cost = heapq.heappop(queue)
+        
+        # Skip if exceeded stop limit
+        if steps > k:
+            continue
+        
+        # Process all neighbors
+        for adj_node, flight_cost in graph[node].items():
+            new_cost = cost + flight_cost
+            
+            # If we found a cheaper path and within stop limit
+            if new_cost < distance[adj_node]:
+                distance[adj_node] = new_cost
+                # Add to queue with incremented stops
+                heapq.heappush(queue, (steps + 1, adj_node, new_cost))
+    
+    return distance[destination] if distance[destination] != float('inf') else -1
+
+class Solution:
+    def findCheapestPrice(self, n: int, flights: List[List[int]], src: int, dst: int, k: int) -> int:
+        nodes = [i for i in range(n)]
+        graph = {i: {} for i in nodes}
+        
+        # Build directed graph
+        for u, v, cost in flights:
+            graph[u][v] = cost
+        
+        return solution(nodes, graph, src, dst, k)
+```
+
+### Method 2: BFS with Queue (More Efficient)
+```python
+from collections import deque
+
+def findCheapestPriceBFS(n, flights, src, dst, k):
+    # Build adjacency list
+    graph = [[] for _ in range(n)]
+    for u, v, cost in flights:
+        graph[u].append((v, cost))
+    
+    # Use simple queue since stops increase monotonically
+    queue = deque([(src, 0, 0)])  # (city, cost, stops)
+    min_cost = [float('inf')] * n
+    min_cost[src] = 0
+    
+    while queue:
+        city, cost, stops = queue.popleft()
+        
+        # Skip if exceeded stop limit
+        if stops > k:
+            continue
+        
+        # Process all neighbors
+        for next_city, flight_cost in graph[city]:
+            new_cost = cost + flight_cost
+            
+            # Only proceed if we found a cheaper path
+            if new_cost < min_cost[next_city]:
+                min_cost[next_city] = new_cost
+                queue.append((next_city, new_cost, stops + 1))
+    
+    return min_cost[dst] if min_cost[dst] != float('inf') else -1
+```
+
+### Method 3: Bellman-Ford Variation (Alternative Approach)
+```python
+def findCheapestPriceBellmanFord(n, flights, src, dst, k):
+    # Initialize distance array
+    dist = [float('inf')] * n
+    dist[src] = 0
+    
+    # Relax edges at most k+1 times (k stops = k+1 edges)
+    for i in range(k + 1):
+        temp = dist.copy()  # Use previous iteration's distances
+        
+        for u, v, cost in flights:
+            if dist[u] != float('inf'):
+                temp[v] = min(temp[v], dist[u] + cost)
+        
+        dist = temp
+    
+    return dist[dst] if dist[dst] != float('inf') else -1
+```
+
+### Method 4: DFS with Memoization (For Learning)
+```python
+def findCheapestPriceDFS(n, flights, src, dst, k):
+    # Build adjacency list
+    graph = [[] for _ in range(n)]
+    for u, v, cost in flights:
+        graph[u].append((v, cost))
+    
+    # Memoization: (city, stops_left) -> min_cost
+    memo = {}
+    
+    def dfs(city, stops_left):
+        if city == dst:
+            return 0
+        if stops_left < 0:
+            return float('inf')
+        if (city, stops_left) in memo:
+            return memo[(city, stops_left)]
+        
+        min_cost = float('inf')
+        for next_city, flight_cost in graph[city]:
+            cost = flight_cost + dfs(next_city, stops_left - 1)
+            min_cost = min(min_cost, cost)
+        
+        memo[(city, stops_left)] = min_cost
+        return min_cost
+    
+    result = dfs(src, k + 1)  # k stops = k+1 edges
+    return result if result != float('inf') else -1
+```
+
+## Time and Space Complexity
+
+### Method 1 & 2 (BFS/Modified Dijkstra's):
+**Time Complexity: O(V + E × K)**
+- Each city can be visited multiple times (up to k+1 times)
+- Each edge is processed at most k+1 times
+- V is number of cities, E is number of flights
+
+**Space Complexity: O(V + E)**
+- Adjacency list: O(E) space
+- Queue and distance array: O(V) space
+
+### Method 3 (Bellman-Ford):
+**Time Complexity: O(K × E)**
+- K+1 iterations of edge relaxation
+- Each iteration processes all E flights
+
+**Space Complexity: O(V)**
+- Only distance arrays needed
+
+## Key Points to Remember
+
+**Why not standard Dijkstra's?**
+- Standard Dijkstra's prioritizes minimum distance
+- Here we need to balance cost vs. number of stops
+- A cheaper path might exceed the stop limit
+
+**Why BFS works better here?**
+- Stops increase monotonically (always +1)
+- No need for priority queue's logarithmic operations
+- Simpler and more efficient for this specific problem
+
+**Edge Cases:**
+- Direct flight exists (0 stops)
+- No path exists within k stops
+- k = 0 (only direct flights allowed)
+- Source equals destination
+
+**Real-world Applications:**
+- Flight booking systems with layover limits
+- Network routing with hop count restrictions
+- Supply chain optimization with intermediate stops
+
+---
+
+# Number of Ways to Arrive at Destination
+
+## Problem Description
+Given a city with n intersections (numbered 0 to n-1) connected by bi-directional roads, find the number of ways to travel from intersection 0 to intersection n-1 in the shortest possible time. Each road has a travel time, and you need to count all different shortest paths. Return the answer modulo 10^9 + 7.
+
+Think of it like finding all the fastest routes on GPS - there might be multiple different paths that all take the same minimum time.
+
+## Examples
+
+### Input
+```
+n = 7, m = 10
+roads = [[0,6,7],[0,1,2],[1,2,3],[1,3,3],[6,3,3],[3,5,1],[6,5,1],[2,5,1],[0,4,5],[4,6,2]]
+```
+
+### Output
+```
+4
+```
+
+### Explanation
+Shortest time from 0 to 6 is 7 minutes. The four ways to achieve this are:
+- Path 1: 0→6 (time: 7)
+- Path 2: 0→4→6 (time: 5+2 = 7)  
+- Path 3: 0→1→2→5→6 (time: 2+3+1+1 = 7)
+- Path 4: 0→1→3→5→6 (time: 2+3+1+1 = 7)
+
+### Input
+```
+n = 6, m = 8
+roads = [[0,5,8],[0,2,2],[0,1,1],[1,3,3],[1,2,3],[2,5,6],[3,4,2],[4,5,2]]
+```
+
+### Output
+```
+3
+```
+
+### Explanation
+Shortest time from 0 to 5 is 8 minutes. The three ways are:
+- Path 1: 0→5 (time: 8)
+- Path 2: 0→2→5 (time: 2+6 = 8)
+- Path 3: 0→1→3→4→5 (time: 1+3+2+2 = 8)
+
+## Solution
+Use a modified Dijkstra's algorithm that tracks both the shortest distance and the number of ways to achieve that shortest distance to each node. When we find a path of equal length, we add the ways; when we find a shorter path, we replace the ways.
+
+## Intuition
+This problem combines shortest path finding with path counting. The key insight is:
+
+**Number of ways to reach a node in shortest time = Sum of ways to reach all parent nodes that can lead to this node in shortest time**
+
+For example, if we can reach node C in shortest time from both node A and node B:
+- ways[C] = ways[A] + ways[B]
+
+**Modified Dijkstra's Logic:**
+1. **Shorter path found**: Update distance and reset ways count
+2. **Equal path found**: Keep same distance but add to ways count  
+3. **Longer path found**: Ignore (standard Dijkstra's behavior)
+
+This works because when we process nodes in order of shortest distance (thanks to priority queue), we guarantee that we've found the optimal way to reach each node.
+
+## Approach Steps
+
+1. **Initialize data structures**:
+   - Distance array with infinity for all nodes except source (set to 0)
+   - Ways array with 0 for all nodes except source (set to 1)  
+   - Priority queue for Dijkstra's algorithm
+2. **Run modified Dijkstra's**:
+   - Process nodes in order of shortest distance
+   - For each neighbor, check if we found shorter, equal, or longer path
+3. **Handle three cases**:
+   - **Shorter path**: Update distance and reset ways count
+   - **Equal path**: Keep distance, add to ways count
+   - **Longer path**: Ignore
+4. **Apply modulo**: Use modulo 10^9+7 to prevent integer overflow
+5. **Return result**: Return ways[destination]
+
+## Code
+
+### Method 1: Modified Implementation (Based on Provided Code)
+```python
+import heapq
+
+MOD = 10**9 + 7
+
+def solution(nodes, graph, src, dest):
+    # Initialize distance and ways arrays
+    distance = {i: float('inf') for i in nodes}
+    ways = {i: 0 for i in nodes}
+    
+    # Priority queue: (distance, node)
+    queue = [(0, src)]
+    distance[src] = 0
+    ways[src] = 1
+    
+    while queue:
+        dist, node = heapq.heappop(queue)
+        
+        # Skip if we've already processed this node with better distance
+        if dist > distance[node]:
+            continue
+        
+        # Process all neighbors
+        for adj_node, adj_weight in graph[node].items():
+            new_dist = distance[node] + adj_weight
+            
+            if new_dist < distance[adj_node]:
+                # Found shorter path: update distance and reset ways
+                distance[adj_node] = new_dist
+                ways[adj_node] = ways[node]
+                heapq.heappush(queue, (new_dist, adj_node))
+                
+            elif new_dist == distance[adj_node]:
+                # Found equal path: add to ways count
+                ways[adj_node] = (ways[node] + ways[adj_node]) % MOD
+    
+    return ways[dest]
+
+class Solution:
+    def countPaths(self, n, roads):
+        nodes = [i for i in range(n)]
+        graph = {i: {} for i in nodes}
+        
+        # Build undirected graph
+        for u, v, weight in roads:
+            graph[u][v] = weight
+            graph[v][u] = weight
+        
+        return solution(nodes, graph, 0, n - 1)
+```
+
+### Method 2: Clean Standard Implementation
+```python
+import heapq
+
+def countPaths(n, roads):
+    MOD = 10**9 + 7
+    
+    # Build adjacency list
+    graph = [[] for _ in range(n)]
+    for u, v, time in roads:
+        graph[u].append((v, time))
+        graph[v].append((u, time))
+    
+    # Dijkstra's with path counting
+    dist = [float('inf')] * n
+    ways = [0] * n
+    
+    dist[0] = 0
+    ways[0] = 1
+    
+    pq = [(0, 0)]  # (distance, node)
+    
+    while pq:
+        d, u = heapq.heappop(pq)
+        
+        # Skip outdated entries
+        if d > dist[u]:
+            continue
+        
+        for v, time in graph[u]:
+            new_dist = dist[u] + time
+            
+            if new_dist < dist[v]:
+                # Shorter path found
+                dist[v] = new_dist
+                ways[v] = ways[u]
+                heapq.heappush(pq, (new_dist, v))
+                
+            elif new_dist == dist[v]:
+                # Equal path found
+                ways[v] = (ways[v] + ways[u]) % MOD
+    
+    return ways[n - 1]
+
+class Solution:
+    def countPaths(self, n, roads):
+        return countPaths(n, roads)
+```
+
+### Method 3: With Visited Set (Alternative)
+```python
+import heapq
+
+def countPathsWithVisited(n, roads):
+    MOD = 10**9 + 7
+    
+    # Build graph
+    graph = [[] for _ in range(n)]
+    for u, v, time in roads:
+        graph[u].append((v, time))
+        graph[v].append((u, time))
+    
+    # Initialize arrays
+    dist = [float('inf')] * n
+    ways = [0] * n
+    processed = [False] * n
+    
+    dist[0] = 0
+    ways[0] = 1
+    
+    pq = [(0, 0)]
+    
+    while pq:
+        d, u = heapq.heappop(pq)
+        
+        if processed[u]:
+            continue
+            
+        processed[u] = True
+        
+        for v, time in graph[u]:
+            new_dist = dist[u] + time
+            
+            if new_dist < dist[v]:
+                dist[v] = new_dist
+                ways[v] = ways[u]
+                if not processed[v]:
+                    heapq.heappush(pq, (new_dist, v))
+                    
+            elif new_dist == dist[v] and not processed[v]:
+                ways[v] = (ways[v] + ways[u]) % MOD
+    
+    return ways[n - 1]
+```
+
+### Method 4: Debug Version (For Understanding)
+```python
+import heapq
+
+def countPathsDebug(n, roads):
+    MOD = 10**9 + 7
+    
+    graph = [[] for _ in range(n)]
+    for u, v, time in roads:
+        graph[u].append((v, time))
+        graph[v].append((u, time))
+    
+    dist = [float('inf')] * n
+    ways = [0] * n
+    
+    dist[0] = 0
+    ways[0] = 1
+    
+    pq = [(0, 0)]
+    
+    while pq:
+        d, u = heapq.heappop(pq)
+        
+        if d > dist[u]:
+            continue
+        
+        print(f"Processing node {u} with distance {d}")
+        
+        for v, time in graph[u]:
+            new_dist = dist[u] + time
+            
+            if new_dist < dist[v]:
+                print(f"  Shorter path to {v}: {new_dist} (was {dist[v]})")
+                dist[v] = new_dist
+                ways[v] = ways[u]
+                heapq.heappush(pq, (new_dist, v))
+                
+            elif new_dist == dist[v]:
+                print(f"  Equal path to {v}: {new_dist}, adding {ways[u]} ways")
+                ways[v] = (ways[v] + ways[u]) % MOD
+    
+    print(f"Final distances: {dist}")
+    print(f"Final ways: {ways}")
+    
+    return ways[n - 1]
+```
+
+## Time and Space Complexity
+
+**Time Complexity: O((V + E) log V)**
+- Same as standard Dijkstra's algorithm
+- Each vertex is processed at most once when extracted from priority queue
+- Each edge relaxation involves heap operations
+- V is number of intersections, E is number of roads
+
+**Space Complexity: O(V + E)**
+- Adjacency list representation: O(E) space
+- Distance and ways arrays: O(V) space each
+- Priority queue: O(V) space in worst case
+- Overall: O(V + E)
+
+## Key Points to Remember
+
+**Why modulo is needed:**
+- Number of paths can grow exponentially
+- Without modulo, integer overflow would occur
+- Apply modulo only when adding ways, not when comparing distances
+
+**Critical insight:**
+- We only add ways when distances are equal
+- This ensures we're only counting shortest paths
+- The ways array represents number of shortest paths to each node
+
+**Edge cases:**
+- Direct path exists (might not be shortest)
+- Multiple equal shortest paths
+- No path exists (shouldn't happen given problem constraints)
+- Single node graph (n=1)
+
+**Common mistakes:**
+- Forgetting to apply modulo
+- Adding ways for longer paths (should only add for equal distances)
+- Not handling duplicate entries in priority queue properly
+
+**Real-world applications:**
+- GPS routing systems (finding all fastest routes)
+- Network routing (load balancing across equal-cost paths)
+- Transportation optimization
+- Supply chain route planning
+
+---
