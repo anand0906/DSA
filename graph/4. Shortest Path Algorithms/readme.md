@@ -1458,3 +1458,1093 @@ def countPathsDebug(n, roads):
 - Supply chain route planning
 
 ---
+
+# Word Ladder I
+
+## Problem Description
+Given a startWord and a targetWord, along with a list of unique words (wordList), find the length of the shortest transformation sequence from startWord to targetWord. In each transformation, only one letter can be changed, and each intermediate word must exist in the wordList. If no transformation sequence exists, return 0.
+
+Think of it like a word puzzle where you change one letter at a time to transform one word into another, but every intermediate step must be a valid word from your dictionary.
+
+## Examples
+
+### Input
+```
+wordList = ["des","der","dfr","dgt","dfs"], startWord = "der", targetWord = "dfs"
+```
+
+### Output
+```
+3
+```
+
+### Explanation
+Transformation sequence: "der" → "dfr" → "dfs"
+- Step 1: "der" (starting word)
+- Step 2: "dfr" (replace 'e' with 'f')
+- Step 3: "dfs" (replace 'r' with 's')
+Total length: 3
+
+### Input
+```
+wordList = ["geek", "gefk"], startWord = "gedk", targetWord = "geek"
+```
+
+### Output
+```
+2
+```
+
+### Explanation
+Transformation sequence: "gedk" → "geek"
+- Step 1: "gedk" (starting word)
+- Step 2: "geek" (replace 'd' with 'e')
+Total length: 2
+
+### Input
+```
+wordList = ["hot", "dot", "dog", "lot", "log"], startWord = "hit", targetWord = "cog"
+```
+
+### Output
+```
+0
+```
+
+### Explanation
+No transformation sequence possible since "cog" is not in the wordList.
+
+## Solution
+Use BFS (Breadth-First Search) to explore all possible word transformations level by level. BFS guarantees finding the shortest transformation sequence because it explores all words reachable in k steps before exploring words reachable in k+1 steps.
+
+## Intuition
+This is a shortest path problem in an unweighted graph where:
+- **Nodes**: Words (startWord + all words in wordList)
+- **Edges**: Direct transformations (words differing by exactly one character)
+- **Goal**: Find shortest path from startWord to targetWord
+
+**Why BFS works perfectly:**
+1. **Unweighted graph**: Each transformation has equal "cost" (1 step)
+2. **Level-wise exploration**: BFS explores all words reachable in 1 step, then 2 steps, then 3 steps, etc.
+3. **First occurrence = shortest path**: When we first reach the targetWord, we've found the shortest sequence
+
+**Key optimization**: Remove words from wordList once visited to avoid cycles and redundant processing.
+
+## Approach Steps
+
+1. **Setup data structures**:
+   - Convert wordList to set for O(1) lookup and removal
+   - Initialize BFS queue with (startWord, steps=1)
+   - Remove startWord from set if present (avoid revisiting)
+
+2. **BFS traversal**:
+   - Process words level by level using queue
+   - For each word, try changing each character position
+
+3. **Generate transformations**:
+   - For each position i, try all 26 letters ('a' to 'z')
+   - Create new word by replacing character at position i
+
+4. **Valid transformation check**:
+   - If new word exists in wordList set, it's a valid transformation
+   - Add to queue with incremented step count
+   - Remove from set to mark as visited
+
+5. **Target check**: If current word equals targetWord, return step count
+
+## Code
+
+### Method 1: Standard BFS Implementation (Based on Provided Code)
+```python
+from collections import deque
+
+def solution(wordList, startWord, targetWord):
+    # Initialize BFS queue and convert wordList to set
+    queue = deque()
+    queue.append((startWord, 1))
+    wordSet = set(wordList)
+    
+    # Remove startWord from set to avoid revisiting
+    wordSet.discard(startWord)
+    
+    while queue:
+        word, steps = queue.popleft()
+        
+        # Check if we reached target
+        if word == targetWord:
+            return steps
+        
+        # Try all possible single character transformations
+        for i in range(len(word)):
+            for char in 'abcdefghijklmnopqrstuvwxyz':
+                newWord = word[:i] + char + word[i+1:]
+                
+                # If transformation is valid and exists in wordList
+                if newWord in wordSet:
+                    queue.append((newWord, steps + 1))
+                    wordSet.discard(newWord)  # Mark as visited
+    
+    return 0  # No transformation sequence found
+
+class Solution:
+    def wordLadderLength(self, startWord, targetWord, wordList):
+        return solution(wordList, startWord, targetWord)
+```
+
+### Method 2: Early Termination Check
+```python
+from collections import deque
+
+def wordLadderLength(startWord, targetWord, wordList):
+    # Early check: if targetWord not in wordList, return 0
+    if targetWord not in wordList:
+        return 0
+    
+    # Convert to set for O(1) operations
+    wordSet = set(wordList)
+    queue = deque([(startWord, 1)])
+    wordSet.discard(startWord)
+    
+    while queue:
+        word, steps = queue.popleft()
+        
+        if word == targetWord:
+            return steps
+        
+        # Generate all possible transformations
+        for i in range(len(word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                newWord = word[:i] + c + word[i+1:]
+                
+                if newWord in wordSet:
+                    if newWord == targetWord:
+                        return steps + 1
+                    queue.append((newWord, steps + 1))
+                    wordSet.remove(newWord)
+    
+    return 0
+```
+
+### Method 3: Bidirectional BFS (Advanced Optimization)
+```python
+from collections import deque
+
+def wordLadderBidirectional(startWord, targetWord, wordList):
+    if targetWord not in wordList:
+        return 0
+    
+    wordSet = set(wordList)
+    
+    # Two queues for bidirectional search
+    beginQueue = deque([(startWord, 1)])
+    endQueue = deque([(targetWord, 1)])
+    
+    beginVisited = {startWord: 1}
+    endVisited = {targetWord: 1}
+    
+    def getNeighbors(word):
+        neighbors = []
+        for i in range(len(word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                newWord = word[:i] + c + word[i+1:]
+                if newWord in wordSet:
+                    neighbors.append(newWord)
+        return neighbors
+    
+    def bfsLevel(queue, visited, otherVisited):
+        for _ in range(len(queue)):
+            word, steps = queue.popleft()
+            
+            for neighbor in getNeighbors(word):
+                if neighbor in otherVisited:
+                    return steps + otherVisited[neighbor]
+                
+                if neighbor not in visited:
+                    visited[neighbor] = steps + 1
+                    queue.append((neighbor, steps + 1))
+        return 0
+    
+    while beginQueue and endQueue:
+        # Always expand the smaller queue
+        if len(beginQueue) <= len(endQueue):
+            result = bfsLevel(beginQueue, beginVisited, endVisited)
+        else:
+            result = bfsLevel(endQueue, endVisited, beginVisited)
+        
+        if result:
+            return result
+    
+    return 0
+```
+
+### Method 4: With Path Tracking (For Learning)
+```python
+from collections import deque
+
+def wordLadderWithPath(startWord, targetWord, wordList):
+    if targetWord not in wordList:
+        return 0, []
+    
+    wordSet = set(wordList)
+    queue = deque([(startWord, 1, [startWord])])
+    wordSet.discard(startWord)
+    
+    while queue:
+        word, steps, path = queue.popleft()
+        
+        if word == targetWord:
+            return steps, path
+        
+        for i in range(len(word)):
+            for c in 'abcdefghijklmnopqrstuvwxyz':
+                newWord = word[:i] + c + word[i+1:]
+                
+                if newWord in wordSet:
+                    newPath = path + [newWord]
+                    queue.append((newWord, steps + 1, newPath))
+                    wordSet.remove(newWord)
+    
+    return 0, []
+```
+
+## Time and Space Complexity
+
+**Time Complexity: O(M² × N)**
+- M = length of each word
+- N = number of words in wordList
+- For each word, we try M positions × 26 characters = 26M transformations
+- Each transformation takes O(M) time to create new string
+- We might visit all N words: O(26M × M × N) = O(M² × N)
+
+**Space Complexity: O(N × M)**
+- WordSet storage: O(N × M) for storing all words
+- BFS queue: O(N) in worst case  
+- Each word takes O(M) space
+- Overall: O(N × M)
+
+## Key Points to Remember
+
+**Why BFS over DFS?**
+- BFS explores level by level, guaranteeing shortest path
+- DFS might find a valid path but not necessarily the shortest one
+- In unweighted graphs, BFS always finds optimal solution first
+
+**Critical optimization - removing visited words:**
+- Prevents infinite loops and revisiting
+- Safe because: if we reach a word in k steps, any future path to it will be ≥ k steps
+- Uses O(1) set operations for efficiency
+
+**Edge cases:**
+- targetWord not in wordList → return 0
+- startWord equals targetWord → return 1 
+- Empty wordList → return 0
+- No valid transformation sequence exists → return 0
+
+**Common mistakes:**
+- Forgetting to remove visited words (leads to infinite loops)
+- Using list instead of set for wordList (TLE due to O(n) lookups)
+- Not handling case where startWord is not in wordList
+- Counting steps incorrectly (should count words in sequence, not transformations)
+
+**Real-world applications:**
+- Spell checkers (finding closest valid words)
+- DNA sequence analysis (mutations with single base changes)
+- Text processing and natural language processing
+- Game development (word puzzles and transformations)
+
+---
+
+# Word Ladder II
+
+## Problem Description
+Given a startWord and a targetWord, along with a list of unique words (wordList), find all shortest transformation sequences from startWord to targetWord. In each transformation, only one letter can be changed, and each intermediate word must exist in the wordList. Return all possible shortest paths, or an empty list if no transformation sequence exists.
+
+Think of it like finding all the shortest routes in a word puzzle - not just one optimal path, but every possible way to get from start to finish in the minimum number of steps.
+
+## Examples
+
+### Input
+```
+startWord = "der", targetWord = "dfs", wordList = ["des", "der", "dfr", "dgt", "dfs"]
+```
+
+### Output
+```
+[["der", "dfr", "dfs"], ["der", "des", "dfs"]]
+```
+
+### Explanation
+Two shortest transformation sequences of length 3:
+1. "der" → "dfr" → "dfs" (change 'e'→'f', then 'r'→'s')
+2. "der" → "des" → "dfs" (change 'r'→'s', then 'e'→'f')
+
+### Input
+```
+startWord = "gedk", targetWord = "geek", wordList = ["geek", "gefk"]
+```
+
+### Output
+```
+[["gedk", "geek"]]
+```
+
+### Explanation
+Only one shortest transformation sequence of length 2:
+- "gedk" → "geek" (change 'd'→'e')
+
+## Solution
+Use a two-phase approach: First, build a level-wise graph using BFS to find the shortest distance to all words. Then, use DFS with backtracking to reconstruct all shortest paths from target back to source.
+
+## Intuition
+Word Ladder II is more complex than Word Ladder I because we need ALL shortest paths, not just the length. The key challenges are:
+
+1. **Multiple paths**: We can't stop at first occurrence of target word
+2. **Path reconstruction**: Need to remember how to build the actual sequences
+3. **Efficiency**: Avoid exponential path enumeration during BFS
+
+**Two-phase approach:**
+- **Phase 1 (BFS)**: Build a level-wise map showing shortest distance to reach each word
+- **Phase 2 (DFS)**: Reconstruct all paths by traversing from target back to source
+
+**Why this works:**
+- BFS ensures we find the shortest distance to each word
+- Level information helps us only follow edges that are part of shortest paths
+- DFS with backtracking efficiently explores all valid paths
+
+## Approach Steps
+
+1. **Phase 1 - BFS to build level map**:
+   - Use BFS to explore all reachable words level by level
+   - Record the shortest distance (level) to reach each word
+   - Continue until all reachable words are processed
+
+2. **Phase 2 - DFS path reconstruction**:
+   - Start DFS from target word
+   - Only move to words that are one level closer to start
+   - Use backtracking to explore all valid paths
+
+3. **Level constraint**: Only follow edges where `level[current] = level[next] + 1`
+
+4. **Path building**: Collect complete paths and reverse them (since we go target→start)
+
+5. **Return result**: All collected shortest transformation sequences
+
+## Code
+
+### Method 1: BFS + DFS Approach (Based on Provided Code)
+```python
+from collections import deque, defaultdict
+
+def solution(wordList, startWord, endWord):
+    def dfs(word, path):
+        if word == startWord:
+            ans.append(path[::-1])  # Reverse path since we go target->start
+            return
+        
+        # Try all single character transformations
+        for i in range(len(word)):
+            for char in "abcdefghijklmnopqrstuvwxyz":
+                newWord = word[:i] + char + word[i+1:]
+                
+                # Only follow edges that are part of shortest paths
+                if newWord in levels and levels[word] == (levels[newWord] + 1):
+                    dfs(newWord, path + [newWord])
+    
+    # Phase 1: BFS to build level map
+    queue = deque([(startWord, 1)])
+    wordSet = set(wordList)
+    wordSet.discard(startWord)
+    
+    levels = defaultdict(int)
+    levels[startWord] = 1
+    
+    while queue:
+        word, steps = queue.popleft()
+        
+        for i in range(len(word)):
+            for char in "abcdefghijklmnopqrstuvwxyz":
+                newWord = word[:i] + char + word[i+1:]
+                
+                if newWord in wordSet:
+                    queue.append((newWord, steps + 1))
+                    levels[newWord] = steps + 1
+                    wordSet.discard(newWord)
+    
+    # Phase 2: DFS to reconstruct all paths
+    ans = []
+    if endWord in levels:
+        dfs(endWord, [endWord])
+    
+    return ans
+
+class Solution:
+    def findSequences(self, beginWord, endWord, wordList):
+        return solution(wordList, beginWord, endWord)
+```
+
+### Method 2: Clean BFS + Backtracking Implementation
+```python
+from collections import deque, defaultdict
+
+def findLadders(beginWord, endWord, wordList):
+    if endWord not in wordList:
+        return []
+    
+    wordSet = set(wordList)
+    
+    # BFS to build parent-child relationships
+    queue = deque([beginWord])
+    visited = {beginWord}
+    found = False
+    parent = defaultdict(list)
+    
+    while queue and not found:
+        level_visited = set()
+        
+        for _ in range(len(queue)):
+            word = queue.popleft()
+            
+            for i in range(len(word)):
+                for c in 'abcdefghijklmnopqrstuvwxyz':
+                    newWord = word[:i] + c + word[i+1:]
+                    
+                    if newWord in wordSet and newWord not in visited:
+                        if newWord == endWord:
+                            found = True
+                        
+                        if newWord not in level_visited:
+                            level_visited.add(newWord)
+                            queue.append(newWord)
+                        
+                        parent[newWord].append(word)
+        
+        visited.update(level_visited)
+    
+    # DFS to construct all paths
+    def dfs(word, path, result):
+        if word == beginWord:
+            result.append([beginWord] + path[::-1])
+            return
+        
+        for p in parent[word]:
+            dfs(p, path + [word], result)
+    
+    result = []
+    if found:
+        dfs(endWord, [], result)
+    
+    return result
+```
+
+### Method 3: Level-by-Level BFS with Path Tracking
+```python
+from collections import deque
+
+def findLaddersLevelwise(beginWord, endWord, wordList):
+    if endWord not in wordList:
+        return []
+    
+    wordSet = set(wordList)
+    
+    # Start with initial word and its path
+    queue = deque([[beginWord]])
+    visited = set([beginWord])
+    result = []
+    
+    while queue:
+        level_visited = set()
+        
+        # Process all paths at current level
+        for _ in range(len(queue)):
+            path = queue.popleft()
+            word = path[-1]
+            
+            # If we reached target, this level has shortest paths
+            if word == endWord:
+                result.append(path)
+                continue
+            
+            # Generate transformations for current word
+            for i in range(len(word)):
+                for c in 'abcdefghijklmnopqrstuvwxyz':
+                    newWord = word[:i] + c + word[i+1:]
+                    
+                    if newWord in wordSet and newWord not in visited:
+                        level_visited.add(newWord)
+                        queue.append(path + [newWord])
+        
+        # If we found target at this level, stop (all shortest found)
+        if result:
+            break
+        
+        # Mark level words as visited
+        visited.update(level_visited)
+    
+    return result
+```
+
+### Method 4: Optimized Bidirectional BFS + DFS
+```python
+from collections import defaultdict, deque
+
+def findLaddersBidirectional(beginWord, endWord, wordList):
+    if endWord not in wordList:
+        return []
+    
+    wordSet = set(wordList)
+    
+    # Build adjacency graph first
+    neighbors = defaultdict(list)
+    for word in [beginWord] + wordList:
+        for i in range(len(word)):
+            pattern = word[:i] + '*' + word[i+1:]
+            neighbors[pattern].append(word)
+    
+    def bfs():
+        queue = deque([beginWord])
+        visited = {beginWord: [[beginWord]]}
+        
+        while queue:
+            word = queue.popleft()
+            
+            if word == endWord:
+                return visited[endWord]
+            
+            for i in range(len(word)):
+                pattern = word[:i] + '*' + word[i+1:]
+                
+                for nextWord in neighbors[pattern]:
+                    if nextWord == word:
+                        continue
+                    
+                    if nextWord not in visited:
+                        visited[nextWord] = []
+                        queue.append(nextWord)
+                    
+                    # Add all paths that lead to current word
+                    for path in visited[word]:
+                        if nextWord not in path:  # Avoid cycles
+                            visited[nextWord].append(path + [nextWord])
+        
+        return []
+    
+    return bfs()
+```
+
+## Time and Space Complexity
+
+**Time Complexity: O(N × M² × 26^L)**
+- N = number of words in wordList
+- M = length of each word  
+- L = length of shortest path
+- BFS phase: O(N × M² × 26) to explore all transformations
+- DFS phase: O(26^L) in worst case for path reconstruction
+- Overall dominated by path enumeration
+
+**Space Complexity: O(N × M + P × L)**
+- N × M for storing wordList and level information
+- P × L where P is number of shortest paths and L is path length
+- In worst case, could be exponential in number of paths
+
+## Key Points to Remember
+
+**Differences from Word Ladder I:**
+- **Multiple paths**: Need all shortest sequences, not just length
+- **No early termination**: Can't stop at first occurrence of target
+- **Path reconstruction**: Must remember actual transformation sequences
+- **Delayed removal**: Can't remove words immediately to allow multiple paths
+
+**Critical optimizations:**
+- **Two-phase approach**: BFS for distances, DFS for paths
+- **Level constraint**: Only follow edges that are part of shortest paths  
+- **Backtracking**: Efficiently explore all valid path combinations
+
+**Common pitfalls:**
+- **Exponential explosion**: Naive path tracking during BFS leads to TLE
+- **Incorrect path reconstruction**: Must reverse paths when going target→start
+- **Missing shortest paths**: Removing words too early can miss valid sequences
+
+**Edge cases:**
+- No transformation sequence exists → return []
+- Multiple shortest paths of different structures
+- Start word equals target word → return [[startWord]]
+- Target word not in wordList → return []
+
+**Interview tips:**
+- Explain the two-phase approach clearly
+- Mention why naive BFS with path tracking fails
+- Discuss time complexity trade-offs
+- Consider bidirectional BFS for very long paths
+
+**Real-world applications:**
+- Finding all optimal solutions in puzzle games
+- Route planning with multiple equally good options
+- Genetic algorithm pathways in bioinformatics
+- Natural language processing for word similarity
+
+---
+
+# Minimum multiplications to reach end
+
+Given a starting number, an ending number, and an array of numbers, find the minimum number of steps to transform the start number into the end number. At each step, you can multiply the current number by any number from the array, then take modulo 100000 to get the new number. If it's impossible to reach the end number, return -1.
+
+## Examples
+
+### Input
+```
+arr = [2, 5, 7], start = 3, end = 30
+```
+
+### Output
+```
+2
+```
+
+### Explanation
+Think of this like a game where you're trying to reach a target number by multiplying your current number with choices from a given array:
+
+- **Step 1:** Start with 3, multiply by 2 → 3 × 2 = 6 % 100000 = 6
+- **Step 2:** Now with 6, multiply by 5 → 6 × 5 = 30 % 100000 = 30 ✓
+
+We reached our target (30) in just 2 steps! It's like finding the shortest route in a maze where each room represents a number, and each door represents a multiplication operation.
+
+---
+
+### Input
+```
+arr = [3, 4, 65], start = 7, end = 66175
+```
+
+### Output
+```
+4
+```
+
+### Explanation
+- **Step 1:** 7 × 3 = 21 % 100000 = 21
+- **Step 2:** 21 × 3 = 63 % 100000 = 63  
+- **Step 3:** 63 × 65 = 4095 % 100000 = 4095
+- **Step 4:** 4095 × 65 = 266175 % 100000 = 66175 ✓
+
+## Solution
+
+This is a **shortest path problem in disguise**! We use BFS (Breadth-First Search) to find the minimum number of steps. Each number we can reach is like a "node" in a graph, and multiplying by array elements creates "edges" to new nodes.
+
+## Intuition
+
+**Why think of this as a graph problem?**
+- **Nodes:** Each possible number (0 to 99999) is a node
+- **Edges:** Multiplying by any array element and taking mod 100000 creates an edge to a new node  
+- **Goal:** Find shortest path from start node to end node
+
+**Why BFS works perfectly:**
+- BFS explores all possibilities level by level
+- The first time we reach the target, we've found the minimum steps
+- BFS guarantees shortest path in unweighted graphs (each step has cost 1)
+
+## Approach Steps
+
+1. **Handle base case:** If start equals end, return 0 steps
+2. **Initialize BFS setup:**
+   - Create a queue starting with (start_number, 0_steps)
+   - Create an array to track minimum steps to reach each number (0-99999)
+3. **BFS traversal:**
+   - Pop current number and step count from queue
+   - Try multiplying with each element in the array
+   - For each result after mod 100000:
+     - If it equals target → return steps + 1
+     - If we found a shorter path → update and add to queue
+4. **Return -1 if target unreachable**
+
+## Code
+
+```python
+def solution(arr, start, end):
+    # Base case: already at target
+    if start == end:
+        return 0
+    
+    # BFS setup
+    queue = [(start, 0)]  # (current_number, steps_taken)
+    min_steps = [float('inf')] * 100000  # Track minimum steps to reach each number
+    min_steps[start] = 0
+    
+    while queue:
+        current_num, steps = queue.pop(0)
+        
+        # Try multiplying with each number in array
+        for multiplier in arr:
+            new_num = (current_num * multiplier) % 100000
+            
+            # Found target!
+            if new_num == end:
+                return steps + 1
+            
+            # Found shorter path to this number
+            if steps + 1 < min_steps[new_num]:
+                min_steps[new_num] = steps + 1
+                queue.append((new_num, steps + 1))
+    
+    # Target unreachable
+    return -1
+
+class Solution:
+    def minimumMultiplications(self, arr, start, end):
+        return solution(arr, start, end)
+```
+
+## Time and Space Complexity
+
+**Time Complexity: O(100000 × M)**
+- We might visit each of the 100000 possible numbers (0-99999) at most once
+- For each number, we try M multipliers from the array
+- In simple terms: We explore at most 100,000 numbers, and for each number we try all array elements
+
+**Space Complexity: O(100000)**
+- We use an array of size 100000 to track minimum steps
+- The queue can hold at most 100000 elements in worst case
+- In simple terms: We need memory proportional to the range of possible numbers (0-99999)
+
+---
+
+# **Shortest Distance in a Binary Maze**
+
+You are given an `n x m` grid (matrix) with cells containing either `0` or `1`. You can move from a cell to its **up, down, left, or right** neighbor **only if** that neighbor has value `1`.Given a **source** cell and a **destination** cell, find the **shortest number of steps** to reach the destination from the source. If the destination is not reachable, return `-1`.
+
+---
+
+## Examples
+
+### Example 1
+
+### Input
+
+```
+grid = [
+  [1, 1, 1, 1],
+  [1, 1, 0, 1],
+  [1, 1, 1, 1],
+  [1, 1, 0, 0],
+  [1, 0, 0, 1]
+]
+source = [0, 1]
+destination = [2, 2]
+```
+
+### Output
+
+```
+3
+```
+
+### Explanation
+
+A shortest path from `(0, 1)` to `(2, 2)` is:
+
+* Down to `(1, 1)`
+* Down to `(2, 1)`
+* Right to `(2, 2)`
+
+This takes **3** moves.
+
+*Analogy:* Imagine walking on tiles where only tiles marked `1` are solid. You move one tile at a time (up/down/left/right). The shortest path is just the minimum number of steps on solid tiles to reach the target.
+
+---
+
+### Example 2
+
+### Input
+
+```
+grid = [
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 0],
+  [1, 0, 1, 0, 1]
+]
+source = [0, 0]
+destination = [3, 4]
+```
+
+### Output
+
+```
+-1
+```
+
+### Explanation
+
+There is no valid path of `1`s from the source to the destination. Hence the answer is `-1`.
+
+---
+
+## Solution
+
+Use **Breadth-First Search (BFS)** starting from the source:
+
+* BFS explores the grid **level by level** (i.e., all cells at distance 1, then distance 2, and so on).
+* Because every move costs the same (1 step), the **first time** we reach the destination, it is **guaranteed** to be via the shortest path.
+* Maintain a **distance matrix** to store the shortest steps taken to reach each cell.
+
+---
+
+## Intuition
+
+* Dijkstra’s algorithm is a general tool for shortest paths with varying edge weights.
+* Here, **every move has equal cost (1)**, so **BFS** is enough and **faster/simpler**:
+
+  * Use a **queue** (not a min-heap).
+  * Once you pop a cell from the queue, all neighbors reachable in one more step get updated.
+
+*Neighbor traversal trick:*
+Define direction arrays to iterate neighbors efficiently:
+
+* `delRow = [-1, 0, 1, 0]`
+* `delCol = [0, 1, 0, -1]`
+  Each pair `(delRow[k], delCol[k])` gives one of the 4 directions.
+
+---
+
+## Approach Steps
+
+1. **Validate**:
+
+   * If grid is empty → return `-1`.
+   * If source or destination is outside the grid or lies on a `0` → return `-1`.
+   * If source == destination → return `0`.
+2. **Initialize**:
+
+   * Let `n, m` be grid dimensions.
+   * `dist[n][m]` initialized to `∞` (or a large number).
+   * Set `dist[source] = 0`.
+   * Push `source` into a queue.
+3. **BFS Loop**:
+
+   * While the queue is not empty:
+
+     * Pop `(r, c)`.
+     * For each of the 4 neighbors `(nr, nc)`:
+
+       * Check bounds and that `grid[nr][nc] == 1`.
+       * If `dist[r][c] + 1 < dist[nr][nc]`:
+
+         * Update `dist[nr][nc]`.
+         * If `(nr, nc)` is the destination → **return** `dist[nr][nc]` (early exit).
+         * Push `(nr, nc)` into the queue.
+4. **End**:
+
+   * If BFS finishes without reaching destination → return `-1`.
+
+*Edge Cases*:
+
+* Source equals destination → `0`.
+* Source/destination on a `0` → `-1`.
+* Grid with single cell → depends on that cell and equality of source/destination.
+
+---
+
+## Code
+
+```python
+from collections import deque
+from typing import List, Tuple
+
+def shortest_distance_binary_maze(
+    grid: List[List[int]],
+    source: Tuple[int, int],
+    destination: Tuple[int, int]
+) -> int:
+    """
+    Returns the shortest number of steps from source to destination in a binary grid,
+    moving only in 4 directions through cells with value 1. If unreachable, returns -1.
+    """
+    # Basic validation
+    if not grid or not grid[0]:
+        return -1
+
+    n, m = len(grid), len(grid[0])
+    sr, sc = source
+    dr, dc = destination
+
+    # Check bounds
+    if not (0 <= sr < n and 0 <= sc < m and 0 <= dr < n and 0 <= dc < m):
+        return -1
+
+    # Must start/end on 1-cells
+    if grid[sr][sc] == 0 or grid[dr][dc] == 0:
+        return -1
+
+    # Trivial case
+    if (sr, sc) == (dr, dc):
+        return 0
+
+    # Distance matrix
+    INF = 10**9
+    dist = [[INF] * m for _ in range(n)]
+    dist[sr][sc] = 0
+
+    # Direction vectors: up, right, down, left
+    directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+    # BFS queue
+    q = deque([(sr, sc)])
+
+    while q:
+        r, c = q.popleft()
+        current = dist[r][c]
+
+        for drc, dcc in directions:
+            nr, nc = r + drc, c + dcc
+            # Check valid neighbor and passable cell
+            if 0 <= nr < n and 0 <= nc < m and grid[nr][nc] == 1:
+                # Relax edge if shorter
+                if current + 1 < dist[nr][nc]:
+                    dist[nr][nc] = current + 1
+                    # Early exit if destination reached
+                    if (nr, nc) == (dr, dc):
+                        return dist[nr][nc]
+                    q.append((nr, nc))
+
+    return -1
+
+
+# Optional class wrapper (common on coding platforms)
+class Solution:
+    def shortestPath(self, grid: List[List[int]], source: List[int], destination: List[int]) -> int:
+        return shortest_distance_binary_maze(
+            grid,
+            (source[0], source[1]),
+            (destination[0], destination[1])
+        )
+```
+
+---
+
+## Time and Space Complexity
+
+* **Time Complexity:**
+  Each cell is processed at most once and we check up to 4 neighbors → **O(n × m)**.
+* **Space Complexity:**
+  Distance matrix `dist` uses `O(n × m)` space, and the queue holds at most `O(n × m)` cells → **O(n × m)**.
+
+*In simple words:* We visit each cell at most one time and keep distances for each cell, so both time and memory grow with the number of cells in the grid.
+
+---
+
+# **Path with minimum effort**
+
+We are given a 2D grid `heights` where each cell's value represents the height of that point. The hiker starts at the top-left cell `(0,0)` and wants to reach the bottom-right cell `(rows-1, columns-1)`. He can move up, down, left, or right.
+
+The **effort** of a route is defined as the maximum absolute difference in heights between any two consecutive cells in the route. Our goal is to find a route that minimizes this maximum effort.
+
+---
+
+## Examples
+
+### Input
+
+```
+heights = [[1,2,2],[3,8,2],[5,3,5]]
+```
+
+### Output
+
+```
+2
+```
+
+### Explanation
+
+One optimal path is `[1 → 3 → 5 → 3 → 5]`, where the largest step difference is `2`. This is better than `[1 → 2 → 2 → 2 → 5]`, which has a maximum step difference of `3`.
+
+### Input
+
+```
+heights = [[1,2,3],[3,8,4],[5,3,5]]
+```
+
+### Output
+
+```
+1
+```
+
+### Explanation
+
+One optimal path is `[1 → 2 → 3 → 4 → 5]`, where the largest step difference is `1`.
+
+---
+
+## Solution
+
+We can adapt **Dijkstra’s algorithm** to solve this:
+
+* Instead of summing distances, we track the **maximum difference** seen so far.
+* We use a **min-heap (priority queue)** to always expand the path with the smallest current effort.
+* For each move, the new effort is `max(current_effort, height_diff)`.
+* The first time we reach the destination, the effort is minimal.
+
+---
+
+## Intuition
+
+This is like normal Dijkstra, but with a twist: instead of adding edge weights, we take the **maximum** between the path's current effort and the next step's height difference. BFS would not work directly here because edge weights (differences) are not uniform.
+
+---
+
+## Approach Steps
+
+1. Create a `difference` matrix initialized to infinity, storing the minimal effort needed to reach each cell.
+2. Use a min-heap and push `(effort=0, row=0, col=0)`.
+3. While heap is not empty:
+
+   * Pop the cell with smallest effort.
+   * If it’s the destination, return effort.
+   * For each valid neighbor, calculate `new_effort = max(current_effort, abs(height_diff))`.
+   * If `new_effort` is smaller than the stored value, update and push to heap.
+4. Return the result when destination is reached.
+
+---
+
+## Code
+
+```python
+import heapq
+
+def minimum_effort_path(heights):
+    n, m = len(heights), len(heights[0])
+    difference = [[float('inf')] * m for _ in range(n)]
+    difference[0][0] = 0
+    pq = [(0, 0, 0)]  # (effort, row, col)
+
+    directions = [(1,0), (-1,0), (0,-1), (0,1)]
+
+    while pq:
+        effort, r, c = heapq.heappop(pq)
+        if (r, c) == (n-1, m-1):
+            return effort
+        for dr, dc in directions:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < n and 0 <= nc < m:
+                curr_diff = abs(heights[nr][nc] - heights[r][c])
+                new_effort = max(effort, curr_diff)
+                if new_effort < difference[nr][nc]:
+                    difference[nr][nc] = new_effort
+                    heapq.heappush(pq, (new_effort, nr, nc))
+    return -1
+
+# Example usage
+print(minimum_effort_path([[1,2,2],[3,8,2],[5,3,5]]))  # Output: 2
+print(minimum_effort_path([[1,2,3],[3,8,4],[5,3,5]]))  # Output: 1
+```
+
+---
+
+## Time and Space Complexity
+
+* **Time Complexity:** `O(n*m*log(n*m))` because each cell is pushed/popped from the priority queue at most once.
+* **Space Complexity:** `O(n*m)` for the `difference` matrix and priority queue.
+
+---
+
+
