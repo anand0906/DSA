@@ -2547,4 +2547,1015 @@ print(minimum_effort_path([[1,2,3],[3,8,4],[5,3,5]]))  # Output: 1
 
 ---
 
+# Bellman-Ford Algorithm
+
+## Problem Description
+Given a weighted and directed graph with V vertices and E edges, find the shortest distance from a source vertex S to all other vertices. Each edge is represented as [source, destination, weight]. If a vertex cannot be reached from the source, mark its distance as 10^9. If the graph contains a negative cycle (a cycle where the sum of all weights is negative), return [-1].
+
+## Examples
+
+### Example 1
+#### Input
+```
+V = 6
+Edges = [[3, 2, 6], [5, 3, 1], [0, 1, 5], [1, 5, -3], [1, 2, -2], [3, 4, -2], [2, 4, 3]]
+S = 0
+```
+
+#### Output
+```
+[0, 5, 3, 3, 1, 2]
+```
+
+#### Explanation
+- **Node 0 (source)**: Distance = 0
+- **Node 1**: Shortest path is 0→1, distance = 5
+- **Node 2**: Shortest path is 0→1→2, distance = 5 + (-2) = 3
+- **Node 3**: Shortest path is 0→1→5→3, distance = 5 + (-3) + 1 = 3
+- **Node 4**: Shortest path is 0→1→5→3→4, distance = 5 + (-3) + 1 + (-2) = 1
+- **Node 5**: Shortest path is 0→1→5, distance = 5 + (-3) = 2
+
+### Example 2
+#### Input
+```
+V = 2
+Edges = [[0, 1, 9]]
+S = 0
+```
+
+#### Output
+```
+[0, 9]
+```
+
+#### Explanation
+- **Node 0 (source)**: Distance = 0
+- **Node 1**: Shortest path is 0→1, distance = 9
+
+## Solution
+The Bellman-Ford algorithm finds shortest paths from a source vertex to all other vertices in a weighted graph, even when the graph contains negative weight edges. It can also detect negative cycles in the graph.
+
+## Intuition
+Think of the Bellman-Ford algorithm like this:
+- Imagine you're trying to find the cheapest way to travel from one city to all other cities
+- Some routes might have "negative costs" (like cashback offers)
+- You need to check all possible routes multiple times to ensure you found the absolute cheapest path
+- The algorithm is like a patient traveler who checks every possible route exactly (V-1) times
+- If after (V-1) checks you can still find a cheaper route, it means there's an infinite money-making loop (negative cycle)
+
+**Why this approach works:**
+1. **Edge Relaxation**: If going through city A to reach city B is cheaper than the current known way to reach B, update the cost to reach B
+2. **V-1 iterations**: In a graph with V vertices, the longest simple path can have at most (V-1) edges
+3. **Negative cycle detection**: If we can still improve distances after V-1 iterations, there must be a negative cycle
+
+## Approach Steps
+1. **Initialize distances**: Set source distance to 0, all others to infinity
+2. **Relax edges V-1 times**: For each iteration, go through all edges and update distances if a shorter path is found
+3. **Check for negative cycles**: Run one more iteration - if any distance can still be improved, a negative cycle exists
+4. **Handle unreachable vertices**: Convert remaining infinity values to 10^9
+5. **Return result**: Return the distance array or [-1] if negative cycle found
+
+## Code
+```python
+class Solution:
+    def bellman_ford(self, V, edges, S):
+        # Step 1: Initialize distances
+        distance = [float('inf')] * V
+        distance[S] = 0
+        
+        # Step 2: Relax edges V-1 times
+        for _ in range(V - 1):
+            for source, dest, weight in edges:
+                # Edge relaxation: if we can reach dest through source with less cost
+                if distance[source] != float('inf') and distance[source] + weight < distance[dest]:
+                    distance[dest] = distance[source] + weight
+        
+        # Step 3: Check for negative cycles
+        for source, dest, weight in edges:
+            if distance[source] != float('inf') and distance[source] + weight < distance[dest]:
+                return [-1]  # Negative cycle detected
+        
+        # Step 4: Handle unreachable vertices
+        for i in range(V):
+            if distance[i] == float('inf'):
+                distance[i] = 10**9
+        
+        return distance
+```
+
+## Time and Space Complexity
+
+### Time Complexity: O(V × E)
+- **Why**: We perform V-1 iterations, and in each iteration, we check all E edges
+- **In simple terms**: If you have V cities and E roads, you need to check all roads V times
+- **Worst case**: For a complete graph, E can be V², making it O(V³)
+
+### Space Complexity: O(V)
+- **Why**: We only use extra space for the distance array of size V
+- **In simple terms**: We need to store one distance value for each vertex
+- **Additional space**: No extra data structures needed beyond the input
+
+### Comparison with Dijkstra's Algorithm
+- **Dijkstra**: Faster O((V + E) log V) but cannot handle negative edges
+- **Bellman-Ford**: Slower O(V × E) but handles negative edges and detects negative cycles
+- **Use Bellman-Ford when**: Graph has negative edges or you need to detect negative cycles
+
+---
+
+# Floyd-Warshall Algorithm
+
+## Problem Description
+Given a weighted directed graph represented as an adjacency matrix, find the shortest distances between every pair of vertices. The matrix[i][j] represents the weight of the edge from vertex i to vertex j. If matrix[i][j] = -1, it means there is no direct edge from i to j. The goal is to find the shortest path between all pairs of vertices.
+
+## Examples
+
+### Example 1
+#### Input
+```
+matrix = [[0, 2, -1, -1],
+          [1, 0, 3, -1],
+          [-1, -1, 0, 1],
+          [3, 5, 4, 0]]
+```
+
+#### Output
+```
+[[0, 2, 5, 6],
+ [1, 0, 3, 4],
+ [4, 6, 0, 1],
+ [3, 5, 4, 0]]
+```
+
+#### Explanation
+Let's trace a few paths:
+- **From 0 to 2**: Direct path doesn't exist (-1), but 0→1→2 = 2+3 = 5
+- **From 0 to 3**: No direct path, but 0→1→2→3 = 2+3+1 = 6
+- **From 2 to 0**: No direct path, but 2→3→0 = 1+3 = 4
+- **From 1 to 3**: No direct path, but 1→2→3 = 3+1 = 4
+
+### Example 2
+#### Input
+```
+matrix = [[0, 25],
+          [-1, 0]]
+```
+
+#### Output
+```
+[[0, 25],
+ [-1, 0]]
+```
+
+#### Explanation
+- **From 0 to 1**: Direct path exists with distance 25
+- **From 1 to 0**: No path exists, so it remains -1
+
+## Solution
+The Floyd-Warshall algorithm finds the shortest paths between all pairs of vertices by systematically checking if going through an intermediate vertex k provides a shorter path from vertex i to vertex j than the current known shortest path.
+
+## Intuition
+Think of this algorithm like finding the best flight connections:
+
+**The Problem**: You want to know the cheapest way to fly between every pair of cities in the world.
+
+**The Approach**: For each possible "layover city" k, check if:
+- Flying from city i → layover city k → city j is cheaper than
+- Flying directly from city i → city j (if direct flight exists)
+
+**Why it works**:
+- We try every possible intermediate city as a "stepping stone"
+- We do this systematically for all pairs of cities
+- By the end, we've considered all possible routes and found the cheapest ones
+
+**Real-world analogy**: It's like a travel agent who checks every possible connection through every airport to find you the cheapest route between any two cities.
+
+## Approach Steps
+
+1. **Initialize the matrix**: Replace all -1 values (no edge) with infinity to handle calculations properly
+
+2. **Triple nested loop structure**:
+   - **Outer loop (k)**: Try each vertex as an intermediate/via point
+   - **Middle loop (i)**: Consider each vertex as source
+   - **Inner loop (j)**: Consider each vertex as destination
+
+3. **Path comparison**: For each pair (i,j), compare:
+   - Current shortest known distance from i to j
+   - Distance via intermediate vertex k: distance[i][k] + distance[k][j]
+   - Take the minimum of these two
+
+4. **Restore format**: Convert infinity values back to -1 for unreachable vertices
+
+5. **Return result**: The matrix now contains shortest distances between all pairs
+
+## Code
+
+```python
+class Solution:
+    def shortest_distance(self, matrix):
+        n = len(matrix)
+        
+        # Step 1: Replace -1 with infinity for easier calculations
+        for i in range(n):
+            for j in range(n):
+                if matrix[i][j] == -1:
+                    matrix[i][j] = float('inf')
+        
+        # Step 2: Floyd-Warshall algorithm
+        # Try each vertex k as intermediate vertex
+        for k in range(n):
+            # For each source vertex i
+            for i in range(n):
+                # For each destination vertex j
+                for j in range(n):
+                    # Check if path via k is shorter than direct path
+                    # matrix[i][j] = min(direct_path, via_k_path)
+                    matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
+        
+        # Step 3: Convert infinity back to -1 for unreachable vertices
+        for i in range(n):
+            for j in range(n):
+                if matrix[i][j] == float('inf'):
+                    matrix[i][j] = -1
+        
+        return matrix
+```
+
+### Alternative Implementation with Negative Cycle Detection
+
+```python
+class Solution:
+    def shortest_distance_with_cycle_detection(self, matrix):
+        n = len(matrix)
+        
+        # Initialize
+        for i in range(n):
+            for j in range(n):
+                if matrix[i][j] == -1:
+                    matrix[i][j] = float('inf')
+        
+        # Floyd-Warshall
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
+        
+        # Check for negative cycles
+        for i in range(n):
+            if matrix[i][i] < 0:
+                return "Negative cycle detected"
+        
+        # Restore format
+        for i in range(n):
+            for j in range(n):
+                if matrix[i][j] == float('inf'):
+                    matrix[i][j] = -1
+        
+        return matrix
+```
+
+## Time and Space Complexity
+
+### Time Complexity: O(V³)
+- **Why**: Three nested loops, each running V times where V is the number of vertices
+- **In simple terms**: For each vertex as intermediate point, we check all pairs of vertices
+- **Breakdown**: 
+  - Outer loop (k): V iterations
+  - Middle loop (i): V iterations  
+  - Inner loop (j): V iterations
+  - Total: V × V × V = V³
+
+### Space Complexity: O(1)
+- **Why**: We modify the input matrix in-place, no additional space needed
+- **In simple terms**: We only use the given matrix and a few variables
+- **Note**: If we create a separate result matrix, space complexity becomes O(V²)
+
+---
+
+# Find City with Smallest Number of Neighbors
+
+## Problem Description
+Given n cities numbered from 0 to n-1 and bidirectional weighted edges between them, find the city with the smallest number of cities that are reachable within a given distance threshold. If multiple cities have the same minimum count of reachable neighbors, return the city with the largest index number.
+
+## Examples
+
+### Example 1
+#### Input
+```
+N = 4, M = 4
+edges = [[0,1,3], [1,2,1], [1,3,4], [2,3,1]]
+distanceThreshold = 4
+```
+
+#### Output
+```
+3
+```
+
+#### Explanation
+Let's find reachable cities for each city within distance threshold 4:
+
+**City 0**: Can reach cities 1 (distance=3), 2 (distance=4) → **2 cities**
+**City 1**: Can reach cities 0 (distance=3), 2 (distance=1), 3 (distance=2) → **3 cities**  
+**City 2**: Can reach cities 0 (distance=4), 1 (distance=1), 3 (distance=1) → **3 cities**
+**City 3**: Can reach cities 1 (distance=2), 2 (distance=1) → **2 cities**
+
+Cities 0 and 3 both have minimum count (2 cities). Since we need the city with the largest index, answer is **City 3**.
+
+### Example 2
+#### Input
+```
+N = 3, M = 2
+edges = [[0,1,1], [0,2,3]]
+distanceThreshold = 2
+```
+
+#### Output
+```
+2
+```
+
+#### Explanation
+**City 0**: Can reach city 1 (distance=1) → **1 city**
+**City 1**: Can reach city 0 (distance=1) → **1 city**
+**City 2**: Cannot reach any city within threshold 2 → **0 cities**
+
+City 2 has the minimum count (0 cities), so answer is **City 2**.
+
+## Solution
+This problem requires finding shortest distances between all pairs of cities, then counting reachable neighbors for each city. We use Floyd-Warshall algorithm to compute all-pairs shortest paths, then count neighbors within the distance threshold for each city.
+
+## Intuition
+Think of this problem like finding the most isolated city:
+
+**Real-world analogy**: Imagine you're a delivery company trying to choose a city for your headquarters. You want to choose a city that has the fewest other cities within your delivery range (distance threshold), because:
+- Less competition in nearby areas
+- More focused service area
+- If there's a tie, choose the city with the higher number (maybe better infrastructure)
+
+**Why this approach works**:
+1. **Step 1**: Calculate shortest distances between ALL city pairs (like having a complete road distance map)
+2. **Step 2**: For each city, count how many other cities are within delivery range
+3. **Step 3**: Pick the city with minimum neighbors (most isolated)
+4. **Step 4**: If tie, pick the city with largest index
+
+**Why Floyd-Warshall**: We need distances between ALL pairs of cities, making Floyd-Warshall perfect for this multi-source shortest path problem.
+
+## Approach Steps
+
+1. **Create distance matrix**: Initialize a 2D matrix where matrix[i][j] represents shortest distance from city i to city j
+   - Set direct edge weights from input
+   - Set distance from city to itself as 0
+   - Set all other distances to infinity
+
+2. **Apply Floyd-Warshall algorithm**: Find shortest paths between all pairs of cities using intermediate cities
+
+3. **Count reachable neighbors**: For each city, count how many other cities are reachable within the distance threshold
+
+4. **Find optimal city**: 
+   - Find the city with minimum neighbor count
+   - If there's a tie, choose the city with the largest index
+   - Return that city
+
+## Code
+
+```python
+class Solution:
+    def findCity(self, n, m, edges, distanceThreshold):
+        # Step 1: Initialize distance matrix
+        matrix = [[float('inf')] * n for _ in range(n)]
+        
+        # Set direct edges (bidirectional)
+        for source, dest, weight in edges:
+            matrix[source][dest] = weight
+            matrix[dest][source] = weight  # bidirectional
+        
+        # Distance from city to itself is 0
+        for i in range(n):
+            matrix[i][i] = 0
+        
+        # Step 2: Apply Floyd-Warshall algorithm
+        # Try each city k as intermediate city
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    # Check if path via city k is shorter
+                    matrix[i][j] = min(matrix[i][j], matrix[i][k] + matrix[k][j])
+        
+        # Step 3: Count reachable neighbors for each city
+        result_city = 0
+        min_neighbors = float('inf')
+        
+        for i in range(n):
+            neighbor_count = 0
+            
+            # Count cities reachable within threshold
+            for j in range(n):
+                if i != j and matrix[i][j] <= distanceThreshold:
+                    neighbor_count += 1
+            
+            # Step 4: Update result (choose city with min neighbors, largest index in tie)
+            if neighbor_count <= min_neighbors:
+                min_neighbors = neighbor_count
+                result_city = i  # This automatically handles "largest index" due to iteration order
+        
+        return result_city
+```
+
+### Step-by-Step Trace for Example 1
+
+```python
+# Initial matrix after setting edges:
+matrix = [[0, 3, inf, inf],
+          [3, 0, 1, 4],
+          [inf, 1, 0, 1],
+          [inf, 4, 1, 0]]
+
+# After Floyd-Warshall:
+matrix = [[0, 3, 4, 4],    # City 0 can reach: 1(3), 2(4), 3(4)
+          [3, 0, 1, 2],    # City 1 can reach: 0(3), 2(1), 3(2)  
+          [4, 1, 0, 1],    # City 2 can reach: 0(4), 1(1), 3(1)
+          [4, 2, 1, 0]]    # City 3 can reach: 0(4), 1(2), 2(1)
+
+# Neighbor counts (within threshold 4):
+# City 0: neighbors [1,2] = 2 cities
+# City 1: neighbors [0,2,3] = 3 cities  
+# City 2: neighbors [0,1,3] = 3 cities
+# City 3: neighbors [1,2] = 2 cities
+
+# Result: Cities 0 and 3 tie with 2 neighbors, choose larger index = 3
+```
+
+## Time and Space Complexity
+
+### Time Complexity: O(N³)
+- **Floyd-Warshall algorithm**: O(N³) with three nested loops
+- **Counting neighbors**: O(N²) to check all pairs
+- **Overall**: O(N³ + N²) = O(N³)
+- **In simple terms**: For each city as intermediate point, we update distances between all city pairs
+
+### Space Complexity: O(N²)
+- **Distance matrix**: O(N²) space to store shortest distances between all pairs
+- **Additional variables**: O(1) space
+- **Overall**: O(N²)
+- **In simple terms**: We need a 2D array to store distances between every pair of cities
+
+### Why This Approach is Optimal
+
+1. **All-pairs shortest path needed**: We must know distances between ALL city pairs, making Floyd-Warshall the right choice
+2. **Handles complex graphs**: Works with any graph structure, finding optimal paths through multiple intermediate cities
+3. **Single pass counting**: After computing distances, we can count neighbors in O(N²) time
+
+### Alternative Approaches (Less Efficient)
+
+1. **Dijkstra from each city**: O(N × (N + M) log N) - slower for dense graphs
+2. **Bellman-Ford from each city**: O(N² × M) - much slower
+3. **DFS/BFS with distance limit**: O(N × (N + M)) - but may not find optimal paths
+
+### Key Insights
+
+- **Bidirectional edges**: Remember to set both matrix[i][j] and matrix[j][i]
+- **Tie-breaking rule**: When counts are equal, choose larger index (handled naturally by iteration order)
+- **Self-distance**: Always set matrix[i][i] = 0
+- **Threshold comparison**: Use ≤ (less than or equal) when counting neighbors
+
+---
+
+# A* Search Algorithm
+
+## Problem Description
+Given a grid with obstacles and a start and end position, find the shortest path from start to end using the A* search algorithm. The grid contains 0s (free cells) and 1s (obstacles). You can move in 4 directions (up, down, left, right) and each move has a cost of 1. The A* algorithm uses both the actual distance traveled (g-cost) and a heuristic estimate to the goal (h-cost) to efficiently find the optimal path.
+
+## Examples
+
+### Example 1
+#### Input
+```
+grid = [[0, 0, 0, 0, 0],
+        [0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0]]
+start = (0, 0)
+end = (4, 4)
+```
+
+#### Output
+```
+Path: [(0,0), (0,1), (0,2), (0,3), (0,4), (1,4), (2,4), (3,4), (4,4)]
+Total Cost: 8
+```
+
+#### Explanation
+The algorithm finds the shortest path by avoiding obstacles (1s) and using the Manhattan distance heuristic to guide the search efficiently. The path goes around the obstacles in the optimal way.
+
+### Example 2
+#### Input
+```
+grid = [[0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]]
+start = (0, 0)
+end = (2, 2)
+```
+
+#### Output
+```
+Path: [(0,0), (0,1), (0,2), (1,2), (2,2)]
+Total Cost: 4
+```
+
+#### Explanation
+The algorithm navigates around the single obstacle at (1,1) to reach the destination with minimum cost.
+
+## Solution
+A* is an informed search algorithm that combines the benefits of Dijkstra's algorithm (guaranteed shortest path) with the efficiency of greedy best-first search (using heuristics). It maintains a priority queue of nodes to explore, ordered by f-cost = g-cost + h-cost, where g-cost is the actual distance from start and h-cost is the heuristic estimate to the goal.
+
+## Intuition
+Think of A* like a smart GPS navigation system:
+
+**Real-world analogy**: Imagine you're driving to a destination and your GPS has to choose between multiple routes:
+- **G-cost (actual distance)**: How far you've already driven from your starting point
+- **H-cost (heuristic)**: Straight-line distance to your destination (like "as the crow flies")
+- **F-cost (total estimate)**: G-cost + H-cost = total estimated trip distance
+
+**Why this works**:
+1. **GPS logic**: The GPS always picks the route with the lowest total estimated distance (F-cost)
+2. **Smart exploration**: Instead of exploring all possible routes equally, it prioritizes routes that seem most promising
+3. **Guaranteed optimal**: If the heuristic never overestimates (admissible), you'll always find the shortest route
+
+**Key insight**: A* is like having perfect intuition about which direction to explore first, making it much faster than blind search algorithms while still guaranteeing the optimal solution.
+
+## Approach Steps
+
+1. **Initialize data structures**:
+   - Priority queue (min-heap) for nodes to explore, ordered by f-cost
+   - Sets to track visited nodes and nodes in queue
+   - Dictionary to store g-costs and parent pointers for path reconstruction
+
+2. **Set up starting conditions**:
+   - Add start node to queue with g-cost = 0, h-cost = heuristic(start, end)
+   - Mark start as discovered
+
+3. **Main search loop**:
+   - Extract node with lowest f-cost from queue
+   - If it's the goal, reconstruct and return path
+   - Mark current node as visited
+   - Explore all valid neighbors
+
+4. **Neighbor processing**:
+   - Skip obstacles and already visited nodes
+   - Calculate tentative g-cost for neighbor
+   - If this path to neighbor is better than any previous path:
+     - Update g-cost and parent
+     - Add to queue if not already there
+
+5. **Path reconstruction**:
+   - Backtrack from goal to start using parent pointers
+   - Return the path and total cost
+
+## Code
+
+```python
+import heapq
+from typing import List, Tuple, Optional
+
+class AStar:
+    def __init__(self, grid: List[List[int]]):
+        self.grid = grid
+        self.rows = len(grid)
+        self.cols = len(grid[0])
+        # 4-directional movement: up, down, left, right
+        self.directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    
+    def heuristic(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
+        """Manhattan distance heuristic (admissible for 4-directional movement)"""
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+    
+    def is_valid(self, row: int, col: int) -> bool:
+        """Check if position is within grid bounds and not an obstacle"""
+        return (0 <= row < self.rows and 
+                0 <= col < self.cols and 
+                self.grid[row][col] == 0)
+    
+    def reconstruct_path(self, parent: dict, start: Tuple[int, int], 
+                        end: Tuple[int, int]) -> List[Tuple[int, int]]:
+        """Backtrack from goal to start to build the path"""
+        path = []
+        current = end
+        
+        while current is not None:
+            path.append(current)
+            current = parent.get(current)
+        
+        path.reverse()
+        return path
+    
+    def search(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[Tuple[List[Tuple[int, int]], int]]:
+        """
+        A* search algorithm implementation
+        Returns: (path, cost) if path found, None otherwise
+        """
+        # Priority queue: (f_cost, g_cost, position)
+        queue = [(0, 0, start)]
+        
+        # Track nodes we've seen and visited
+        in_queue = {start}
+        visited = set()
+        
+        # Cost from start to each node
+        g_cost = {start: 0}
+        
+        # Parent pointers for path reconstruction
+        parent = {start: None}
+        
+        while queue:
+            # Get node with lowest f-cost
+            current_f, current_g, current_pos = heapq.heappop(queue)
+            
+            # Skip if we've already processed this node
+            if current_pos in visited:
+                continue
+            
+            # Mark as visited
+            visited.add(current_pos)
+            in_queue.discard(current_pos)
+            
+            # Check if we reached the goal
+            if current_pos == end:
+                path = self.reconstruct_path(parent, start, end)
+                return path, current_g
+            
+            # Explore neighbors
+            for dr, dc in self.directions:
+                neighbor_row = current_pos[0] + dr
+                neighbor_col = current_pos[1] + dc
+                neighbor_pos = (neighbor_row, neighbor_col)
+                
+                # Skip invalid positions or already visited nodes
+                if not self.is_valid(neighbor_row, neighbor_col) or neighbor_pos in visited:
+                    continue
+                
+                # Calculate tentative g-cost
+                tentative_g = current_g + 1  # Each step costs 1
+                
+                # If we found a better path to this neighbor
+                if neighbor_pos not in g_cost or tentative_g < g_cost[neighbor_pos]:
+                    # Update costs and parent
+                    g_cost[neighbor_pos] = tentative_g
+                    parent[neighbor_pos] = current_pos
+                    
+                    # Calculate f-cost and add to queue if not already there
+                    if neighbor_pos not in in_queue:
+                        h_cost = self.heuristic(neighbor_pos, end)
+                        f_cost = tentative_g + h_cost
+                        heapq.heappush(queue, (f_cost, tentative_g, neighbor_pos))
+                        in_queue.add(neighbor_pos)
+        
+        # No path found
+        return None
+
+# Usage example
+def solve_pathfinding(grid: List[List[int]], start: Tuple[int, int], 
+                     end: Tuple[int, int]) -> Optional[Tuple[List[Tuple[int, int]], int]]:
+    """
+    Solve pathfinding using A* algorithm
+    
+    Args:
+        grid: 2D list where 0 = free space, 1 = obstacle
+        start: Starting position (row, col)
+        end: Goal position (row, col)
+    
+    Returns:
+        Tuple of (path, cost) if path exists, None otherwise
+    """
+    astar = AStar(grid)
+    return astar.search(start, end)
+
+# Example usage
+if __name__ == "__main__":
+    grid = [[0, 0, 0, 0, 0],
+            [0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0]]
+    
+    start = (0, 0)
+    end = (4, 4)
+    
+    result = solve_pathfinding(grid, start, end)
+    if result:
+        path, cost = result
+        print(f"Path found: {path}")
+        print(f"Total cost: {cost}")
+    else:
+        print("No path found")
+```
+
+## Time and Space Complexity
+
+### Time Complexity: O(b^d)
+- **Where**: b = branching factor (average neighbors per node), d = depth of optimal solution
+- **In practice**: Much better than O(b^d) due to heuristic guidance
+- **Grid case**: O(V log V) where V is number of free cells, similar to Dijkstra but with better practical performance
+- **Why**: Each node is processed at most once, and heap operations take O(log V) time
+
+### Space Complexity: O(b^d)
+- **Priority queue**: Can store up to O(b^d) nodes in worst case
+- **Data structures**: O(V) for visited set, g_cost dictionary, and parent dictionary
+- **Overall**: O(V) in practice for grid problems
+- **Why**: We need to store information for all nodes we've discovered
+
+---
+# Johnson's Algorithm
+
+## Problem Description
+Given a weighted directed graph that may contain negative edge weights, find the shortest paths between all pairs of vertices. Johnson's Algorithm is designed to handle graphs with negative edges efficiently by combining the Bellman-Ford and Dijkstra algorithms. It first uses Bellman-Ford to detect negative cycles and reweight the graph, then applies Dijkstra from each vertex on the reweighted graph to find all-pairs shortest paths.
+
+## Examples
+
+### Example 1
+#### Input
+```
+V = 4
+edges = [[0, 1, -5], [0, 2, 2], [0, 3, 3], [1, 2, 4], [2, 3, 1]]
+```
+
+#### Output
+```
+Shortest distances between all pairs:
+From 0: [0, -5, -1, 0]
+From 1: [inf, 0, 4, 5]
+From 2: [inf, inf, 0, 1]
+From 3: [inf, inf, inf, 0]
+```
+
+#### Explanation
+- **Step 1**: Add auxiliary vertex connected to all vertices with weight 0
+- **Step 2**: Run Bellman-Ford from auxiliary vertex to get reweighting values
+- **Step 3**: Reweight all edges using: new_weight = original_weight + h[u] - h[v]
+- **Step 4**: Run Dijkstra from each vertex on reweighted graph
+- **Step 5**: Convert back to original weights
+
+### Example 2 (Negative Cycle)
+#### Input
+```
+V = 3
+edges = [[0, 1, 1], [1, 2, -3], [2, 0, 1]]
+```
+
+#### Output
+```
+"Negative cycle detected"
+```
+
+#### Explanation
+The cycle 0→1→2→0 has total weight: 1 + (-3) + 1 = -1, which is negative. Johnson's algorithm detects this during the Bellman-Ford phase and reports the negative cycle.
+
+## Solution
+Johnson's Algorithm cleverly transforms a graph with negative edges into one with non-negative edges while preserving shortest path relationships. It then uses the faster Dijkstra algorithm multiple times instead of the slower Floyd-Warshall algorithm, making it more efficient for sparse graphs.
+
+## Intuition
+Think of Johnson's Algorithm like adjusting prices in different cities to make them all positive:
+
+**Real-world analogy**: Imagine you're a logistics company with shipping costs between cities, some of which give you money back (negative costs):
+
+**The Problem**: You want to use fast route-finding algorithms, but they don't work with "cashback routes"
+
+**Johnson's Solution**:
+1. **Add a "virtual depot"**: Create an imaginary city connected to all real cities with 0 cost
+2. **Calculate adjustment values**: Find the cheapest way to reach each city from this virtual depot
+3. **Adjust all shipping costs**: Add/subtract adjustment values so all costs become positive
+4. **Use fast algorithms**: Now you can use efficient algorithms on the adjusted costs
+5. **Convert back**: Transform the results back to original cost scale
+
+**Why it works**:
+- The adjustment preserves the relative ordering of paths
+- If path A was cheaper than path B originally, it stays cheaper after adjustment
+- All edges become non-negative, enabling Dijkstra's algorithm
+
+**Key insight**: It's like converting different currencies to a common positive currency, doing calculations, then converting back!
+
+## Approach Steps
+
+1. **Add auxiliary vertex**: Create a new vertex and connect it to all original vertices with weight 0
+
+2. **Run Bellman-Ford**: 
+   - Execute Bellman-Ford from the auxiliary vertex
+   - If negative cycle detected, return "Negative cycle exists"
+   - Otherwise, get shortest distances h[v] to all vertices
+
+3. **Reweight all edges**: Transform each edge (u,v,w) to new weight: w' = w + h[u] - h[v]
+
+4. **Run Dijkstra from each vertex**: 
+   - Apply Dijkstra algorithm from each vertex on the reweighted graph
+   - This gives shortest distances in the transformed graph
+
+5. **Convert back to original weights**: Transform distances back using: original_dist[u][v] = reweighted_dist[u][v] - h[u] + h[v]
+
+6. **Return result**: Return the all-pairs shortest distance matrix
+
+## Code
+
+```python
+import heapq
+from typing import List, Optional, Dict, Tuple
+from collections import defaultdict
+
+class JohnsonsAlgorithm:
+    def __init__(self):
+        self.graph = defaultdict(list)
+        self.V = 0
+    
+    def add_edge(self, u: int, v: int, weight: int):
+        """Add a directed edge to the graph"""
+        self.graph[u].append((v, weight))
+    
+    def bellman_ford(self, src: int, V: int) -> Optional[List[float]]:
+        """
+        Bellman-Ford algorithm to detect negative cycles and find shortest distances
+        Returns None if negative cycle exists, otherwise returns distance array
+        """
+        # Initialize distances
+        dist = [float('inf')] * V
+        dist[src] = 0
+        
+        # Relax edges V-1 times
+        for _ in range(V - 1):
+            for u in self.graph:
+                if dist[u] != float('inf'):
+                    for v, weight in self.graph[u]:
+                        if dist[u] + weight < dist[v]:
+                            dist[v] = dist[u] + weight
+        
+        # Check for negative cycles
+        for u in self.graph:
+            if dist[u] != float('inf'):
+                for v, weight in self.graph[u]:
+                    if dist[u] + weight < dist[v]:
+                        return None  # Negative cycle detected
+        
+        return dist
+    
+    def dijkstra(self, src: int, V: int) -> List[float]:
+        """
+        Dijkstra's algorithm for non-negative weighted graph
+        """
+        dist = [float('inf')] * V
+        dist[src] = 0
+        pq = [(0, src)]  # (distance, vertex)
+        visited = set()
+        
+        while pq:
+            d, u = heapq.heappop(pq)
+            
+            if u in visited:
+                continue
+            
+            visited.add(u)
+            
+            for v, weight in self.graph[u]:
+                if dist[u] + weight < dist[v]:
+                    dist[v] = dist[u] + weight
+                    heapq.heappush(pq, (dist[v], v))
+        
+        return dist
+    
+    def johnsons_algorithm(self, edges: List[List[int]], V: int) -> Optional[List[List[float]]]:
+        """
+        Johnson's Algorithm for All-Pairs Shortest Path
+        
+        Args:
+            edges: List of [source, destination, weight]
+            V: Number of vertices (0 to V-1)
+        
+        Returns:
+            2D list of shortest distances, or None if negative cycle exists
+        """
+        # Clear previous graph
+        self.graph.clear()
+        
+        # Step 1: Add all original edges to graph
+        for u, v, w in edges:
+            self.add_edge(u, v, w)
+        
+        # Step 2: Add auxiliary vertex (vertex V) connected to all vertices with weight 0
+        auxiliary_vertex = V
+        for i in range(V):
+            self.add_edge(auxiliary_vertex, i, 0)
+        
+        # Step 3: Run Bellman-Ford from auxiliary vertex
+        h = self.bellman_ford(auxiliary_vertex, V + 1)
+        
+        if h is None:
+            return None  # Negative cycle detected
+        
+        # Step 4: Remove auxiliary vertex and reweight edges
+        self.graph.clear()
+        
+        # Add reweighted edges: new_weight = original_weight + h[u] - h[v]
+        for u, v, w in edges:
+            new_weight = w + h[u] - h[v]
+            self.add_edge(u, v, new_weight)
+        
+        # Step 5: Run Dijkstra from each vertex
+        result = []
+        
+        for src in range(V):
+            # Get shortest distances from src in reweighted graph
+            reweighted_dist = self.dijkstra(src, V)
+            
+            # Convert back to original weights: original = reweighted - h[src] + h[dest]
+            original_dist = []
+            for dest in range(V):
+                if reweighted_dist[dest] == float('inf'):
+                    original_dist.append(float('inf'))
+                else:
+                    # Convert back: dist[src][dest] = reweighted_dist[dest] - h[src] + h[dest]
+                    original_dist.append(reweighted_dist[dest] - h[src] + h[dest])
+            
+            result.append(original_dist)
+        
+        return result
+
+# Usage function
+def solve_all_pairs_shortest_path(edges: List[List[int]], V: int) -> Optional[List[List[float]]]:
+    """
+    Solve All-Pairs Shortest Path using Johnson's Algorithm
+    
+    Args:
+        edges: List of [source, destination, weight] representing directed edges
+        V: Number of vertices (numbered 0 to V-1)
+    
+    Returns:
+        2D matrix where result[i][j] is shortest distance from vertex i to vertex j,
+        or None if negative cycle exists
+    """
+    johnson = JohnsonsAlgorithm()
+    return johnson.johnsons_algorithm(edges, V)
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Example 1: Graph with negative edges but no negative cycle
+    print("Example 1:")
+    edges1 = [[0, 1, -5], [0, 2, 2], [0, 3, 3], [1, 2, 4], [2, 3, 1]]
+    V1 = 4
+    
+    result1 = solve_all_pairs_shortest_path(edges1, V1)
+    
+    if result1:
+        print("Shortest distances between all pairs:")
+        for i in range(V1):
+            print(f"From {i}: {[float('inf') if x == float('inf') else int(x) for x in result1[i]]}")
+    else:
+        print("Negative cycle detected")
+    
+    print("\nExample 2:")
+    # Example 2: Graph with negative cycle
+    edges2 = [[0, 1, 1], [1, 2, -3], [2, 0, 1]]
+    V2 = 3
+    
+    result2 = solve_all_pairs_shortest_path(edges2, V2)
+    
+    if result2:
+        print("Shortest distances between all pairs:")
+        for i in range(V2):
+            print(f"From {i}: {result2[i]}")
+    else:
+        print("Negative cycle detected")
+
+# Utility function to print results nicely
+def print_distance_matrix(matrix: List[List[float]], V: int):
+    """Pretty print the distance matrix"""
+    print("\nDistance Matrix:")
+    print("    ", end="")
+    for j in range(V):
+        print(f"{j:6}", end="")
+    print()
+    
+    for i in range(V):
+        print(f"{i}: ", end="")
+        for j in range(V):
+            if matrix[i][j] == float('inf'):
+                print("  INF", end="")
+            else:
+                print(f"{matrix[i][j]:6.0f}", end="")
+        print()
+```
+
+## Time and Space Complexity
+
+### Time Complexity: O(V² log V + VE)
+- **Bellman-Ford phase**: O(VE) for detecting negative cycles
+- **Dijkstra phase**: O(V × (V log V + E)) = O(V² log V + VE) for V runs of Dijkstra
+- **Overall**: O(VE + V² log V + VE) = O(V² log V + VE)
+- **For dense graphs**: O(V³ log V) when E ≈ V²
+- **For sparse graphs**: O(V² log V) when E ≈ V
+
+### Space Complexity: O(V² + E)
+- **Distance matrices**: O(V²) for storing all-pairs shortest distances  
+- **Graph representation**: O(V + E) for adjacency list
+- **Dijkstra's heap**: O(V) space per run
+- **Reweighting arrays**: O(V) for h values
+- **Overall**: O(V² + E)
+
 
