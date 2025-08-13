@@ -1,3 +1,218 @@
+# Graph Algorithms - Complete Index
+
+## 📚 Table of Contents
+
+### **Core Shortest Path Algorithms**
+1. [**Shortest Path in DAG**](#shortest-path-in-dag)
+   - Topological sorting approach
+   - DFS-based topological sort
+   - Kahn's algorithm implementation
+   - Time: O(N + M), Space: O(N + M)
+
+2. [**Shortest Path in Unweighted Graph**](#shortest-path-in-undirected-graph-with-unit-weights)
+   - BFS approach for unit weights
+   - Level-wise exploration
+   - Time: O(N + M), Space: O(N + M)
+
+3. [**Dijkstra's Algorithm**](#dijkstras-algorithm)
+   - Single-source shortest path with non-negative weights
+   - Priority queue implementation
+   - Time: O((V + E) log V), Space: O(V + E)
+
+4. [**Bellman-Ford Algorithm**](#bellman-ford-algorithm)
+   - Handles negative edge weights
+   - Negative cycle detection
+   - Time: O(V × E), Space: O(V)
+
+5. [**Floyd-Warshall Algorithm**](#floyd-warshall-algorithm)
+   - All-pairs shortest paths
+   - Dynamic programming approach
+   - Time: O(V³), Space: O(1)
+
+6. [**Johnson's Algorithm**](#johnsons-algorithm)
+   - All-pairs with negative edges
+   - Combines Bellman-Ford + Dijkstra
+   - Time: O(V² log V + VE), Space: O(V² + E)
+
+### **Advanced Shortest Path Problems**
+
+7. [**Print Shortest Path**](#print-shortest-path)
+   - Path reconstruction using parent tracking
+   - Modified Dijkstra's with path storage
+   - Time: O((V + E) log V), Space: O(V + E)
+
+8. [**Cheapest Flights within K Stops**](#cheapest-flights-within-k-stops)
+   - Constrained shortest path problem
+   - Modified Dijkstra's with stop counting
+   - Time: O(V + E × K), Space: O(V + E)
+
+9. [**Number of Ways to Arrive at Destination**](#number-of-ways-to-arrive-at-destination)
+   - Shortest path counting problem
+   - Modified Dijkstra's with path enumeration
+   - Time: O((V + E) log V), Space: O(V + E)
+
+### **Graph Traversal Applications**
+
+10. [**Word Ladder I**](#word-ladder-i)
+    - Shortest transformation sequence
+    - BFS on word graph
+    - Time: O(M² × N), Space: O(N × M)
+
+11. [**Word Ladder II**](#word-ladder-ii)
+    - All shortest transformation sequences
+    - BFS + DFS with backtracking
+    - Time: O(N × M² × 26^L), Space: O(N × M + P × L)
+
+### **Specialized Graph Problems**
+
+12. [**Minimum Multiplications to Reach End**](#minimum-multiplications-to-reach-end)
+    - Number transformation problem
+    - BFS on state space (0-99999)
+    - Time: O(100000 × M), Space: O(100000)
+
+13. [**Shortest Distance in Binary Maze**](#shortest-distance-in-a-binary-maze)
+    - Grid pathfinding problem
+    - BFS on 2D grid
+    - Time: O(n × m), Space: O(n × m)
+
+14. [**Path with Minimum Effort**](#path-with-minimum-effort)
+    - Minimize maximum edge weight
+    - Modified Dijkstra's with max operation
+    - Time: O(n × m × log(n × m)), Space: O(n × m)
+
+15. [**Find City with Smallest Number of Neighbors**](#find-city-with-smallest-number-of-neighbors)
+    - Distance threshold problem
+    - Floyd-Warshall + counting
+    - Time: O(N³), Space: O(N²)
+
+### **Advanced Search Algorithms**
+
+16. [**A* Search Algorithm**](#a-search-algorithm)
+    - Heuristic-guided pathfinding
+    - Priority queue with f-cost = g-cost + h-cost
+    - Time: O(b^d), Space: O(b^d)
+
+---
+
+## 🔍 Quick Reference Guide
+
+### **Algorithm Selection Matrix**
+
+| **Problem Type** | **Recommended Algorithm** | **Key Characteristics** |
+|------------------|---------------------------|------------------------|
+| **Single-source, non-negative weights** | Dijkstra's | Fastest for this case |
+| **Single-source, with negative weights** | Bellman-Ford | Detects negative cycles |
+| **Single-source, DAG** | Topological Sort + DP | Optimal for DAGs |
+| **Single-source, unweighted** | BFS | Simplest and fastest |
+| **All-pairs, small graphs** | Floyd-Warshall | Easy to implement |
+| **All-pairs, large sparse graphs** | Johnson's | More efficient than Floyd-Warshall |
+| **Path reconstruction needed** | Modified Dijkstra's | Tracks parent pointers |
+| **Constrained shortest path** | Modified BFS/Dijkstra's | Problem-specific modifications |
+| **Heuristic-guided search** | A* | Best for pathfinding with heuristics |
+
+### **Complexity Quick Reference**
+
+| **Algorithm** | **Time Complexity** | **Space Complexity** | **Graph Type** |
+|---------------|---------------------|---------------------|----------------|
+| **BFS** | O(V + E) | O(V) | Unweighted |
+| **Dijkstra's** | O((V + E) log V) | O(V + E) | Non-negative weights |
+| **Bellman-Ford** | O(V × E) | O(V) | Any weights |
+| **Floyd-Warshall** | O(V³) | O(V²) | Any weights |
+| **Johnson's** | O(V² log V + VE) | O(V² + E) | Any weights |
+| **A*** | O(b^d) | O(b^d) | Heuristic search |
+
+### **Common Problem Patterns**
+
+#### **🎯 Pattern 1: Basic Shortest Path**
+- **Problems**: Dijkstra's, BFS on unweighted graphs
+- **Key insight**: Direct application of standard algorithms
+- **Implementation**: Priority queue or simple queue
+
+#### **🎯 Pattern 2: Path Reconstruction**
+- **Problems**: Print shortest path, Word Ladder II
+- **Key insight**: Track parent pointers during search
+- **Implementation**: Additional parent/predecessor tracking
+
+#### **🎯 Pattern 3: Constrained Shortest Path**
+- **Problems**: Cheapest flights with K stops, Path with minimum effort
+- **Key insight**: Modify cost function or add constraints
+- **Implementation**: Extended state space or modified relaxation
+
+#### **🎯 Pattern 4: State Space Search**
+- **Problems**: Word Ladder, Minimum multiplications
+- **Key insight**: Transform problem into graph traversal
+- **Implementation**: Generate neighbors dynamically
+
+#### **🎯 Pattern 5: Multiple Shortest Paths**
+- **Problems**: Number of ways to arrive, Word Ladder II
+- **Key insight**: Count or enumerate instead of just finding one path
+- **Implementation**: Modified algorithms with counting/path storage
+
+### **📝 Implementation Tips**
+
+#### **Common Data Structures**
+```python
+# Priority queue for Dijkstra's/A*
+import heapq
+pq = [(cost, node)]
+heapq.heappush(pq, (new_cost, new_node))
+cost, node = heapq.heappop(pq)
+
+# Adjacency list representation
+graph = defaultdict(list)
+graph[u].append((v, weight))
+
+# Distance tracking
+dist = [float('inf')] * n
+dist[source] = 0
+
+# Parent tracking for path reconstruction
+parent = [-1] * n
+parent[v] = u  # u is parent of v
+```
+
+#### **Edge Cases to Consider**
+- Source equals destination
+- Unreachable destinations
+- Negative cycles (for Bellman-Ford)
+- Empty graphs
+- Single node graphs
+- Disconnected components
+
+#### **Optimization Techniques**
+- Early termination when destination reached
+- Bidirectional search for long paths
+- Visited set to avoid reprocessing
+- Efficient heuristics for A*
+
+---
+
+## 🚀 Problem-Solving Strategy
+
+### **Step 1: Problem Analysis**
+1. **Identify graph type**: Weighted/unweighted, directed/undirected
+2. **Determine requirements**: Single-source vs all-pairs, path reconstruction needed?
+3. **Check constraints**: Negative weights, cycles, special conditions
+
+### **Step 2: Algorithm Selection**
+- Use the selection matrix above
+- Consider time/space trade-offs
+- Account for expected graph density
+
+### **Step 3: Implementation Approach**
+- Start with standard algorithm template
+- Add problem-specific modifications
+- Handle edge cases and constraints
+
+### **Step 4: Optimization**
+- Profile for bottlenecks
+- Apply appropriate optimizations
+- Validate correctness with test cases
+
+---
+
+This index provides a comprehensive overview of all graph algorithms covered in the document, with quick reference guides for algorithm selection, complexity analysis, and implementation strategies. Each algorithm includes links to detailed explanations, code implementations, and complexity analysis.
+
 # Shortest Path in DAG
 
 ## Problem Description
