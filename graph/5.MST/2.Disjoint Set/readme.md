@@ -75,6 +75,21 @@ Disjoint sets are particularly useful for detecting cycles in undirected graphs 
 
 **Graph**: 8 vertices with edges to be processed in order
 
+Original Graph with ALL possible edges:
+
+    1 ————— 2 ————— 5
+    |   ╲   |   ╱   |
+    |    ╲  |  ╱    |
+    3 ————— 4       6
+            |       |
+            |       |
+            8 ————— 7
+
+All Edges in the Graph:
+(1,2), (1,3), (2,4), (2,5), (3,4), (4,8), (5,6), (6,8), (7,8)
+
+Note: Some edges like (1,3) and (5,7) will create cycles
+
 ```
 Initial State:
 Universal Set: {1, 2, 3, 4, 5, 6, 7, 8}
