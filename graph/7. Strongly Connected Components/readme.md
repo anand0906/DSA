@@ -1156,4 +1156,360 @@ class SolutionOptimized:
 
 ---
 
+# Articulation Point
+
+# Problem Description
+
+Given an undirected graph with V vertices and adjacency list, find all **articulation points** (or cut vertices). An articulation point is a vertex whose removal (along with all its incident edges) increases the number of connected components in the graph. Return vertices in ascending order, or [-1] if no articulation points exist.
+
+## Examples
+
+### Input
+```
+V = 7
+adj = [[1,2,3], [0], [0,3,4,5], [2,0], [2,6], [5,2,6], [4,5]]
+```
+<img src="https://static.takeuforward.org/content/ProblemSetter-kfpw3bZG" />
+
+### Output
+```
+[0, 2]
+```
+
+### Explanation
+Removing vertex 0 disconnects vertices 1 from the rest. Removing vertex 2 separates vertices {4,5,6} from {0,1,3}. Both are critical for connectivity.
+
+### Input
+```
+V = 5
+adj = [[1], [0,4], [3,4], [2,4], [1,2,3]]
+```
+<img src="https://static.takeuforward.org/content/ProblemSetter-xysZGNeR" />
+
+### Output
+```
+[1, 4]
+```
+
+### Explanation
+Removing vertex 1 isolates vertex 0. Removing vertex 4 separates the graph into multiple components. Both are articulation points.
+
+## Solution
+
+Use **Tarjan's Algorithm for Articulation Points**: a DFS-based approach using discovery times and low values to identify critical vertices in O(V+E) time.
+
+## Intuition
+
+### Core Difference: Articulation Points vs Bridges
+
+```
+Bridge Problem: "Which EDGES are critical for connectivity?"
+Articulation Point: "Which VERTICES are critical for connectivity?"
+
+Key Challenge: When we remove a vertex, we also remove ALL its incident edges!
+This makes the problem more complex than finding bridges.
+```
+
+### What Makes a Vertex an Articulation Point?
+
+```
+A vertex u is an articulation point if:
+1. It's the root of DFS tree AND has more than one child, OR  
+2. It's a non-root vertex AND removing it disconnects some part of the graph
+
+Visual Example:
+       1
+      / \
+     0   2---3
+         |   |
+         4---5
+
+- Vertex 2 is articulation point: removing it separates {0,1} from {3,4,5}
+- Vertex 0 is NOT articulation point: graph remains connected without it
+- Vertex 1 is articulation point IF it's the DFS root with children 0 and 2
+```
+
+### The Articulation Point Condition
+
+```
+For a non-root vertex u with child v in DFS tree:
+u is an articulation point if low[v] >= tin[u]
+
+Why this works:
+- low[v] >= tin[u] means v's subtree cannot reach any ancestor of u  
+- Without vertex u, v's subtree would be disconnected from u's ancestors
+- Therefore, u is critical for connectivity
+
+Compare with Bridge Condition:
+- Bridge: low[v] > tin[u] (strictly greater)
+- Articulation Point: low[v] >= tin[u] (greater or equal)
+
+The difference: Equal case means v can reach u but not u's ancestors!
+```
+
+### Special Case: Root of DFS Tree
+
+```
+Root vertex is articulation point if and only if it has more than 1 child in DFS tree.
+
+Why?
+- If root has only 1 child: removing root leaves one connected component
+- If root has 2+ children: removing root separates children into different components
+
+Example:
+    Root (0)
+    /   |   \
+   1    2    3
+   
+Removing root 0 creates 3 separate components: {1}, {2}, {3}
+So root 0 is an articulation point.
+```
+
+### Step-by-Step Algorithm Walkthrough
+
+```
+Example Graph:
+    0---1---4
+    |       |
+    2---3---+
+
+DFS Tree starting from 0:
+    0 (root)
+    |
+    1
+    |
+    4
+    |
+    3
+    |
+    2 (back edge to 0)
+
+Step-by-step execution:
+
+1. Visit 0: tin[0] = low[0] = 1, children = 0
+
+2. Visit 1: tin[1] = low[1] = 2, parent = 0
+   
+3. Visit 4: tin[4] = low[4] = 3, parent = 1
+   
+4. Visit 3: tin[3] = low[3] = 4, parent = 4
+   
+5. Visit 2: tin[2] = low[2] = 5, parent = 3
+   
+6. From 2, find neighbor 0 (visited, not parent):
+   Back edge! low[2] = min(5, 1) = 1
+   
+7. Return to 3: low[3] = min(4, 1) = 1
+   Check articulation: low[2] >= tin[3]? → 1 >= 4? → NO
+   
+8. Return to 4: low[4] = min(3, 1) = 1  
+   Check articulation: low[3] >= tin[4]? → 1 >= 3? → NO
+   
+9. Return to 1: low[1] = min(2, 1) = 1
+   Check articulation: low[4] >= tin[1]? → 1 >= 2? → NO
+   
+10. Return to 0: low[0] = min(1, 1) = 1, children = 1
+    Root check: children > 1? → 1 > 1? → NO
+
+Result: No articulation points (graph is 2-edge-connected cycle)
+```
+
+### Complex Example with Multiple Articulation Points
+
+```
+Graph:
+    1---0---2---3
+            |   |
+            4---5
+
+DFS Tree from 0:
+    0 (root)
+   /|\
+  1 2 4  
+    | |
+    3 5
+
+Execution:
+1. Visit 0: tin[0] = 1, children = 0
+2. Visit 1: tin[1] = 2, check later
+3. Visit 2: tin[2] = 3
+4. Visit 3: tin[3] = 4
+   Return to 2: low[2] = min(3,4) = 3
+   Check: low[3] >= tin[2]? → 4 >= 3? → YES! 
+   2 is articulation point ✓
+5. Visit 4: tin[4] = 5  
+6. Visit 5: tin[5] = 6
+   Return to 4: low[4] = min(5,6) = 5
+   Check: low[5] >= tin[4]? → 6 >= 5? → YES!
+   4 is articulation point ✓
+   Return to 2: low[2] = min(3,5) = 3
+   Check: low[4] >= tin[2]? → 5 >= 3? → YES!
+   2 is articulation point ✓ (confirmed again)
+7. Return to 0: children = 3
+   Root check: children > 1? → 3 > 1? → YES!
+   0 is articulation point ✓
+
+Result: Articulation points = [0, 2, 4]
+```
+
+### Why the Algorithm Works: Deep Insight
+
+```
+The genius of Tarjan's algorithm for articulation points:
+
+🎯 DFS Tree Structure: Creates a hierarchical view where parent-child 
+   relationships represent dependencies
+
+🔍 Back Edge Detection: low[] values track alternative paths that could
+   bypass the current vertex
+
+⚡ Single Pass Efficiency: Computes both conditions (root and non-root) 
+   simultaneously during one DFS traversal
+
+🧠 Critical Insight: The condition low[v] >= tin[u] captures exactly when
+   removing u would isolate v's subtree
+
+The algorithm transforms the complex question "What vertices disconnect
+the graph?" into the simpler question "What vertices have no alternative
+paths around them?" - which DFS can answer efficiently!
+```
+
+## Approach Steps
+
+1. **Initialize data structures**:
+   - Arrays: `tin[]` (discovery time), `low[]` (lowest reachable time), `visited[]`
+   - Timer counter and result list for articulation points
+
+2. **Start DFS from each unvisited vertex**:
+   - Set discovery and low time for current vertex
+   - Mark as visited and increment timer
+   - Track number of children for root case
+
+3. **For each neighbor of current vertex**:
+   - Skip if neighbor is parent
+   - If unvisited: recursively call DFS, then check articulation condition
+   - If visited: update low time (back edge)
+
+4. **Check articulation point conditions**:
+   - **Non-root**: If `low[child] >= tin[current]`, current is articulation point
+   - **Root**: If number of children > 1, root is articulation point
+
+5. **Return sorted unique articulation points** (or [-1] if none exist)
+
+## Code
+
+```python
+class Solution:
+    def articulationPoints(self, n, adj):
+        # Initialize data structures
+        tin = [0] * n          # Discovery times
+        low = [0] * n          # Lowest reachable times
+        visited = [False] * n   # Visited markers
+        ap_points = []         # Articulation points
+        timer = [0]            # Timer (use list for mutability)
+        
+        def dfs(u, parent):
+            # Mark current vertex as visited
+            visited[u] = True
+            timer[0] += 1
+            tin[u] = low[u] = timer[0]
+            
+            children = 0  # Count children in DFS tree
+            
+            # Explore all adjacent vertices
+            for v in adj[u]:
+                if v == parent:
+                    continue  # Skip parent to avoid immediate backtrack
+                
+                if not visited[v]:
+                    # Tree edge: v is a child of u
+                    children += 1
+                    dfs(v, u)
+                    
+                    # Update low value after returning from recursion
+                    low[u] = min(low[u], low[v])
+                    
+                    # Check articulation point condition for non-root
+                    if parent != -1 and low[v] >= tin[u]:
+                        ap_points.append(u)
+                    
+                else:
+                    # Back edge: update low value
+                    low[u] = min(low[u], tin[v])
+            
+            # Check articulation point condition for root
+            if parent == -1 and children > 1:
+                ap_points.append(u)
+        
+        # Run DFS for all unvisited vertices (handle disconnected components)
+        for i in range(n):
+            if not visited[i]:
+                dfs(i, -1)
+        
+        # Return sorted unique articulation points, or [-1] if none exist
+        if ap_points:
+            return sorted(set(ap_points))
+        else:
+            return [-1]
+
+# Alternative implementation with cleaner structure
+class SolutionOptimized:
+    def articulationPoints(self, n, adj):
+        tin = [0] * n
+        low = [0] * n
+        visited = [False] * n
+        is_articulation = [False] * n  # Use boolean array to avoid duplicates
+        time = 0
+        
+        def tarjan_ap(u, parent):
+            nonlocal time
+            visited[u] = True
+            time += 1
+            tin[u] = low[u] = time
+            children = 0
+            
+            for v in adj[u]:
+                if v == parent:
+                    continue
+                    
+                if visited[v]:
+                    # Back edge
+                    low[u] = min(low[u], tin[v])
+                else:
+                    # Tree edge
+                    children += 1
+                    tarjan_ap(v, u)
+                    low[u] = min(low[u], low[v])
+                    
+                    # Articulation point condition
+                    if (parent == -1 and children > 1) or (parent != -1 and low[v] >= tin[u]):
+                        is_articulation[u] = True
+        
+        # Process all connected components
+        for i in range(n):
+            if not visited[i]:
+                tarjan_ap(i, -1)
+        
+        # Collect articulation points
+        result = [i for i in range(n) if is_articulation[i]]
+        return result if result else [-1]
+```
+
+## Time and Space Complexity
+
+### Time Complexity: **O(V + E)**
+- **Single DFS traversal**: Each vertex visited exactly once  
+- **Edge processing**: Each edge examined exactly twice (once from each endpoint)
+- **Condition checking**: Constant time per vertex
+- **Sorting**: O(V log V) for final result, but dominated by DFS time
+
+### Space Complexity: **O(V + E)**
+- **Adjacency list**: O(V + E) to store the graph
+- **Arrays**: O(V) for tin[], low[], visited[], and result arrays
+- **Recursion stack**: O(V) in worst case (linear graph)
+- **Overall**: O(V + E) dominated by graph storage
+
+### Simplified Explanation
+- **Time**: We visit each vertex once and examine each edge twice. Like inspecting a building - you check each room once and each doorway from both sides to understand the structural dependencies.
+- **Space**: We need to store the building blueprint plus some notes about when we first visited each room and the earliest room reachable from each location through the hallway network.
 
