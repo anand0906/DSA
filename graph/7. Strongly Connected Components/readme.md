@@ -662,3 +662,157 @@ Kosaraju’s algorithm is **not just about theory**. Anywhere you have a **direc
 ---
 
 
+# Kosaraju's Algorithm - Why DFS, Reverse, and DFS Again?
+
+Kosaraju’s Algorithm is used to find **Strongly Connected Components (SCCs)** in a directed graph.
+
+A **Strongly Connected Component (SCC)** is a subgraph where every node is reachable from every other node in the same subgraph.
+
+The algorithm works in three main steps:
+
+1. **DFS to record finishing times**
+2. **Reverse the graph**
+3. **DFS in the order of decreasing finishing times**
+
+Let’s break this down with intuition, reasoning, and examples.
+
+---
+
+## Step 1: DFS to Record Finishing Times
+
+* We first do a **DFS traversal** on the original graph.
+* The important part is the **finishing time** (when a node’s DFS call is completed).
+* We push nodes into a stack (or list) when they finish.
+
+👉 Why?
+
+* The finishing time ensures that we process **the right components first** when we move to the reversed graph.
+* A node that finishes last is the one that does **not depend on any other node outside its component**.
+
+📌 Example:
+
+```
+Graph:
+1 → 2 → 3
+↑       ↓
+└───────4
+```
+
+* If we run DFS:
+
+  * Start at 1 → visit 2 → visit 3 → visit 4 → backtrack.
+  * Finishing order: \[2, 4, 3, 1]
+* Here, node `1` finishes last, meaning it should be processed first in the reversed graph.
+
+---
+
+## Step 2: Reverse the Graph
+
+* We reverse the direction of every edge in the graph.
+* If the original graph has `u → v`, the reversed graph has `v → u`.
+
+👉 Why?
+
+* In the original graph, DFS follows outward edges, so finishing times tell us which node leads strongly connected groups.
+* In the reversed graph, DFS now explores **inward connections**, which allows us to capture the entire SCC.
+
+📌 Example (reversing the above graph):
+
+```
+Original:    Reversed:
+1 → 2        2 → 1
+2 → 3        3 → 2
+3 → 4        4 → 3
+4 → 1        1 → 4
+```
+
+* Notice: The reversed graph still keeps the cycle, but DFS starting in the right order will now reveal SCCs directly.
+
+---
+
+## Step 3: DFS in Decreasing Finishing Time Order
+
+* Now we pop nodes from the stack (based on finishing time order from Step 1).
+* For each unvisited node, perform DFS in the **reversed graph**.
+* Every DFS call will give exactly **one SCC**.
+
+👉 Why?
+
+* Because the reversed graph ensures we can only reach nodes **inside the same SCC**.
+* Processing nodes in the order of finishing time ensures that we discover larger SCCs first, and we never miss one.
+
+📌 Continuing Example:
+
+* Finishing order from Step 1: \[2, 4, 3, 1]
+* Start with `1` in reversed graph → DFS gives SCC = {1, 2, 3, 4}
+* No other nodes left.
+* Answer: one SCC = {1, 2, 3, 4}
+
+---
+
+## Different Cases
+
+### Case 1: Multiple SCCs
+
+```
+Graph:
+1 → 2 → 3
+↑         ↓
+└── 4 ←───
+
+5 → 6
+```
+
+* SCCs: {1,2,3,4} and {5,6}
+* Step 1: DFS gives finishing order: \[2,3,4,1,6,5]
+* Step 2: Reverse edges.
+* Step 3: DFS on reversed graph in finishing order:
+
+  * Start 5 → {5,6}
+  * Start 1 → {1,2,3,4}
+* Answer: Two SCCs found.
+
+### Case 2: Single SCC (all connected)
+
+```
+Graph:
+1 → 2 → 3 → 1
+```
+
+* All nodes form one SCC.
+* Any DFS in reversed graph will capture all nodes at once.
+
+### Case 3: Completely Disconnected Graph
+
+```
+Graph:
+1     2     3
+```
+
+* Each node is its own SCC.
+* Algorithm correctly identifies {1}, {2}, {3}.
+
+---
+
+## Summary (Why the Three Steps?)
+
+1. **DFS first (finishing times):**
+
+   * Helps identify a correct processing order.
+   * Nodes that finish last are “roots” of SCCs.
+
+2. **Reverse graph:**
+
+   * Changes direction so that DFS explores entire SCCs instead of moving out of them.
+
+3. **DFS again in finishing order:**
+
+   * Ensures we capture SCCs one by one without overlap.
+
+💡 Intuition:
+
+* Step 1 tells us the order to consider nodes.
+* Step 2 makes sure that we don’t escape the SCC.
+* Step 3 extracts SCCs cleanly.
+
+Thus, Kosaraju’s algorithm is essentially: **Finish times → Reverse → Extract SCCs.**
