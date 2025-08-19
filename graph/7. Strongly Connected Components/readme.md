@@ -1,15 +1,3 @@
-# Strongly Connected Components (SCC) - Complete Guide
-
-## Table of Contents
-1. [Strongly Connected Graph](#strongly-connected-graph)
-2. [Strongly Connected Components](#strongly-connected-components)
-3. [SCC in Directed vs Undirected Graphs](#scc-in-directed-vs-undirected-graphs)
-4. [Brute Force Solution using Floyd-Warshall](#brute-force-solution-using-floyd-warshall)
-5. [Graph Transpose and SCC Behavior](#graph-transpose-and-scc-behavior)
-6. [Visual Examples](#visual-examples)
-
----
-
 ## Strongly Connected Graph
 
 ### Definition
