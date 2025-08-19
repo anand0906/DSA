@@ -816,3 +816,356 @@ Graph:
 * Step 3 extracts SCCs cleanly.
 
 Thus, Kosaraju’s algorithm is essentially: **Finish times → Reverse → Extract SCCs.**
+
+
+---
+
+# Bridges in graph / Targan's Algorithm
+# Problem Description
+
+Given an undirected connected graph with V vertices and E edges, find all **bridges** in the graph. A bridge is an edge whose removal increases the number of connected components in the graph (i.e., disconnects the graph or makes some vertices unreachable from others).
+
+## Examples
+
+### Input
+```
+V = 4
+edges = [[0,1], [1,2], [2,0], [1,3]]
+```
+
+<img src="https://static.takeuforward.org/content/ProblemSetter-kfpw3bZG" />
+
+### Output
+```
+[[1,3]]
+```
+
+### Explanation
+The edge [1,3] is a bridge because removing it splits the graph into two components: {0,1,2} and {3}. All other edges are part of cycles and can be removed without disconnecting the graph.
+
+### Input
+```
+V = 3
+edges = [[0,1], [1,2], [2,0]]
+```
+<img src="https://static.takeuforward.org/content/ProblemSetter-xysZGNeR" />
+### Output
+```
+[]
+```
+
+### Explanation
+This graph forms a triangle (3-cycle). No edge is a bridge because removing any edge still leaves the graph connected through the other two edges.
+
+## Solution
+
+Use **Tarjan's Algorithm**: a DFS-based approach that tracks discovery times and lowest reachable times to identify bridges in O(V+E) time.
+
+## Intuition
+
+### The Core Insight: What Makes an Edge a Bridge?
+
+```
+Key Principle: An edge (u,v) is a bridge if and only if there's NO alternative path 
+between u and v that doesn't use this edge.
+
+In other words: If removing edge (u,v) isolates v (and its subtree) from u,
+then (u,v) is a bridge.
+```
+
+### Visual Understanding: Bridge vs Non-Bridge
+
+```
+Case 1: Bridge Edge
+    0---1---3
+        |
+        2
+
+Edge (1,3) is a bridge because:
+- Removing it isolates node 3
+- No alternative path exists from {0,1,2} to {3}
+
+Case 2: Non-Bridge Edge  
+    0---1---3
+    |   |   |
+    2---+---4
+
+Edge (1,3) is NOT a bridge because:
+- Alternative path exists: 1→0→2→4→3
+- Removing (1,3) doesn't disconnect the graph
+```
+
+### The Brilliant Tarjan's Algorithm Concept
+
+Tarjan's algorithm tracks two crucial timestamps for each node during DFS:
+
+```
+1. Discovery Time (tin[v]): When node v was first visited in DFS
+2. Low Time (low[v]): Earliest discovered node reachable from v's subtree
+
+Bridge Condition: Edge (u,v) is a bridge if low[v] > tin[u]
+```
+
+### Why This Condition Works: Deep Dive
+
+```
+Understanding low[v] > tin[u]:
+
+If low[v] > tin[u], it means:
+- Node v and its entire subtree cannot reach any ancestor of u
+- The only way to reach v from u's ancestors is through edge (u,v)
+- Therefore, removing (u,v) would disconnect v's subtree from the rest
+
+Visual Example:
+    DFS Tree with discovery times:
+    
+         0 (tin=1)
+         |
+         1 (tin=2) 
+         |
+         2 (tin=3)
+         |
+         3 (tin=4)
+
+If low[3] = 4 and tin[2] = 3:
+- low[3] > tin[2] means node 3 cannot reach node 2 or earlier
+- Edge (2,3) is a bridge!
+
+If low[3] = 1 and tin[2] = 3:  
+- low[3] < tin[2] means node 3 can reach node 0 (discovered at time 1)
+- There's a back edge! Edge (2,3) is NOT a bridge
+```
+
+### Step-by-Step Algorithm Walkthrough
+
+```
+Example Graph:
+    0---1---3
+        |   
+        2   
+
+Step 1: Start DFS from node 0
+timer = 1
+tin[0] = low[0] = 1
+visited[0] = true
+
+Step 2: Visit neighbor 1
+timer = 2  
+tin[1] = low[1] = 2
+visited[1] = true
+
+Step 3: From node 1, visit neighbor 2
+timer = 3
+tin[2] = low[2] = 3  
+visited[2] = true
+
+Step 4: From node 2, check neighbors
+- Neighbor 1 is parent, skip
+- No other unvisited neighbors
+- Return to node 1
+- Update: low[1] = min(low[1], low[2]) = min(2, 3) = 2
+- Check bridge condition: low[2] > tin[1]? → 3 > 2? → YES!
+- Edge (1,2) is a bridge ✓
+
+Step 5: From node 1, visit neighbor 3  
+timer = 4
+tin[3] = low[3] = 4
+visited[3] = true
+
+Step 6: From node 3, check neighbors
+- Neighbor 1 is parent, skip  
+- Return to node 1
+- Update: low[1] = min(low[1], low[3]) = min(2, 4) = 2
+- Check bridge condition: low[3] > tin[1]? → 4 > 2? → YES!
+- Edge (1,3) is a bridge ✓
+
+Final Result: Bridges = [(1,2), (1,3)]
+```
+
+### Handling Back Edges: The Non-Bridge Case
+
+```
+Example with Back Edge (no bridges):
+    0---1
+    |   |  
+    2---+
+
+DFS Traversal:
+Step 1: Visit 0 (tin[0]=1, low[0]=1)
+Step 2: Visit 1 (tin[1]=2, low[1]=2)  
+Step 3: Visit 2 (tin[2]=3, low[2]=3)
+Step 4: From 2, find neighbor 0 (already visited, not parent)
+        This is a BACK EDGE!
+        Update: low[2] = min(low[2], tin[0]) = min(3, 1) = 1
+Step 5: Return to 1: low[1] = min(low[1], low[2]) = min(2, 1) = 1
+        Check: low[2] > tin[1]? → 1 > 2? → NO! 
+        Edge (1,2) is NOT a bridge
+Step 6: Return to 0: low[0] = min(low[0], low[1]) = min(1, 1) = 1
+        Check: low[1] > tin[0]? → 1 > 1? → NO!
+        Edge (0,1) is NOT a bridge
+
+Result: No bridges (cycle detected via back edge)
+```
+
+### Why Tarjan's Algorithm is Genius
+
+```
+🎯 Single DFS Pass: Unlike naive approaches that try removing each edge,
+   Tarjan's algorithm finds all bridges in just one DFS traversal!
+
+🧠 Smart Timestamps: The low[] array cleverly tracks reachability without
+   explicitly finding all paths.
+
+⚡ Optimal Complexity: O(V+E) time - you can't do better than visiting
+   each vertex and edge once!
+
+🔗 Handles All Cases: Automatically distinguishes between:
+   - Tree edges (potential bridges)
+   - Back edges (cycle indicators, prevent bridges)
+   - Cross edges (in directed graphs)
+
+The algorithm essentially asks: "If I remove this edge, can the subtree
+still reach the ancestors?" If not, it's a bridge!
+```
+
+## Approach Steps
+
+1. **Initialize data structures**:
+   - Build adjacency list from edge list
+   - Create arrays: `tin[]` (discovery time), `low[]` (lowest reachable time), `visited[]`
+   - Initialize timer counter and result list
+
+2. **Start DFS from each unvisited node**:
+   - Set discovery and low time for current node
+   - Mark as visited and increment timer
+
+3. **For each neighbor of current node**:
+   - Skip if neighbor is parent (avoid immediate backtrack)
+   - If unvisited: recursively call DFS
+   - If visited: update low time (back edge detected)
+
+4. **Check bridge condition after each recursive call**:
+   - If `low[neighbor] > tin[current]`, edge is a bridge
+   - Add bridge to result list
+
+5. **Update low time**:
+   - `low[current] = min(low[current], low[neighbor])`
+
+## Code
+
+```python
+class Solution:
+    def criticalConnections(self, n, connections):
+        # Step 1: Build adjacency list
+        graph = [[] for _ in range(n)]
+        for u, v in connections:
+            graph[u].append(v)
+            graph[v].append(u)
+        
+        # Step 2: Initialize arrays
+        tin = [0] * n      # Discovery time
+        low = [0] * n      # Lowest reachable time  
+        visited = [False] * n
+        bridges = []
+        timer = [0]        # Use list to make it mutable in nested function
+        
+        def dfs(node, parent):
+            # Mark current node as visited
+            visited[node] = True
+            timer[0] += 1
+            tin[node] = low[node] = timer[0]
+            
+            # Explore all neighbors
+            for neighbor in graph[node]:
+                # Skip parent to avoid immediate backtrack
+                if neighbor == parent:
+                    continue
+                
+                if not visited[neighbor]:
+                    # Tree edge: recursively visit unvisited neighbor
+                    dfs(neighbor, node)
+                    
+                    # Update low time after returning from recursion
+                    low[node] = min(low[node], low[neighbor])
+                    
+                    # Check bridge condition
+                    if low[neighbor] > tin[node]:
+                        bridges.append([node, neighbor])
+                        
+                else:
+                    # Back edge: neighbor is visited and not parent
+                    low[node] = min(low[node], tin[neighbor])
+        
+        # Step 3: Start DFS from each unvisited node (handles disconnected components)
+        for i in range(n):
+            if not visited[i]:
+                dfs(i, -1)  # -1 indicates no parent for starting node
+        
+        return bridges
+
+# Alternative implementation with cleaner structure
+class SolutionOptimized:
+    def criticalConnections(self, n, connections):
+        # Build adjacency list using sets for faster lookups
+        graph = [set() for _ in range(n)]
+        for u, v in connections:
+            graph[u].add(v)
+            graph[v].add(u)
+        
+        tin = [0] * n
+        low = [0] * n  
+        visited = [False] * n
+        bridges = []
+        time = 0
+        
+        def tarjan_dfs(u, parent):
+            nonlocal time
+            visited[u] = True
+            time += 1
+            tin[u] = low[u] = time
+            
+            for v in graph[u]:
+                if v == parent:
+                    continue
+                    
+                if visited[v]:
+                    # Back edge
+                    low[u] = min(low[u], tin[v])
+                else:
+                    # Tree edge
+                    tarjan_dfs(v, u)
+                    low[u] = min(low[u], low[v])
+                    
+                    # Bridge condition
+                    if low[v] > tin[u]:
+                        bridges.append([u, v])
+        
+        # Handle all connected components
+        for i in range(n):
+            if not visited[i]:
+                tarjan_dfs(i, -1)
+                
+        return bridges
+```
+
+## Time and Space Complexity
+
+### Time Complexity: **O(V + E)**
+- **Single DFS traversal**: Each vertex visited exactly once
+- **Edge processing**: Each edge examined exactly twice (once from each endpoint)  
+- **Bridge checking**: Constant time per edge
+- **Overall**: Optimal - cannot do better than visiting each vertex and edge
+
+### Space Complexity: **O(V + E)**
+- **Adjacency list**: O(V + E) for storing the graph
+- **Arrays**: O(V) for tin[], low[], visited[] arrays
+- **Recursion stack**: O(V) in worst case (linear graph)
+- **Result storage**: O(E) in worst case (when all edges are bridges)
+
+### Simplified Explanation
+- **Time**: We visit each vertex once and examine each edge twice (from both endpoints). Like surveying a road network - you drive each road segment once in each direction to map it completely.
+- **Space**: We need to store the road network map, plus some bookkeeping about when we first visited each intersection and the earliest intersection reachable from each location.
+
+---
+
+
