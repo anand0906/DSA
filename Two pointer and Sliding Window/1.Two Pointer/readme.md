@@ -1,4 +1,4 @@
-# Two Pointer & Sliding Window - Problem Solutions
+# Two Pointer & Sliding Window
 
 ## 📋 Table of Contents
 1. [Container With Most Water](#container-with-most-water)
