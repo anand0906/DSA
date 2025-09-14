@@ -1,7 +1,3 @@
-# Array Problems Collection 📚
-
-A comprehensive collection of common array manipulation problems with multiple solution approaches, detailed explanations, and complexity analysis.
-
 ## Table of Contents
 1. [Move All Zeros to End](#1-move-all-zeros-to-end)
 2. [Remove Duplicates from Sorted Array](#2-remove-duplicates-from-sorted-array)
