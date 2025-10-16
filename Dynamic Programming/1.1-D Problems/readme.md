@@ -2265,4 +2265,1189 @@ print("Tabulation:", tabulation(n, heights, k))
 ```
 
 ---
+# Maximum Sum of Non-Adjacent Elements
+
+## Problem Statement
+
+Given an integer array **nums** of size **n**. Return the **maximum sum possible** using the elements of nums such that **no two elements taken are adjacent** in nums.
+
+**Note:** A subsequence of an array is a list with elements of the array where some elements are deleted (or not deleted at all) and the elements should be in the same order in the subsequence as in the array.
+
+### Examples:
+
+**Example 1:**
+```
+Input: nums = [1, 2, 4]
+Output: 5
+Explanation:
+[1, 2, 4] → Take elements at index 0 and 2
+Maximum sum = 1 + 4 = 5
+```
+
+**Example 2:**
+```
+Input: nums = [2, 1, 4, 9]
+Output: 11
+Explanation:
+[2, 1, 4, 9] → Take elements at index 0 and 2
+Maximum sum = 2 + 9 = 11
+```
+
+**Example 3:**
+```
+Input: nums = [1, 2, 3, 4]
+Output: 6
+Explanation:
+[1, 2, 3, 4] → Take elements at index 1 and 3
+Maximum sum = 2 + 4 = 6
+```
+
+---
+
+## Step 1: Define The Problem
+
+- Given an array of **N positive integers**
+- We need to find the **maximum sum** of elements
+- **Constraint:** No two selected elements should be adjacent to each other in the array
+
+**Example:** For arr = [1, 2, 3, 4]
+
+**Valid non-adjacent subsequences:**
+- [1, 3] → sum = 4
+- [1, 4] → sum = 5
+- [2, 4] → sum = 6 ✓ (maximum)
+- [1] → sum = 1
+- [2] → sum = 2
+- [3] → sum = 3
+- [4] → sum = 4
+
+**Invalid subsequence:**
+- [1, 2] → Adjacent elements
+- [2, 3] → Adjacent elements
+- [3, 4] → Adjacent elements
+
+---
+
+## Step 2: Represent the Problem Programmatically
+
+- Given an array where each element has an **index**
+- **Function notation:** f(index) = maximum sum of non-adjacent elements from index 0 to index
+- **Goal:** Find f(n-1), where n = size of array
+- This represents the maximum sum we can achieve considering all elements from start to end
+
+---
+
+## Step 3: Finding Base Cases
+
+**Case 1: Array with 1 element**
+- Only one element exists, no adjacency issue
+- We must take that element
+- **f(0) = arr[0]**
+
+**Case 2: Array with 2 elements**
+- Both elements are adjacent to each other
+- We can only pick one of them
+- Pick the maximum of the two
+- **f(1) = max(arr[0], arr[1])**
+
+**Base cases summary:**
+```
+f(0) = arr[0]
+f(1) = max(arr[0], arr[1])
+```
+
+---
+
+## Step 4: Finding The Recurrence Relation
+
+Let's solve for a small example: **arr = [1, 2, 3]**
+
+**Known base cases:**
+- f(0) = arr[0] = 1 (maximum sum at index 0)
+- f(1) = max(arr[0], arr[1]) = max(1, 2) = 2 (maximum sum from index 0 to 1)
+
+**Finding f(2)** (maximum sum from index 0 to 2):
+
+At index 2, we have **two choices**:
+
+### Choice 1: Include element at index 2
+- If we include arr[2] = 3, we **cannot** include arr[1] (adjacent)
+- We can only add the maximum sum from index 0 (which is before the adjacent position)
+- **Include = arr[2] + f(0) = 3 + 1 = 4**
+
+### Choice 2: Exclude element at index 2
+- If we don't include arr[2], we take the maximum sum up to index 1
+- **Exclude = f(1) = 2**
+
+### Final Answer:
+- f(2) = max(Include, Exclude) = max(4, 2) = **4**
+
+### ✅ Recurrence Relation:
+```
+f(n) = max(
+    arr[n] + f(n-2),    // Include current element
+    f(n-1)              // Exclude current element
+)
+```
+
+**Breaking it down:**
+- **Include current element:** arr[n] + f(n-2)
+  - Add current element value
+  - Add maximum sum from 2 positions back (skip adjacent)
+  
+- **Exclude current element:** f(n-1)
+  - Don't add current element
+  - Take maximum sum up to previous index
+
+**Final:** Take the maximum of both choices
+
+---
+
+## Recursion Tree Visualization
+
+### Example: arr = [2, 1, 4, 9]
+
+```
+                                f(3)
+                          /              \
+                         /                \
+                    Include 9           Exclude 9
+                   arr[3]+f(1)             f(2)
+                      /                  /      \
+                     /                  /        \
+                  f(1)              Include 4   Exclude 4
+                 /    \            arr[2]+f(0)    f(1)
+                /      \              /           /   \
+           Include 1  Exclude 1     f(0)     Include 1  Exclude 1
+          arr[1]+f(-1)  f(0)        |        arr[1]+f(-1) f(0)
+              |          |           |           |          |
+              1          2           2           1          2
+
+Calculations:
+f(0) = arr[0] = 2 (base case)
+f(1) = max(arr[0], arr[1]) = max(2, 1) = 2 (base case)
+
+f(2) = max(
+    arr[2] + f(0) = 4 + 2 = 6,   // Include 4
+    f(1) = 2                      // Exclude 4
+) = 6
+
+f(3) = max(
+    arr[3] + f(1) = 9 + 2 = 11,  // Include 9
+    f(2) = 6                      // Exclude 9
+) = 11
+
+Answer: 11
+```
+
+### Analysis:
+
+**Redundant Computations:**
+- f(2) is calculated **1 time**
+- f(1) is calculated **3 times**
+- f(0) is calculated **2 times**
+
+**Optimal path:** Take elements at index 0 and 3 → [2, 9] → sum = 11
+
+### Key Observation:
+Each subproblem (f(i)) is computed multiple times in the recursion tree, making it inefficient. Dynamic Programming eliminates this redundancy.
+
+---
+
+## Solution 1: Recursive Approach (Naive)
+
+This is the direct implementation of our recurrence relation with two choices at each step.
+
+### Code:
+```python
+def solve(n, arr):
+    # Base cases
+    if n == 0:
+        return arr[0]
+    if n == 1:
+        return max(arr[0], arr[1])
+    
+    # Choice 1: Include current element
+    include = arr[n] + solve(n - 2, arr)
+    
+    # Choice 2: Exclude current element
+    exclude = solve(n - 1, arr)
+    
+    # Return maximum of both choices
+    return max(include, exclude)
+
+# Driver Code
+arr = [2, 1, 4, 9]
+n = len(arr)
+print(solve(n - 1, arr))
+```
+
+### How It Works:
+For each index n:
+1. **Include option:** Take current element + maximum from (n-2)
+2. **Exclude option:** Take maximum from (n-1)
+3. Return the larger of the two
+
+### Complexity:
+- **Time Complexity:** O(2^n) - Binary tree recursion
+- **Space Complexity:** O(n) - Recursion stack depth
+
+### Pros & Cons:
+✅ Simple and intuitive
+✅ Directly models the problem as "include or exclude"
+✅ Clear two-choice logic
+❌ Extremely slow for large inputs
+❌ Many redundant calculations
+❌ Exponential time complexity
+
+---
+
+## Solution 2: Memoization (Top-Down DP)
+
+### The Idea:
+Cache the maximum sum for each index. Once computed for an index, reuse it instead of recalculating.
+
+### How We Convert from Recursion:
+1. **Keep the recursive structure** - Same include/exclude logic
+2. **Add memo array** - Store computed maximum sums
+3. **Check before computing** - If memo[n] != -1, return it
+4. **Store after computing** - Save the maximum in memo[n]
+
+### Code:
+```python
+def solve_memo(n, arr, memo):
+    # CHECK: Already computed?
+    if memo[n] != -1:
+        return memo[n]
+    
+    # Base cases (same as recursive)
+    if n == 0:
+        return arr[0]
+    if n == 1:
+        return max(arr[0], arr[1])
+    
+    # Choice 1: Include current element (same as recursive)
+    include = arr[n] + solve_memo(n - 2, arr, memo)
+    
+    # Choice 2: Exclude current element (same as recursive)
+    exclude = solve_memo(n - 1, arr, memo)
+    
+    # STORE: Save result before returning
+    memo[n] = max(include, exclude)
+    return memo[n]
+
+# Driver Code
+arr = [2, 1, 4, 9]
+n = len(arr)
+memo = [-1] * n
+print(solve_memo(n - 1, arr, memo))
+```
+
+### What Changed:
+```
+Recursive:                          Memoization:
+───────────────────────            ────────────────────────────────
+def solve(n, arr):                 def solve_memo(n, arr, memo):
+                                       if memo[n] != -1:        ← Check cache
+                                           return memo[n]
+    if n == 0:                         if n == 0:
+        return arr[0]                      return arr[0]
+    if n == 1:                         if n == 1:
+        return max(arr[0], arr[1])         return max(arr[0], arr[1])
+    include = arr[n] + solve(n-2)      include = arr[n] + solve_memo(n-2, memo)
+    exclude = solve(n-1)               exclude = solve_memo(n-1, memo)
+                                       memo[n] = max(include, exclude)  ← Store
+    return max(include, exclude)       return memo[n]
+```
+
+### How It Works (Example: arr=[2,1,4,9]):
+```
+Call f(3):
+  → Try include: Need f(1)
+    → f(1) = max(2, 1) = 2 (base case)
+    → include = 9 + 2 = 11
+  → Try exclude: Need f(2) - NOT in memo
+    → f(2) tries:
+      → include: arr[2] + f(0) = 4 + 2 = 6
+      → exclude: f(1) = 2 (already computed!)
+      → f(2) = max(6, 2) = 6, STORE memo[2]=6
+    → exclude = 6
+  → f(3) = max(11, 6) = 11, STORE memo[3]=11
+
+Each index's maximum sum is computed only once!
+```
+
+### Complexity:
+- **Time Complexity:** O(n) - Each subproblem computed once
+- **Space Complexity:** O(n) - Memo array + recursion stack
+
+### Pros & Cons:
+✅ Much faster than naive recursion
+✅ Each subproblem computed only once
+✅ Easy to convert from recursive solution
+✅ Maintains the include/exclude logic clarity
+❌ Still uses recursion stack
+❌ Uses O(n) extra space
+
+---
+
+## Solution 3: Tabulation (Bottom-Up DP)
+
+### The Idea:
+Build the solution iteratively from the start (index 0) to the end (index n-1). For each index, calculate the maximum sum by considering include/exclude choices.
+
+### How We Convert from Memoization:
+1. **Remove recursion** - Use a loop instead
+2. **Create DP array** - dp[i] = maximum sum from index 0 to i
+3. **Fill base cases** - dp[0] = arr[0], dp[1] = max(arr[0], arr[1])
+4. **Loop from index 2 to n-1** - Apply recurrence relation
+5. **Each step uses previously computed values** - No backward calls
+
+### Code:
+```python
+def tabulation(n, arr):
+    # Handle edge case
+    if n == 1:
+        return arr[0]
+    
+    # Create DP array
+    dp = [0] * n
+    
+    # Fill base cases
+    dp[0] = arr[0]
+    dp[1] = max(arr[0], arr[1])
+    
+    # Build up from index 2 to n-1
+    for i in range(2, n):
+        # Choice 1: Include current element
+        include = arr[i] + dp[i - 2]
+        
+        # Choice 2: Exclude current element
+        exclude = dp[i - 1]
+        
+        # Store maximum of both choices
+        dp[i] = max(include, exclude)
+    
+    return dp[n - 1]
+
+# Driver Code
+arr = [2, 1, 4, 9]
+n = len(arr)
+print(tabulation(n, arr))
+```
+
+### What Changed:
+```
+Memoization:                        Tabulation:
+──────────────────────────         ──────────────────────────────────
+def solve_memo(n, arr, memo):      def tabulation(n, arr):
+    if memo[n] != -1:                  if n == 1:
+        return memo[n]                     return arr[0]
+    if n == 0:                         dp = [0] * n
+        return arr[0]                  dp[0] = arr[0]         ← Fill base
+    if n == 1:                         dp[1] = max(arr[0], arr[1])
+        return max(arr[0], arr[1])     for i in range(2, n):  ← Loop
+    include = arr[n] + solve_memo          include = arr[i] + dp[i-2]
+    exclude = solve_memo(n-1)              exclude = dp[i-1]
+    memo[n] = max(include, exclude)        dp[i] = max(include, exclude)
+    return memo[n]                     return dp[n-1]
+```
+
+### How It Works (Example: arr=[2,1,4,9]):
+```
+Step 1: Initialize
+        dp = [0, 0, 0, 0]
+
+Step 2: Fill base cases
+        dp = [2, 2, 0, 0]
+             ↑  ↑
+          f(0) f(1)
+        f(0) = arr[0] = 2
+        f(1) = max(arr[0], arr[1]) = max(2, 1) = 2
+
+Step 3: Build iteratively
+
+i=2: 
+  include = arr[2] + dp[0] = 4 + 2 = 6
+  exclude = dp[1] = 2
+  dp[2] = max(6, 2) = 6
+  dp = [2, 2, 6, 0]
+  
+  Interpretation: Max sum from index 0 to 2 is 6 (take arr[0] and arr[2])
+
+i=3:
+  include = arr[3] + dp[1] = 9 + 2 = 11
+  exclude = dp[2] = 6
+  dp[3] = max(11, 6) = 11
+  dp = [2, 2, 6, 11]
+  
+  Interpretation: Max sum from index 0 to 3 is 11 (take arr[0] and arr[3])
+
+Return dp[3] = 11
+```
+
+### Visual Representation:
+```
+Array:  [2, 1, 4, 9]
+Index:   0  1  2  3
+
+Building dp array:
+dp[0] = 2               (take element 0)
+dp[1] = max(2, 1) = 2   (take element 0)
+dp[2] = max(4+2, 2) = 6 (take elements 0,2)
+dp[3] = max(9+2, 6) = 11 (take elements 0,3)
+
+At each index i, we decide:
+  - Include arr[i]: Add to dp[i-2] (skip adjacent)
+  - Exclude arr[i]: Take dp[i-1] (best so far)
+```
+
+### Complexity:
+- **Time Complexity:** O(n) - Single loop through array
+- **Space Complexity:** O(n) - DP array only
+
+### Pros & Cons:
+✅ Fast and efficient
+✅ No recursion stack overhead
+✅ Clear iterative logic
+✅ Easy to trace and debug
+✅ Can see the entire dp array progression
+❌ Uses O(n) space
+
+---
+
+## Solution 4: Space Optimized (Best Solution)
+
+### The Idea:
+Looking at the recurrence relation, to calculate dp[i], we only need:
+- **dp[i-1]** (exclude current)
+- **dp[i-2]** (include current)
+
+We don't need the entire array! Just keep track of the last two values.
+
+### How We Convert from Tabulation:
+1. **Identify what we actually need** - Only last 2 values
+2. **Replace array with 2 variables** - prev2 (i-2) and prev (i-1)
+3. **Update variables in each iteration** - Shift values forward
+4. **Same loop logic** - Just different storage
+
+### Code:
+```python
+def optimized(n, arr):
+    # Handle edge case
+    if n == 1:
+        return arr[0]
+    
+    # Initialize with base cases
+    prev2 = arr[0]                    # dp[0]
+    prev = max(arr[0], arr[1])        # dp[1]
+    
+    # Build up from index 2 to n-1
+    for i in range(2, n):
+        # Choice 1: Include current element
+        include = arr[i] + prev2
+        
+        # Choice 2: Exclude current element
+        exclude = prev
+        
+        # Current maximum
+        current = max(include, exclude)
+        
+        # Shift values for next iteration
+        prev2 = prev
+        prev = current
+    
+    return prev
+
+# Driver Code
+arr = [2, 1, 4, 9]
+n = len(arr)
+print(optimized(n, arr))
+```
+
+### What Changed:
+```
+Tabulation:                         Space Optimized:
+───────────────────────            ────────────────────────────────
+def tabulation(n, arr):            def optimized(n, arr):
+    if n == 1:                         if n == 1:
+        return arr[0]                      return arr[0]
+    dp = [0] * n                       prev2 = arr[0]        ← Just 2 vars
+    dp[0] = arr[0]                     prev = max(arr[0], arr[1])
+    dp[1] = max(arr[0], arr[1])        for i in range(2, n):
+    for i in range(2, n):                  include = arr[i] + prev2
+        include = arr[i] + dp[i-2]         exclude = prev
+        exclude = dp[i-1]                  current = max(include, exclude)
+        dp[i] = max(include, exclude)      prev2 = prev       ← Shift values
+    return dp[n-1]                         prev = current
+                                       return prev
+```
+
+### How It Works (Example: arr=[2,1,4,9]):
+```
+Initial state:
+  prev2 = arr[0] = 2
+  prev = max(arr[0], arr[1]) = max(2, 1) = 2
+
+i=2:
+  include = arr[2] + prev2 = 4 + 2 = 6
+  exclude = prev = 2
+  current = max(6, 2) = 6
+  Shift: prev2 = 2 → prev2 = prev = 2
+         prev = 2 → prev = current = 6
+  State: prev2=2, prev=6
+
+i=3:
+  include = arr[3] + prev2 = 9 + 2 = 11
+  exclude = prev = 6
+  current = max(11, 6) = 11
+  Shift: prev2 = 6 → prev2 = prev = 6
+         prev = 6 → prev = current = 11
+  State: prev2=6, prev=11
+
+Return prev = 11
+```
+
+### Visual Representation of Sliding Window:
+```
+Array: [2, 1, 4, 9]
+
+Initial:
+  [prev2=2] [prev=2] [?] [?]
+     ↑        ↑
+   dp[0]    dp[1]
+
+i=2:
+  [  2  ] [prev2=2] [prev=6] [?]
+                      ↑
+              current calculated
+
+i=3:
+  [  2  ] [  2  ] [prev2=6] [prev=11]
+                               ↑
+                      current calculated
+
+Only keep the "sliding window" of last 2 values!
+```
+
+### Complexity:
+- **Time Complexity:** O(n) - Single loop
+- **Space Complexity:** O(1) - Only 2-3 variables!
+
+### Pros & Cons:
+✅ Optimal time complexity
+✅ Minimal space usage - constant space!
+✅ No recursion
+✅ No extra arrays
+✅ Same logic as tabulation
+✅ **Best solution overall**
+
+---
+
+## Summary of Transformations
+
+### Recursion → Memoization:
+- **Add memo array** to cache maximum sums
+- **Check memo[n]** before computing
+- **Store result** in memo[n] after finding max of include/exclude
+- **Same two-choice logic** preserved
+
+### Memoization → Tabulation:
+- **Remove recursion** - use loop from 2 to n-1
+- **Fill base cases first** - dp[0] and dp[1]
+- **Apply same recurrence** - include/exclude at each step
+- **Bottom-up building** - each dp[i] uses dp[i-1] and dp[i-2]
+
+### Tabulation → Space Optimization:
+- **Identify dependency** - only need last 2 values
+- **Replace array with 2 variables** - prev2 and prev
+- **Shift values in each iteration** - maintain sliding window
+- **Same include/exclude logic** - just different storage
+
+---
+
+## Key Insights
+
+### Problem Pattern:
+This is a classic **"Pick or Not Pick"** DP pattern:
+- At each element, we have two choices
+- Picking has a constraint (no adjacent)
+- We want to maximize/minimize some value
+
+### Similar Problems:
+- House Robber
+- Delete and Earn
+- Paint House
+- Maximum Product Subarray (with modifications)
+
+### Core Concept:
+```
+Decision at each index:
+  ┌─────────────────┐
+  │  Include arr[i] │ → Add arr[i] + dp[i-2]
+  │       OR        │
+  │  Exclude arr[i] │ → Take dp[i-1]
+  └─────────────────┘
+         Take MAX
+```
+
+---
+
+## Complete Working Code
+
+```python
+# Solution 1: Recursive
+def solve(n, arr):
+    if n == 0:
+        return arr[0]
+    if n == 1:
+        return max(arr[0], arr[1])
+    include = arr[n] + solve(n - 2, arr)
+    exclude = solve(n - 1, arr)
+    return max(include, exclude)
+
+# Solution 2: Memoization
+def solve_memo(n, arr, memo):
+    if memo[n] != -1:
+        return memo[n]
+    if n == 0:
+        return arr[0]
+    if n == 1:
+        return max(arr[0], arr[1])
+    include = arr[n] + solve_memo(n - 2, arr, memo)
+    exclude = solve_memo(n - 1, arr, memo)
+    memo[n] = max(include, exclude)
+    return memo[n]
+
+# Solution 3: Tabulation
+def tabulation(n, arr):
+    if n == 1:
+        return arr[0]
+    dp = [0] * n
+    dp[0] = arr[0]
+    dp[1] = max(arr[0], arr[1])
+    for i in range(2, n):
+        include = arr[i] + dp[i - 2]
+        exclude = dp[i - 1]
+        dp[i] = max(include, exclude)
+    return dp[n - 1]
+
+# Solution 4: Space Optimized
+def optimized(n, arr):
+    if n == 1:
+        return arr[0]
+    prev2 = arr[0]
+    prev = max(arr[0], arr[1])
+    for i in range(2, n):
+        include = arr[i] + prev2
+        exclude = prev
+        current = max(include, exclude)
+        prev2 = prev
+        prev = current
+    return prev
+
+# Driver Code
+arr = [2, 1, 4, 9]
+n = len(arr)
+print("Recursive:", solve(n - 1, arr))
+print("Memoization:", solve_memo(n - 1, arr, [-1] * n))
+print("Tabulation:", tabulation(n, arr))
+print("Optimized:", optimized(n, arr))
+```
+
+---
+
+# House Robber (Circular Street)
+
+## Problem Statement
+
+A robber is targeting to rob houses from a street. Each house has security measures that **alert the police when two adjacent houses are robbed**. 
+
+The houses are arranged in a **circular manner**, thus the **first and last houses are adjacent to each other**.
+
+Given an integer array **money**, where **money[i]** represents the amount of money that can be looted from the **(i+1)th house**. 
+
+Return the **maximum amount of money** that the robber can loot without alerting the police.
+
+### Examples:
+
+**Example 1:**
+```
+Input: money = [2, 1, 4, 9]
+Output: 10
+Explanation:
+[2, 1, 4, 9] → Rob houses at index 1 and 3
+Maximum loot = 1 + 9 = 10
+Note: We cannot loot the 1st (index 0) and 4th (index 3) houses together
+because they are adjacent in circular arrangement.
+```
+
+**Example 2:**
+```
+Input: money = [1, 5, 2, 1, 6]
+Output: 11
+Explanation:
+[1, 5, 2, 1, 6] → Rob houses at index 1 and 4
+Maximum loot = 5 + 6 = 11
+```
+
+---
+
+## Step 1: Understanding the Circular Constraint
+
+### Previous Problem vs Current Problem:
+
+**Previous (Linear Street):**
+```
+Houses: [2, 1, 4, 9]
+Layout: 2 — 1 — 4 — 9
+        ↑               (no connection)
+```
+- First and last houses are NOT adjacent
+- We can rob both house 0 and house 3 if we skip middle houses
+
+**Current (Circular Street):**
+```
+Houses: [2, 1, 4, 9]
+Layout:     2 — 1
+            |     |
+            9 — 4
+```
+- First and last houses ARE adjacent (connected in a circle)
+- We **CANNOT** rob both house 0 and house 3 together
+
+### Key Insight:
+Due to the circular arrangement, **we cannot consider the first and last elements simultaneously** in our answer.
+
+This gives us two scenarios:
+1. **Include first house** → Cannot include last house
+2. **Include last house** → Cannot include first house
+
+---
+
+## Step 2: Breaking Down the Problem
+
+Since we can't include both first and last houses, we solve two separate subproblems:
+
+### Scenario 1: Exclude the Last House
+- Consider houses: **[0, 1, 2, ..., n-2]** (exclude house n-1)
+- This means we can potentially include the first house
+- Array becomes: `arr[0:n-1]` or `money[:-1]`
+- Find maximum sum of non-adjacent elements in this array
+- Call this answer **ans1**
+
+### Scenario 2: Exclude the First House
+- Consider houses: **[1, 2, 3, ..., n-1]** (exclude house 0)
+- This means we can potentially include the last house
+- Array becomes: `arr[1:n]` or `money[1:]`
+- Find maximum sum of non-adjacent elements in this array
+- Call this answer **ans2**
+
+### Final Answer:
+```
+Maximum money = max(ans1, ans2)
+```
+
+We take the maximum of both scenarios because one of them will give us the optimal answer.
+
+---
+
+## Step 3: Visual Representation
+
+### Example: money = [2, 1, 4, 9]
+
+**Original Circular Arrangement:**
+```
+        2 — 1
+        |     |
+        9 — 4
+        
+First (2) and Last (9) are adjacent!
+```
+
+**Scenario 1: Exclude Last House**
+```
+Linear Array: [2, 1, 4]
+              
+Can rob: 2 and 4 → Sum = 6
+```
+
+**Scenario 2: Exclude First House**
+```
+Linear Array: [1, 4, 9]
+              
+Can rob: 1 and 9 → Sum = 10 ✓
+```
+
+**Final Answer:** max(6, 10) = **10**
+
+---
+
+## Step 4: The Core Algorithm (from Previous Problem)
+
+We use the **Maximum Sum of Non-Adjacent Elements** algorithm from the previous problem for each scenario.
+
+### Optimized Space Solution:
+```python
+def optimized(n, arr):
+    # Handle edge case
+    if n == 1:
+        return arr[0]
+    
+    # Initialize with base cases
+    prev2 = arr[0]                    # dp[0]
+    prev = max(arr[0], arr[1])        # dp[1]
+    
+    # Build up from index 2 to n-1
+    for i in range(2, n):
+        # Include current house
+        include = arr[i] + prev2
+        
+        # Exclude current house
+        exclude = prev
+        
+        # Take maximum
+        current = max(include, exclude)
+        
+        # Shift values for next iteration
+        prev2 = prev
+        prev = current
+    
+    return prev
+```
+
+This function finds the maximum sum of non-adjacent elements in a **linear array**.
+
+---
+
+## Complete Solution
+
+### Code:
+```python
+def optimized(n, arr):
+    """
+    Find maximum sum of non-adjacent elements in a linear array
+    """
+    if n == 1:
+        return arr[0]
+    
+    prev2 = arr[0]
+    prev = max(arr[0], arr[1])
+    
+    for i in range(2, n):
+        include = arr[i] + prev2
+        exclude = prev
+        current = max(include, exclude)
+        prev2 = prev
+        prev = current
+    
+    return prev
+
+class Solution:
+    def houseRobber(self, money):
+        arr = money
+        n = len(arr)
+        
+        # Edge case: Only one house
+        if n == 1:
+            return arr[0]
+        
+        # Scenario 1: Exclude last house (can include first)
+        ans1 = optimized(n - 1, arr[:n-1])  # arr[0] to arr[n-2]
+        
+        # Scenario 2: Exclude first house (can include last)
+        ans2 = optimized(n - 1, arr[1:])    # arr[1] to arr[n-1]
+        
+        # Return maximum of both scenarios
+        return max(ans1, ans2)
+
+# Driver Code
+solution = Solution()
+money = [2, 1, 4, 9]
+print(solution.houseRobber(money))
+```
+
+---
+
+## Step-by-Step Execution
+
+### Example: money = [2, 1, 4, 9]
+
+**Step 1: Check edge case**
+- n = 4, so we proceed
+
+**Step 2: Scenario 1 - Exclude last house**
+```
+Array: [2, 1, 4] (exclude 9)
+n = 3
+
+Execution of optimized(3, [2, 1, 4]):
+  Initial:
+    prev2 = arr[0] = 2
+    prev = max(arr[0], arr[1]) = max(2, 1) = 2
+  
+  i=2:
+    include = arr[2] + prev2 = 4 + 2 = 6
+    exclude = prev = 2
+    current = max(6, 2) = 6
+    prev2 = 2, prev = 6
+  
+  Return prev = 6
+
+ans1 = 6 (rob houses at index 0 and 2: [2, 4])
+```
+
+**Step 3: Scenario 2 - Exclude first house**
+```
+Array: [1, 4, 9] (exclude 2)
+n = 3
+
+Execution of optimized(3, [1, 4, 9]):
+  Initial:
+    prev2 = arr[0] = 1
+    prev = max(arr[0], arr[1]) = max(1, 4) = 4
+  
+  i=2:
+    include = arr[2] + prev2 = 9 + 1 = 10
+    exclude = prev = 4
+    current = max(10, 4) = 10
+    prev2 = 4, prev = 10
+  
+  Return prev = 10
+
+ans2 = 10 (rob houses at index 0 and 2 of this array: [1, 9])
+           (which are index 1 and 3 in original array)
+```
+
+**Step 4: Final answer**
+```
+max(ans1, ans2) = max(6, 10) = 10
+```
+
+---
+
+## Another Example: money = [1, 5, 2, 1, 6]
+
+**Circular Arrangement:**
+```
+        1 — 5
+        |     |
+        6 — 1
+          |
+          2
+```
+
+**Scenario 1: Exclude last house (6)**
+```
+Array: [1, 5, 2, 1]
+
+Optimal: Rob houses at index 1 and 3 → [5, 1] → Sum = 6
+ans1 = 6
+```
+
+**Scenario 2: Exclude first house (1)**
+```
+Array: [5, 2, 1, 6]
+
+Optimal: Rob houses at index 0 and 3 → [5, 6] → Sum = 11 ✓
+ans2 = 11
+```
+
+**Final Answer:** max(6, 11) = **11**
+
+This corresponds to robbing houses at index 1 and 4 in the original array: [5, 6]
+
+---
+
+## Why This Approach Works
+
+### Correctness Proof:
+
+**Claim:** The optimal solution either:
+1. Does NOT include the last house, OR
+2. Does NOT include the first house
+
+**Proof:**
+- In a circular arrangement, the first and last houses are adjacent
+- If we include BOTH first and last houses, the alarm triggers (adjacent houses)
+- Therefore, at least ONE of them must be excluded
+- By trying both scenarios and taking the maximum, we cover all valid possibilities
+
+**Coverage:**
+- **ans1** covers all valid solutions that exclude the last house
+- **ans2** covers all valid solutions that exclude the first house
+- **max(ans1, ans2)** gives us the optimal solution
+
+---
+
+## Complexity Analysis
+
+### Time Complexity:
+- **Scenario 1:** O(n) - Process array of size n-1
+- **Scenario 2:** O(n) - Process array of size n-1
+- **Total:** O(n) + O(n) = **O(n)**
+
+### Space Complexity:
+- Each call to `optimized()` uses O(1) space (only variables)
+- Array slicing creates new arrays: O(n) space
+- **Total:** **O(n)** due to array slicing
+
+**Note:** If we avoid array slicing by using index ranges, we can achieve O(1) space.
+
+---
+
+## Space-Optimized Version (No Array Slicing)
+
+```python
+def optimized_range(arr, start, end):
+    """
+    Find maximum sum of non-adjacent elements from start to end index
+    """
+    n = end - start + 1
+    
+    if n == 1:
+        return arr[start]
+    
+    prev2 = arr[start]
+    prev = max(arr[start], arr[start + 1])
+    
+    for i in range(start + 2, end + 1):
+        include = arr[i] + prev2
+        exclude = prev
+        current = max(include, exclude)
+        prev2 = prev
+        prev = current
+    
+    return prev
+
+class Solution:
+    def houseRobber(self, money):
+        n = len(money)
+        
+        # Edge case: Only one house
+        if n == 1:
+            return money[0]
+        
+        # Scenario 1: Exclude last house (indices 0 to n-2)
+        ans1 = optimized_range(money, 0, n - 2)
+        
+        # Scenario 2: Exclude first house (indices 1 to n-1)
+        ans2 = optimized_range(money, 1, n - 1)
+        
+        return max(ans1, ans2)
+```
+
+**Space Complexity:** O(1) - No extra arrays created!
+
+---
+
+## Comparison with Linear House Robber
+
+| Aspect | Linear Street | Circular Street |
+|--------|---------------|-----------------|
+| **Constraint** | No first-last adjacency | First and last are adjacent |
+| **Approach** | Single pass DP | Two passes with different arrays |
+| **Scenarios** | One | Two (exclude first OR last) |
+| **Time** | O(n) | O(n) |
+| **Space** | O(1) | O(n) with slicing, O(1) without |
+| **Complexity** | Simpler | Builds on linear solution |
+
+---
+
+## Key Takeaways
+
+### Problem Pattern:
+This is an extension of the **"Maximum Sum of Non-Adjacent Elements"** pattern with a circular constraint.
+
+### Solution Strategy:
+1. **Identify the constraint** - First and last are adjacent in circular arrangement
+2. **Break into subproblems** - Two scenarios (exclude first OR exclude last)
+3. **Reuse existing solution** - Apply linear house robber algorithm to each scenario
+4. **Combine results** - Take maximum of both scenarios
+
+### Core Insight:
+```
+Circular Problem → Two Linear Subproblems
+
+Original: [a₀, a₁, a₂, ..., aₙ₋₁]  (circular)
+           ↓
+Subproblem 1: [a₀, a₁, a₂, ..., aₙ₋₂]  (exclude last)
+Subproblem 2: [a₁, a₂, a₃, ..., aₙ₋₁]  (exclude first)
+           ↓
+Answer: max(solve(Subproblem 1), solve(Subproblem 2))
+```
+
+---
+
+## Related Problems
+
+### Similar Patterns:
+- House Robber I (Linear street) - Base problem
+- House Robber III (Binary tree) - Different structure
+- Delete and Earn
+- Maximum Sum Circular Subarray (different constraint)
+
+### Key Difference:
+- **Linear:** Direct application of include/exclude DP
+- **Circular:** Break circle by considering two scenarios
+
+---
+
+## Complete Working Code
+
+```python
+def optimized(n, arr):
+    """
+    Find maximum sum of non-adjacent elements in a linear array
+    """
+    if n == 1:
+        return arr[0]
+    
+    prev2 = arr[0]
+    prev = max(arr[0], arr[1])
+    
+    for i in range(2, n):
+        include = arr[i] + prev2
+        exclude = prev
+        current = max(include, exclude)
+        prev2 = prev
+        prev = current
+    
+    return prev
+
+class Solution:
+    def houseRobber(self, money):
+        arr = money
+        n = len(arr)
+        
+        # Edge case: Only one house
+        if n == 1:
+            return arr[0]
+        
+        # Scenario 1: Exclude last house (can include first)
+        ans1 = optimized(n - 1, arr[:n-1])  # Houses 0 to n-2
+        
+        # Scenario 2: Exclude first house (can include last)
+        ans2 = optimized(n - 1, arr[1:])    # Houses 1 to n-1
+        
+        # Return maximum of both scenarios
+        return max(ans1, ans2)
+
+# Driver Code
+solution = Solution()
+
+# Test Case 1
+money1 = [2, 1, 4, 9]
+print(f"Input: {money1}")
+print(f"Output: {solution.houseRobber(money1)}")
+print()
+
+# Test Case 2
+money2 = [1, 5, 2, 1, 6]
+print(f"Input: {money2}")
+print(f"Output: {solution.houseRobber(money2)}")
+```
+
+---
+
 
