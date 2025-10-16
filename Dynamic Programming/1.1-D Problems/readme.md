@@ -1706,3 +1706,563 @@ print(optimized(n, arr))             # Output: 9
 ```
 
 ---
+
+# Frog Jump with K Distances
+
+## Problem Statement
+
+A frog wants to climb a staircase with **n steps**. Given an integer array **heights**, where **heights[i]** contains the height of the ith step, and an integer **k**.
+
+To jump from the **ith step** to the **jth step**, the frog requires **abs(heights[i] - heights[j])** energy, where abs() denotes the absolute difference.
+
+The frog can jump from the **ith step** to any step in the range **[i + 1, i + k]**, provided it exists.
+
+**Return** the **minimum amount of energy** required by the frog to go from the **0th step** to the **(n-1)th step**.
+
+### Examples:
+
+**Example 1:**
+```
+Input: heights = [10, 5, 20, 0, 15], k = 2
+Output: 15
+Explanation:
+0th step → 2nd step, cost = abs(10 - 20) = 10
+2nd step → 4th step, cost = abs(20 - 15) = 5
+Total cost = 10 + 5 = 15
+```
+
+**Example 2:**
+```
+Input: heights = [15, 4, 1, 14, 15], k = 3
+Output: 2
+Explanation:
+0th step → 2nd step, cost = abs(15 - 1) = 14 (rejected)
+0th step → 3rd step, cost = abs(15 - 14) = 1 ✓
+3rd step → 4th step, cost = abs(14 - 15) = 1 ✓
+Total cost = 1 + 1 = 2
+```
+
+---
+
+## Step 1: Define The Problem
+
+- A frog starts at the **0th step**
+- The frog needs to reach the **(n-1)th step**
+- Each step has a **height** value
+- The frog can jump forward **1 to k steps** at a time
+- **Energy cost** for jumping from step i to step j = **abs(heights[i] - heights[j])**
+- We need to find the **minimum total energy** required to reach the end
+
+**Key Difference from Previous Problem:**
+- Previous: Count number of ways (addition)
+- Current: Find minimum energy (minimization with cost calculation)
+
+---
+
+## Step 2: Represent the Problem Programmatically
+
+- **Starting point:** 0th step (index 0)
+- **Target:** (n-1)th step (last index)
+- **Choices at each step:** Jump 1, 2, 3, ..., or k steps forward
+- **Cost calculation:** abs(heights[current] - heights[next])
+- **Data structure:** 1-D array of size **n** (since we use 0-based indexing)
+- **Function notation:** f(i) = minimum energy required to reach step i from step 0
+
+---
+
+## Step 3: Finding Base Cases
+
+**Case 1: At step 0**
+- We start at step 0, so no energy is required
+- **f(0) = 0**
+
+**Case 2: At step 1**
+- We can only come from step 0
+- Energy required = abs(heights[0] - heights[1])
+- **f(1) = abs(heights[0] - heights[1])**
+
+**Base cases summary:**
+```
+f(0) = 0
+f(1) = abs(heights[0] - heights[1])
+```
+
+---
+
+## Step 4: Finding The Recurrence Relation
+
+To reach the **nth step**, the frog can come from any of the previous k steps:
+- From step **(n-1)** with cost: f(n-1) + abs(heights[n-1] - heights[n])
+- From step **(n-2)** with cost: f(n-2) + abs(heights[n-2] - heights[n])
+- From step **(n-3)** with cost: f(n-3) + abs(heights[n-3] - heights[n])
+- ...
+- From step **(n-k)** with cost: f(n-k) + abs(heights[n-k] - heights[n])
+
+Since we want the **minimum energy**, we take the minimum of all these options.
+
+### ✅ Recurrence Relation:
+```
+f(n) = min(
+    f(n-1) + abs(heights[n-1] - heights[n]),
+    f(n-2) + abs(heights[n-2] - heights[n]),
+    f(n-3) + abs(heights[n-3] - heights[n]),
+    ...
+    f(n-k) + abs(heights[n-k] - heights[n])
+)
+```
+
+**In code form:**
+```python
+mini = float('inf')
+for i in range(1, k+1):
+    if (n-i) >= 0:
+        cost = f(n-i) + abs(heights[n] - heights[n-i])
+        mini = min(mini, cost)
+return mini
+```
+
+---
+
+## Recursion Tree Visualization
+
+### Example: heights = [10, 5, 20, 0, 15], k = 2
+
+```
+                            f(4)
+                          /      \
+                         /        \
+                    f(3)            f(2)
+                   /    \          /    \
+                  /      \        /      \
+              f(2)      f(1)   f(1)     f(0)
+             /   \       |      |         |
+            /     \      |      |         |
+         f(1)    f(0)    5     5          0
+          |       |
+          |       |
+          5       0
+
+Cost calculations at each node:
+f(0) = 0 (base case)
+f(1) = abs(10-5) = 5 (base case)
+
+f(2): min(
+    f(1) + abs(5-20) = 5 + 15 = 20,
+    f(0) + abs(10-20) = 0 + 10 = 10
+) = 10
+
+f(3): min(
+    f(2) + abs(20-0) = 10 + 20 = 30,
+    f(1) + abs(5-0) = 5 + 5 = 10
+) = 10
+
+f(4): min(
+    f(3) + abs(0-15) = 10 + 15 = 25,
+    f(2) + abs(20-15) = 10 + 5 = 15
+) = 15
+
+Answer: 15
+```
+
+### Analysis:
+
+**Redundant Computations:**
+- f(3) is calculated **1 time**
+- f(2) is calculated **2 times**
+- f(1) is calculated **3 times**
+- f(0) is calculated **2 times**
+
+**Path taken:** 0 → 2 → 4 (cost = 10 + 5 = 15)
+
+### Key Observation:
+Similar to previous problems, we have overlapping subproblems. The difference here is that we're computing **minimum cost** instead of counting ways.
+
+---
+
+## Solution 1: Recursive Approach (Naive)
+
+This is the direct implementation of our recurrence relation.
+
+### Code:
+```python
+def solve(n, heights, k):
+    # Base cases
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(heights[0] - heights[1])
+    
+    # Try all possible jumps (from previous k steps)
+    mini = float('inf')
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            # Cost from (n-i)th step to nth step
+            cost = solve(n - i, heights, k) + abs(heights[n] - heights[n - i])
+            mini = min(mini, cost)
+    
+    return mini
+
+# Driver Code
+heights = [10, 5, 20, 0, 15]
+n = len(heights)
+k = 2
+print(solve(n - 1, heights, k))
+```
+
+### How It Works:
+For reaching step n:
+1. Try all possible previous steps (n-1, n-2, ..., n-k)
+2. For each previous step, calculate: minimum energy to reach that step + jump cost
+3. Return the minimum among all options
+
+### Complexity:
+- **Time Complexity:** O(k^n) - Exponential with branching factor k
+- **Space Complexity:** O(n) - Recursion stack depth
+
+### Pros & Cons:
+✅ Simple and intuitive
+✅ Directly follows the problem statement
+✅ Clear logic with min selection
+❌ Extremely slow for large inputs
+❌ Many redundant calculations
+❌ Impractical for even moderate n values
+
+---
+
+## Solution 2: Memoization (Top-Down DP)
+
+### The Idea:
+Store the minimum energy required to reach each step. Once computed, reuse it instead of recalculating.
+
+### How We Convert from Recursion:
+1. **Keep the recursive structure** - Same min-finding logic
+2. **Add memo array** - Store computed results
+3. **Check before computing** - If memo[n] != -1, return it
+4. **Store after computing** - Save the minimum in memo[n]
+
+### Code:
+```python
+def solve_memo(n, heights, k, memo):
+    # CHECK: Already computed?
+    if memo[n] != -1:
+        return memo[n]
+    
+    # Base cases (same as recursive)
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(heights[0] - heights[1])
+    
+    # Try all possible jumps (same loop as recursive)
+    mini = float('inf')
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            cost = solve_memo(n - i, heights, k, memo) + abs(heights[n] - heights[n - i])
+            mini = min(mini, cost)
+    
+    # STORE: Save result before returning
+    memo[n] = mini
+    return memo[n]
+
+# Driver Code
+heights = [10, 5, 20, 0, 15]
+n = len(heights)
+k = 2
+memo = [-1] * n
+print(solve_memo(n - 1, heights, k, memo))
+```
+
+### What Changed:
+```
+Recursive:                              Memoization:
+─────────────────────────────          ──────────────────────────────────────
+def solve(n, heights, k):             def solve_memo(n, heights, k, memo):
+                                           if memo[n] != -1:        ← Check cache
+                                               return memo[n]
+    if n == 0:                             if n == 0:
+        return 0                               return 0
+    if n == 1:                             if n == 1:
+        return abs(heights[0]-heights[1])      return abs(heights[0]-heights[1])
+    mini = float('inf')                    mini = float('inf')
+    for i in range(1, k+1):                for i in range(1, k+1):
+        if (n-i) >= 0:                         if (n-i) >= 0:
+            cost = solve(n-i, heights, k)          cost = solve_memo(n-i, heights, k, memo)
+                   + abs(heights[n]-heights[n-i])         + abs(heights[n]-heights[n-i])
+            mini = min(mini, cost)                 mini = min(mini, cost)
+                                           memo[n] = mini           ← Store result
+    return mini                            return memo[n]
+```
+
+### How It Works (Example: heights=[10,5,20,0,15], k=2):
+```
+Call f(4):
+  → Try from step 3: Need f(3) - NOT in memo
+    → f(3) tries steps 2 and 1
+      → Need f(2) - NOT in memo, compute = 10, STORE memo[2]=10
+      → Need f(1) - base case = 5
+      → f(3) = min(10+20, 5+5) = 10, STORE memo[3]=10
+  → Try from step 2: Need f(2) - FOUND in memo[2]=10! No recalculation!
+  → f(4) = min(10+15, 10+5) = 15, STORE memo[4]=15
+
+Each step's minimum energy is computed only once!
+```
+
+### Complexity:
+- **Time Complexity:** O(n × k) - n subproblems, each tries k jumps
+- **Space Complexity:** O(n) - Memo array + recursion stack
+
+### Pros & Cons:
+✅ Much faster than naive recursion
+✅ Each subproblem computed only once
+✅ Easy to convert from recursive solution
+✅ Efficient for any k value
+❌ Still uses recursion stack
+❌ Uses O(n) extra space
+
+---
+
+## Solution 3: Tabulation (Bottom-Up DP)
+
+### The Idea:
+Build the solution iteratively from the start (step 0) to the end (step n-1). For each step, calculate the minimum energy by looking back at the previous k steps.
+
+### How We Convert from Memoization:
+1. **Remove recursion** - Use nested loops
+2. **Create DP array** - dp[i] = minimum energy to reach step i
+3. **Fill base cases** - dp[0] = 0, dp[1] = abs(heights[0] - heights[1])
+4. **Outer loop:** Iterate from step 2 to n-1
+5. **Inner loop:** For each step i, try all k possible previous steps
+
+### Code:
+```python
+def tabulation(n, heights, k):
+    # Handle edge case
+    if n == 1:
+        return 0
+    
+    # Create DP array
+    dp = [-1] * n
+    
+    # Fill base cases
+    dp[0] = 0
+    dp[1] = abs(heights[0] - heights[1])
+    
+    # Build up from step 2 to n-1
+    for i in range(2, n):
+        mini = float('inf')
+        
+        # Try all possible previous steps (within k range)
+        for j in range(1, k + 1):
+            if (i - j) >= 0:
+                cost = dp[i - j] + abs(heights[i] - heights[i - j])
+                mini = min(mini, cost)
+        
+        dp[i] = mini
+    
+    return dp[n - 1]
+
+# Driver Code
+heights = [10, 5, 20, 0, 15]
+n = len(heights)
+k = 2
+print(tabulation(n, heights, k))
+```
+
+### What Changed:
+```
+Memoization:                            Tabulation:
+─────────────────────────────────      ──────────────────────────────────────
+def solve_memo(n, heights, k, memo):   def tabulation(n, heights, k):
+    if memo[n] != -1:                      if n == 1:
+        return memo[n]                         return 0
+    if n == 0:                             dp = [-1] * n
+        return 0                           dp[0] = 0  ← Fill base cases
+    if n == 1:                             dp[1] = abs(heights[0]-heights[1])
+        return abs(...)                    for i in range(2, n):  ← Outer loop
+    mini = float('inf')                        mini = float('inf')
+    for i in range(1, k+1):                    for j in range(1, k+1):  ← Inner loop
+        if (n-i) >= 0:                             if (i-j) >= 0:
+            cost = solve_memo(...)                     cost = dp[i-j] + abs(...)
+            mini = min(mini, cost)                     mini = min(mini, cost)
+    memo[n] = mini                             dp[i] = mini
+    return memo[n]                         return dp[n-1]
+```
+
+### How It Works (Example: heights=[10,5,20,0,15], k=2):
+```
+Step 1: Initialize
+        dp = [-1, -1, -1, -1, -1]
+
+Step 2: Fill base cases
+        dp = [0, 5, -1, -1, -1]
+             ↑  ↑
+          step0 step1
+
+Step 3: Build iteratively
+
+i=2: Try previous steps within k=2 range
+     From step 1: dp[1] + abs(heights[2]-heights[1]) = 5 + abs(20-5) = 5 + 15 = 20
+     From step 0: dp[0] + abs(heights[2]-heights[0]) = 0 + abs(20-10) = 0 + 10 = 10
+     dp[2] = min(20, 10) = 10
+     dp = [0, 5, 10, -1, -1]
+
+i=3: Try previous steps within k=2 range
+     From step 2: dp[2] + abs(heights[3]-heights[2]) = 10 + abs(0-20) = 10 + 20 = 30
+     From step 1: dp[1] + abs(heights[3]-heights[1]) = 5 + abs(0-5) = 5 + 5 = 10
+     dp[3] = min(30, 10) = 10
+     dp = [0, 5, 10, 10, -1]
+
+i=4: Try previous steps within k=2 range
+     From step 3: dp[3] + abs(heights[4]-heights[3]) = 10 + abs(15-0) = 10 + 15 = 25
+     From step 2: dp[2] + abs(heights[4]-heights[2]) = 10 + abs(15-20) = 10 + 5 = 15
+     dp[4] = min(25, 15) = 15
+     dp = [0, 5, 10, 10, 15]
+
+Return dp[4] = 15
+```
+
+### Visual Flow:
+```
+For each step i, look back at previous k steps:
+
+        [i-k] ... [i-2] [i-1] [i=?]
+          ↓         ↓     ↓
+          └─────────┴─────┘
+      Try all paths, choose minimum cost
+```
+
+### Complexity:
+- **Time Complexity:** O(n × k) - For each of n steps, check k previous steps
+- **Space Complexity:** O(n) - DP array only
+
+### Pros & Cons:
+✅ Fast and efficient
+✅ No recursion stack overhead
+✅ Clear iterative logic
+✅ Easy to trace and debug
+✅ Can see the entire dp array progression
+❌ Uses O(n) space
+
+---
+
+## Solution 4: Space Optimization
+
+### The Idea:
+To calculate dp[i], we only need the values of the **last k steps** (dp[i-1], dp[i-2], ..., dp[i-k]). We could use a sliding window approach.
+
+### Why It's Not Preferred:
+
+**Reasons:**
+1. **Increased Code Complexity** - Managing a sliding window (deque/circular buffer) is more complex
+2. **No Time Improvement** - Still O(n × k), same as tabulation
+3. **Marginal Space Savings** - Only saves from O(n) to O(k)
+4. **When k is small** (common case), the savings are minimal
+5. **Harder to Debug** - Can't inspect full dp array
+6. **Less Readable** - The logic becomes obscured
+
+### Conceptual Approach:
+```python
+from collections import deque
+
+def optimized(n, heights, k):
+    if n == 1:
+        return 0
+    
+    # Keep last k values in a deque
+    window = deque()
+    window.append((0, 0))  # (index, min_energy)
+    window.append((1, abs(heights[0] - heights[1])))
+    
+    for i in range(2, n):
+        mini = float('inf')
+        
+        # Look at elements in window (last k steps)
+        for idx, energy in window:
+            if i - idx <= k:
+                cost = energy + abs(heights[i] - heights[idx])
+                mini = min(mini, cost)
+        
+        # Add current step to window
+        window.append((i, mini))
+        
+        # Remove elements outside k range
+        while window and i - window[0][0] > k:
+            window.popleft()
+    
+    return window[-1][1]
+```
+
+### Trade-offs:
+| Aspect | Tabulation | Space Optimized |
+|--------|-----------|-----------------|
+| Time | O(n × k) | O(n × k) |
+| Space | O(n) | O(k) |
+| Complexity | Simple | Complex |
+| Debugging | Easy | Difficult |
+| Readability | High | Low |
+
+**Recommendation:** Use **Tabulation** for this problem. The space savings don't justify the added complexity.
+
+---
+
+
+
+## Complete Working Code
+
+```python
+# Solution 1: Recursive
+def solve(n, heights, k):
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(heights[0] - heights[1])
+    mini = float('inf')
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            cost = solve(n - i, heights, k) + abs(heights[n] - heights[n - i])
+            mini = min(mini, cost)
+    return mini
+
+# Solution 2: Memoization
+def solve_memo(n, heights, k, memo):
+    if memo[n] != -1:
+        return memo[n]
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(heights[0] - heights[1])
+    mini = float('inf')
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            cost = solve_memo(n - i, heights, k, memo) + abs(heights[n] - heights[n - i])
+            mini = min(mini, cost)
+    memo[n] = mini
+    return memo[n]
+
+# Solution 3: Tabulation
+def tabulation(n, heights, k):
+    if n == 1:
+        return 0
+    dp = [-1] * n
+    dp[0] = 0
+    dp[1] = abs(heights[0] - heights[1])
+    for i in range(2, n):
+        mini = float('inf')
+        for j in range(1, k + 1):
+            if (i - j) >= 0:
+                cost = dp[i - j] + abs(heights[i] - heights[i - j])
+                mini = min(mini, cost)
+        dp[i] = mini
+    return dp[n - 1]
+
+# Driver Code
+heights = [10, 5, 20, 0, 15]
+n = len(heights)
+k = 2
+print("Recursive:", solve(n - 1, heights, k))
+print("Memoization:", solve_memo(n - 1, heights, k, [-1] * n))
+print("Tabulation:", tabulation(n, heights, k))
+```
+
+---
+
