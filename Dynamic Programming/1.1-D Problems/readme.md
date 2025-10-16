@@ -1,5 +1,5 @@
 
-# 1.Fibonacci Number
+# Fibonacci Number
 
 ## Problem Definition
 
@@ -299,7 +299,7 @@ print(optimization(n))
 
 ---
 
-# Climbing Stairs
+# 2.Climbing Stairs
 
 ## Problem Statement
 
@@ -803,6 +803,329 @@ print("Recursive:", solve(n))
 print("Memoization:", solve_memo(n, [-1] * (n + 1)))
 print("Tabulation:", tabulation(n))
 print("Optimized:", optimized(n))
+```
+
+---
+
+
+# Frog Jump
+
+## Problem Statement
+
+A frog wants to climb a staircase with `n` steps. Given an integer array `heights`, where `heights[i]` contains the height of the `i-th` step.
+
+To jump from the `i-th` step to the `j-th` step, the frog requires `abs(heights[i] - heights[j])` energy, where `abs()` denotes the absolute difference. The frog can jump from any step either **one or two steps**, provided it exists.
+
+**Return the minimum amount of energy required by the frog to go from the 0th step to the (n-1)th step.**
+
+---
+
+## Examples
+
+### Example 1
+**Input:** `heights = [2, 1, 3, 5, 4]`  
+**Output:** `2`
+
+**Explanation:**
+- 0th step → 2nd step = abs(2 - 3) = 1
+- 2nd step → 4th step = abs(3 - 4) = 1
+- **Total = 1 + 1 = 2**
+
+### Example 2
+**Input:** `heights = [7, 5, 1, 2, 6]`  
+**Output:** `9`
+
+**Explanation:**
+- 0th step → 1st step = abs(7 - 5) = 2
+- 1st step → 3rd step = abs(5 - 2) = 3
+- 3rd step → 4th step = abs(2 - 6) = 4
+- **Total = 2 + 3 + 4 = 9**
+
+---
+
+## Approach
+
+### Step 1: Define the Problem
+
+- Frog is at the **0th step** and needs to reach the **(n-1)th step**
+- The frog can jump **1 or 2 steps** at a time
+- Every jump from step `i` to step `j` costs `abs(heights[i] - heights[j])` energy
+- We need to find the **minimum total energy** required
+
+### Step 2: Represent the Problem Programmatically
+
+- We need to track the minimum energy required to reach each step from 0 to n-1
+- This suggests using a **1D array** where `dp[i]` represents minimum energy to reach step `i`
+
+### Step 3: Finding Base Cases
+
+**Base Case 1:** Already at step 0
+```
+f(0) = 0  // No energy needed, we're already here
+```
+
+**Base Case 2:** Reaching step 1
+```
+f(1) = abs(heights[0] - heights[1])  // Only one way: jump from 0 to 1
+```
+
+### Step 4: Finding the Recurrence Relation
+
+To reach step `n`, we can come from either:
+- **Step (n-1):** Energy = `f(n-1) + abs(heights[n-1] - heights[n])`
+- **Step (n-2):** Energy = `f(n-2) + abs(heights[n-2] - heights[n])`
+
+We choose the minimum of these two options:
+
+```
+f(n) = min(
+    f(n-1) + abs(heights[n-1] - heights[n]),
+    f(n-2) + abs(heights[n-2] - heights[n])
+)
+```
+
+---
+
+## Recursion Tree
+
+Let's visualize the recursion tree for `heights = [7, 5, 1, 2, 6]` (medium example):
+
+```
+                                solve(4)
+                                   |
+                    +--------------+--------------+
+                    |                             |
+                solve(3)                      solve(2)
+              [7,5,1,2,6]                   [7,5,1,2,6]
+            +abs(2-6)=4                   +abs(1-6)=5
+                    |                             |
+          +---------+---------+         +---------+---------+
+          |                   |         |                   |
+      solve(2)            solve(1)  solve(1)            solve(0)
+    [7,5,1,2]           [7,5,1,2] [7,5,1]             [7,5,1]
+    +abs(1-2)=1         +abs(5-2)=3 +abs(5-1)=4       +abs(7-1)=6
+          |                   |         |                   |
+    +-----+-----+       +-----+---+   +-----+---+           0
+    |           |       |         |   |         |
+solve(1)    solve(0) solve(0)   X solve(0)   X
+[7,5,1]     [7,5,1]  [7,5]          [7,5]
++abs(5-1)=4 +abs(7-1)=6  0              0
+    |           |
+    +-----+     0
+    |     |
+solve(0) X
+[7,5]
+    |
+    0
+
+Legend:
+- X means base case where n < 0 (invalid, not computed)
+- Numbers in brackets show the subarray being considered
+- +abs(...) shows the energy cost being added at that step
+```
+
+**Notice the overlapping subproblems:**
+- `solve(2)` is computed multiple times
+- `solve(1)` is computed multiple times
+- `solve(0)` is computed multiple times
+
+This is why we need **memoization** to avoid redundant calculations!
+
+---
+
+## Solution Implementations
+
+### 1. Recursive Solution (Top-Down)
+
+**Time Complexity:** O(2^n) - Exponential due to overlapping subproblems  
+**Space Complexity:** O(n) - Recursion stack depth
+
+```python
+def solve(n, arr):
+    # Base cases
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(arr[0] - arr[1])
+    
+    # Try jumping from n-1 to n
+    oneStep = solve(n-1, arr) + abs(arr[n] - arr[n-1])
+    
+    # Try jumping from n-2 to n
+    twoSteps = solve(n-2, arr) + abs(arr[n] - arr[n-2])
+    
+    # Return minimum of both options
+    return min(oneStep, twoSteps)
+```
+
+**Problem:** Many subproblems are computed repeatedly (see recursion tree above).
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Converting Recursion → Memoization:**
+- **Add a memo array:** Create an array `memo` of size `n` initialized with `-1`
+- **Check before computing:** Before solving `f(n)`, check if `memo[n]` is already computed
+- **Store after computing:** After computing `f(n)`, store the result in `memo[n]`
+- **Same recurrence relation:** The logic remains identical to recursion
+
+**Time Complexity:** O(n) - Each subproblem computed once  
+**Space Complexity:** O(n) - Memo array + O(n) recursion stack
+
+```python
+def solve_memo(n, arr, memo):
+    # Check if already computed
+    if memo[n] != -1:
+        return memo[n]
+    
+    # Base cases
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(arr[0] - arr[1])
+    
+    # Compute and store result
+    oneStep = solve_memo(n-1, arr, memo) + abs(arr[n] - arr[n-1])
+    twoSteps = solve_memo(n-2, arr, memo) + abs(arr[n] - arr[n-2])
+    memo[n] = min(oneStep, twoSteps)
+    
+    return memo[n]
+```
+
+**How it helps:** Each state `f(n)` is computed only once and reused, eliminating redundant recursive calls.
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Converting Memoization → Tabulation:**
+- **Eliminate recursion:** Replace recursive calls with iterative loops
+- **Bottom-up order:** Start from base cases and build up to the final answer
+- **Same array concept:** Use `dp` array instead of `memo`, but fill it iteratively
+- **Direction change:** Instead of `f(n) → f(n-1) → f(n-2)`, we go `f(0) → f(1) → ... → f(n)`
+
+**Time Complexity:** O(n) - Single loop through all steps  
+**Space Complexity:** O(n) - DP array only (no recursion stack)
+
+```python
+def tabulation(n, arr):
+    if n == 1:
+        return 0
+    
+    # Create DP array
+    dp = [-1] * n
+    
+    # Fill base cases
+    dp[0] = 0
+    dp[1] = abs(arr[0] - arr[1])
+    
+    # Fill remaining states from bottom to top
+    for i in range(2, n):
+        oneStep = dp[i-1] + abs(arr[i] - arr[i-1])
+        twoSteps = dp[i-2] + abs(arr[i] - arr[i-2])
+        dp[i] = min(oneStep, twoSteps)
+    
+    return dp[n-1]
+```
+
+**How it helps:** No recursion overhead, and we process states in a natural forward order.
+
+---
+
+### 4. Space Optimized (Bottom-Up with O(1) Space)
+
+**Converting Tabulation → Space Optimized:**
+- **Identify dependency:** At step `i`, we only need `dp[i-1]` and `dp[i-2]`
+- **Use variables:** Instead of an entire array, maintain only two variables: `prev` and `prev2`
+- **Update pattern:** After computing current, shift values: `prev2 = prev`, `prev = current`
+- **Same logic:** The recurrence relation and iteration order remain unchanged
+
+**Time Complexity:** O(n) - Single loop  
+**Space Complexity:** O(1) - Only two variables
+
+```python
+def optimized(n, arr):
+    if n == 1:
+        return 0
+    
+    # Initialize with base cases
+    prev2 = 0  # dp[0]
+    prev = abs(arr[0] - arr[1])  # dp[1]
+    
+    # Compute for remaining steps
+    for i in range(2, n):
+        oneStep = prev + abs(arr[i] - arr[i-1])
+        twoSteps = prev2 + abs(arr[i] - arr[i-2])
+        current = min(oneStep, twoSteps)
+        
+        # Shift values for next iteration
+        prev2 = prev
+        prev = current
+    
+    return prev
+```
+
+**How it helps:** Achieves the same O(n) time complexity but uses only constant extra space.
+
+---
+
+## Complete Code
+
+```python
+def solve(n, arr):
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(arr[0] - arr[1])
+    oneStep = solve(n-1, arr) + abs(arr[n] - arr[n-1])
+    twoSteps = solve(n-2, arr) + abs(arr[n] - arr[n-2])
+    return min(oneStep, twoSteps)
+
+def solve_memo(n, arr, memo):
+    if memo[n] != -1:
+        return memo[n]
+    if n == 0:
+        return 0
+    if n == 1:
+        return abs(arr[0] - arr[1])
+    oneStep = solve_memo(n-1, arr, memo) + abs(arr[n] - arr[n-1])
+    twoSteps = solve_memo(n-2, arr, memo) + abs(arr[n] - arr[n-2])
+    memo[n] = min(oneStep, twoSteps)
+    return memo[n]
+
+def tabulation(n, arr):
+    if n == 1:
+        return 0
+    dp = [-1] * n
+    dp[0] = 0
+    dp[1] = abs(arr[0] - arr[1])
+    for i in range(2, n):
+        oneStep = dp[i-1] + abs(arr[i] - arr[i-1])
+        twoSteps = dp[i-2] + abs(arr[i] - arr[i-2])
+        dp[i] = min(oneStep, twoSteps)
+    return dp[n-1]
+
+def optimized(n, arr):
+    if n == 1:
+        return 0
+    prev2 = 0
+    prev = abs(arr[0] - arr[1])
+    for i in range(2, n):
+        oneStep = prev + abs(arr[i] - arr[i-1])
+        twoSteps = prev2 + abs(arr[i] - arr[i-2])
+        current = min(oneStep, twoSteps)
+        prev2 = prev
+        prev = current
+    return prev
+
+# Test
+arr = [7, 5, 1, 2, 6]
+n = len(arr)
+print(solve(n-1, arr))              # Output: 9
+print(solve_memo(n-1, arr, [-1]*n)) # Output: 9
+print(tabulation(n, arr))            # Output: 9
+print(optimized(n, arr))             # Output: 9
 ```
 
 ---
