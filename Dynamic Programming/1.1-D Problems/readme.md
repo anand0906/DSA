@@ -299,7 +299,7 @@ print(optimization(n))
 
 ---
 
-# 2.Climbing Stairs
+# Climbing Stairs
 
 ## Problem Statement
 
@@ -803,6 +803,583 @@ print("Recursive:", solve(n))
 print("Memoization:", solve_memo(n, [-1] * (n + 1)))
 print("Tabulation:", tabulation(n))
 print("Optimized:", optimized(n))
+```
+
+---
+
+
+# Climbing Stairs with K Steps
+
+## Problem Statement
+
+Given a number of stairs and a value **k**, starting from the **0th stair** we need to climb to the **Nth stair**. 
+
+At a time we can climb **1 or 2 or 3 ... or k steps**. We need to return the **total number of distinct ways** to reach from 0th to Nth stair.
+
+### Examples:
+
+**Example 1:**
+```
+Input: n = 2, k = 2
+Output: 2
+Explanation: There are two ways to climb to the top.
+1) 1 step + 1 step
+2) 2 steps
+```
+
+**Example 2:**
+```
+Input: n = 3, k = 3
+Output: 4
+Explanation: There are four ways to climb to the top.
+1) 1 step + 1 step + 1 step
+2) 1 step + 2 steps
+3) 2 steps + 1 step
+4) 3 steps
+```
+
+---
+
+## Step 1: Define The Problem
+
+- We have **n steps** in a staircase
+- We start from the **0th step**
+- We need to reach the **nth step**
+- At each move, we can jump **1 or 2 or 3 ... or k steps** (up to k steps)
+- We need to find the **total number of different ways** to reach the nth step
+
+---
+
+## Step 2: Represent the Problem Programmatically
+
+- **Starting point:** 0th step
+- **Target:** nth step
+- **Choices at each step:** We can jump 1, 2, 3, ..., or k steps
+- **Data structure:** We might need a 1-D array of size **(n+1)** to include the 0th step
+- **Index representation:** 0 to n represents the step number we are at currently
+- **Function notation:** f(n) represents the number of ways to reach the nth step
+
+---
+
+## Step 3: Finding Base Cases
+
+Let's analyze small cases:
+
+**Case 1: Reach step 0**
+- We are already at step 0, so there is only **1 way** (stay there)
+- **f(0) = 1**
+
+**Case 2: Reach step 1**
+- From step 0, we can take 1 step to reach step 1 (minimum k value is 1)
+- There is only **1 way**
+- **f(1) = 1**
+
+**Base cases summary:**
+```
+f(0) = 1
+f(1) = 1
+```
+
+---
+
+## Step 4: Finding The Recurrence Relation
+
+### Case 1: When k = 2
+
+To reach the **3rd step**, we can jump either **1 or 2 steps** at a time.
+
+To reach step 3, we can come from:
+1. **Step 2** by taking **1 step** → f(3-1) = f(2)
+2. **Step 1** by taking **2 steps** → f(3-2) = f(1)
+
+**Total ways:** f(3) = f(2) + f(1)
+
+**Recurrence Relation:** f(n) = f(n-1) + f(n-2)
+
+---
+
+### Case 2: When k = 3
+
+To reach the **3rd step**, we can jump **1 or 2 or 3 steps** at a time.
+
+To reach step 3, we can come from:
+1. **Step 2** by taking **1 step** → f(3-1) = f(2)
+2. **Step 1** by taking **2 steps** → f(3-2) = f(1)
+3. **Step 0** by taking **3 steps** → f(3-3) = f(0)
+
+**Calculation:**
+- f(0) = 1
+- f(1) = 1
+- f(2) = f(1) + f(0) = 1 + 1 = 2
+- f(3) = f(2) + f(1) + f(0) = 2 + 1 + 1 = **4**
+
+**Recurrence Relation:** f(n) = f(n-1) + f(n-2) + f(n-3)
+
+---
+
+### General Case: For Any K Steps
+
+To reach the **nth step** with **k choices**, we can come from any of the previous k steps:
+- From step (n-1) by taking 1 step
+- From step (n-2) by taking 2 steps
+- From step (n-3) by taking 3 steps
+- ...
+- From step (n-k) by taking k steps
+
+### ✅ General Recurrence Relation:
+```
+f(n) = f(n-1) + f(n-2) + f(n-3) + ... + f(n-k)
+```
+
+**Important:** We must ensure that (n-i) ≥ 0, because f(-1) is meaningless.
+
+**In code form:**
+```python
+total = 0
+for i in range(1, k+1):
+    if (n-i) >= 0:
+        total += f(n-i)
+```
+
+---
+
+## Recursion Tree Visualization
+
+### Medium Example: n = 4, k = 3
+
+```
+                                f(4)
+                    /            |           \
+                   /             |            \
+                f(3)           f(2)          f(1)
+              /  |  \         /    \           |
+             /   |   \       /      \          |
+          f(2) f(1) f(0)  f(1)    f(0)        1
+         /  \   |    |     |        |
+        /    \  |    |     |        |
+     f(1)  f(0) 1    1     1        1
+      |      |
+      |      |
+      1      1
+```
+
+### Analysis:
+
+**Total Function Calls:** Multiple redundant calculations
+
+**Redundant Computations:**
+- f(3) is calculated **1 time**
+- f(2) is calculated **2 times**
+- f(1) is calculated **5 times**
+- f(0) is calculated **4 times**
+
+### Result Calculation:
+```
+f(0) = 1
+f(1) = 1
+f(2) = f(1) + f(0) = 1 + 1 = 2
+f(3) = f(2) + f(1) + f(0) = 2 + 1 + 1 = 4
+f(4) = f(3) + f(2) + f(1) = 4 + 2 + 1 = 7
+
+Answer: 7 ways to reach step 4 with k=3
+```
+
+### Key Observation:
+As k increases, the branching factor of the recursion tree increases, leading to even more redundant calculations. Dynamic Programming becomes essential!
+
+---
+
+## Solution 1: Recursive Approach (Naive)
+
+This is the direct implementation of our recurrence relation with a loop to handle k choices.
+
+### Code:
+```python
+def solve(n, k):
+    # Base cases
+    if n <= 1:
+        return 1
+    
+    # Try all possible jumps (1 to k steps)
+    ways = 0
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            ways += solve(n - i, k)
+    
+    return ways
+
+# Driver Code
+n = int(input())
+k = int(input())
+print(solve(n, k))
+```
+
+### How It Works:
+For each step n, we try all possible jumps from 1 to k:
+- Jump 1 step: Add ways from (n-1)
+- Jump 2 steps: Add ways from (n-2)
+- ...
+- Jump k steps: Add ways from (n-k)
+
+### Complexity:
+- **Time Complexity:** O(k^n) - Exponential with branching factor k
+- **Space Complexity:** O(n) - Recursion stack depth
+
+### Pros & Cons:
+✅ Simple and intuitive
+✅ Directly follows the recurrence relation
+✅ Easy to understand the logic
+❌ Extremely slow for large inputs
+❌ Many redundant calculations
+❌ Worse than k=2 case due to higher branching factor
+
+---
+
+## Solution 2: Memoization (Top-Down DP)
+
+### The Idea:
+Store computed results to avoid recalculating the same subproblem. The key insight is that for a given n, the number of ways is always the same regardless of how we reached it.
+
+### How We Convert from Recursion:
+1. **Keep the recursive structure** - Same loop logic
+2. **Add memo array** - Initialize with -1
+3. **Check before computing** - If memo[n] != -1, return it
+4. **Store after computing** - Save result in memo[n]
+
+### Code:
+```python
+def solve_memo(n, k, memo):
+    # CHECK: Have we already computed this?
+    if memo[n] != -1:
+        return memo[n]
+    
+    # Base cases (same as recursive)
+    if n <= 1:
+        return 1
+    
+    # Try all possible jumps (same loop as recursive)
+    ways = 0
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            ways += solve_memo(n - i, k, memo)
+    
+    # STORE: Save result before returning
+    memo[n] = ways
+    return memo[n]
+
+# Driver Code
+n = int(input())
+k = int(input())
+memo = [-1] * (n + 1)
+print(solve_memo(n, k, memo))
+```
+
+### What Changed:
+```
+Recursive:                          Memoization:
+─────────────────────────          ──────────────────────────────────
+def solve(n, k):                   def solve_memo(n, k, memo):
+                                       if memo[n] != -1:        ← Check cache
+                                           return memo[n]
+    if n <= 1:                         if n <= 1:
+        return 1                           return 1
+    ways = 0                           ways = 0
+    for i in range(1, k+1):            for i in range(1, k+1):
+        if (n-i) >= 0:                     if (n-i) >= 0:
+            ways += solve(n-i, k)              ways += solve_memo(n-i, k, memo)
+                                       memo[n] = ways           ← Store result
+    return ways                        return memo[n]
+```
+
+### How It Works (Example: n=4, k=3):
+```
+Call f(4):
+  → Try jump 1: Need f(3) - NOT in memo, calculate it
+    → f(3) tries jumps, eventually computes = 4
+    → STORE memo[3] = 4
+  → Try jump 2: Need f(2) - NOT in memo, calculate it
+    → f(2) = 2, STORE memo[2] = 2
+  → Try jump 3: Need f(1) - base case, return 1
+  → f(4) = 4 + 2 + 1 = 7
+  → STORE memo[4] = 7
+
+Any future call to f(3), f(2), etc. returns immediately from memo!
+```
+
+### Complexity:
+- **Time Complexity:** O(n × k) - n subproblems, each tries k jumps
+- **Space Complexity:** O(n) - Memo array + recursion stack
+
+### Pros & Cons:
+✅ Much faster than naive recursion
+✅ Each subproblem computed only once
+✅ Easy to convert from recursive solution
+✅ Handles any value of k efficiently
+❌ Still uses recursion stack
+❌ Uses O(n) extra space
+
+---
+
+## Solution 3: Tabulation (Bottom-Up DP)
+
+### The Idea:
+Build the solution iteratively from base cases upward, eliminating recursion completely. For each step i, we look back at the previous k steps and sum their ways.
+
+### How We Convert from Memoization:
+1. **Remove recursion** - Use nested loops instead
+2. **Create DP array** - Same as memo array
+3. **Fill base cases first** - dp[0] = 1, dp[1] = 1
+4. **Outer loop:** Iterate from 2 to n (building each step)
+5. **Inner loop:** For each step i, try all k possible jumps backwards
+
+### Code:
+```python
+def tabulation(n, k):
+    # Handle edge case
+    if n <= 1:
+        return 1
+    
+    # Create DP array
+    dp = [-1] * (n + 1)
+    
+    # Fill base cases
+    dp[0] = 1
+    dp[1] = 1
+    
+    # Build up from 2 to n
+    for i in range(2, n + 1):
+        ways = 0
+        # Try all possible previous steps (j steps back)
+        for j in range(1, k + 1):
+            if (i - j) >= 0:
+                ways += dp[i - j]
+        dp[i] = ways
+    
+    return dp[n]
+
+# Driver Code
+n = int(input())
+k = int(input())
+print(tabulation(n, k))
+```
+
+### What Changed:
+```
+Memoization:                        Tabulation:
+─────────────────────────────      ──────────────────────────────────
+def solve_memo(n, k, memo):        def tabulation(n, k):
+    if memo[n] != -1:                  if n <= 1:
+        return memo[n]                     return 1
+    if n <= 1:                         dp = [-1] * (n + 1)
+        return 1                       dp[0] = 1  ← Fill base cases
+    ways = 0                           dp[1] = 1
+    for i in range(1, k+1):            for i in range(2, n+1):  ← Outer loop
+        if (n-i) >= 0:                     ways = 0
+            ways += solve_memo(...)        for j in range(1, k+1):  ← Inner loop
+    memo[n] = ways                             if (i-j) >= 0:
+    return memo[n]                                 ways += dp[i-j]
+                                           dp[i] = ways
+                                       return dp[n]
+```
+
+### How It Works (Example: n=4, k=3):
+```
+Step 1: Initialize dp array
+        dp = [-1, -1, -1, -1, -1]
+
+Step 2: Fill base cases
+        dp = [1, 1, -1, -1, -1]
+             ↑  ↑
+           f(0) f(1)
+
+Step 3: Build iteratively
+
+i=2: Try jumps back: 1 step (dp[1]) and 2 steps (dp[0])
+     ways = dp[2-1] + dp[2-2] = dp[1] + dp[0] = 1 + 1 = 2
+     dp = [1, 1, 2, -1, -1]
+
+i=3: Try jumps back: 1, 2, 3 steps
+     ways = dp[3-1] + dp[3-2] + dp[3-3]
+          = dp[2] + dp[1] + dp[0]
+          = 2 + 1 + 1 = 4
+     dp = [1, 1, 2, 4, -1]
+
+i=4: Try jumps back: 1, 2, 3 steps
+     ways = dp[4-1] + dp[4-2] + dp[4-3]
+          = dp[3] + dp[2] + dp[1]
+          = 4 + 2 + 1 = 7
+     dp = [1, 1, 2, 4, 7]
+
+Return dp[4] = 7
+```
+
+### Visual Flow:
+```
+Building dp[i]:
+              Look back k steps
+                    ↓
+    [dp[i-3]] [dp[i-2]] [dp[i-1]] [dp[i]=?]
+        ↓         ↓         ↓
+        └─────────┴─────────┘
+               Sum these
+```
+
+### Complexity:
+- **Time Complexity:** O(n × k) - For each of n steps, we check k previous steps
+- **Space Complexity:** O(n) - DP array only
+
+### Pros & Cons:
+✅ Fast and efficient
+✅ No recursion stack overhead
+✅ Clear iterative logic
+✅ Easy to debug and trace
+❌ Uses O(n) space
+❌ Nested loops might seem complex initially
+
+---
+
+## Solution 4: Space Optimization
+
+### The Idea:
+Looking at the recurrence relation, to calculate dp[i], we only need the **last k values** (dp[i-1], dp[i-2], ..., dp[i-k]). We don't need the entire array!
+
+### Why It's Not Preferred:
+While we can optimize space by keeping only the last k values in a sliding window (like a queue or deque), this approach:
+- **Increases code complexity** significantly
+- **Doesn't improve time complexity** (still O(n × k))
+- **Space savings are marginal** when k is small
+- **Makes the code harder to maintain and understand**
+
+### Conceptual Approach:
+```python
+# Conceptual - Not implemented in detail
+# Use a deque or circular buffer of size k
+# Maintain sliding window of last k values
+# Update and shift values as we progress
+
+from collections import deque
+
+def optimized(n, k):
+    if n <= 1:
+        return 1
+    
+    # Keep last k values in a deque
+    window = deque([1, 1])  # Start with f(0) and f(1)
+    
+    for i in range(2, n + 1):
+        # Sum all values in current window
+        current = sum(window)
+        
+        # Add current to window
+        window.append(current)
+        
+        # Remove oldest if window exceeds k size
+        if len(window) > k:
+            window.popleft()
+    
+    return window[-1]
+```
+
+### Why Tabulation is Preferred:
+1. **Simpler code** - Easier to understand and maintain
+2. **Space is O(n) anyway** - Not a bottleneck for most problems
+3. **Clearer logic** - Direct array access is more readable
+4. **Better debugging** - Can inspect entire dp array
+5. **Standard approach** - More recognizable pattern
+
+### Complexity (if implemented):
+- **Time Complexity:** O(n × k) - Same as tabulation
+- **Space Complexity:** O(k) - Only keep last k values
+
+---
+
+## Summary of Transformations
+
+### Recursion → Memoization:
+- **Add memo array** initialized with -1
+- **Check memo[n]** before computing
+- **Store result** in memo[n] after computing
+- **Same recursive logic** with caching
+
+### Memoization → Tabulation:
+- **Remove recursion** - use nested loops
+- **Outer loop (i):** Iterate from 2 to n (build each step)
+- **Inner loop (j):** Try all k jumps backward
+- **Bottom-up building:** Start from base cases
+
+### Tabulation → Space Optimization:
+- **Identify dependency:** Only need last k values
+- **Use sliding window:** Deque or circular buffer
+- **Trade-off:** Increased complexity for marginal space savings
+- **Generally not preferred** for this problem
+
+---
+
+## Comparison with k=2 Case
+
+### Similarities:
+- Same base cases: f(0) = 1, f(1) = 1
+- Same DP transformation pattern
+- Both use overlapping subproblems
+
+### Differences:
+| Aspect | k=2 (Fixed) | k=Variable |
+|--------|-------------|------------|
+| Recurrence | f(n) = f(n-1) + f(n-2) | f(n) = Σf(n-i) for i=1 to k |
+| Branching Factor | 2 (constant) | k (variable) |
+| Time (Recursive) | O(2^n) | O(k^n) |
+| Time (DP) | O(n) | O(n × k) |
+| Loop Needed | No | Yes (inner loop) |
+
+---
+
+## Complete Working Code
+
+```python
+# Solution 1: Recursive
+def solve(n, k):
+    if n <= 1:
+        return 1
+    ways = 0
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            ways += solve(n - i, k)
+    return ways
+
+# Solution 2: Memoization
+def solve_memo(n, k, memo):
+    if memo[n] != -1:
+        return memo[n]
+    if n <= 1:
+        return 1
+    ways = 0
+    for i in range(1, k + 1):
+        if (n - i) >= 0:
+            ways += solve_memo(n - i, k, memo)
+    memo[n] = ways
+    return memo[n]
+
+# Solution 3: Tabulation
+def tabulation(n, k):
+    if n <= 1:
+        return 1
+    dp = [-1] * (n + 1)
+    dp[0] = 1
+    dp[1] = 1
+    for i in range(2, n + 1):
+        ways = 0
+        for j in range(1, k + 1):
+            if (i - j) >= 0:
+                ways += dp[i - j]
+        dp[i] = ways
+    return dp[n]
+
+# Driver Code
+n = int(input())
+k = int(input())
+print("Recursive:", solve(n, k))
+print("Memoization:", solve_memo(n, k, [-1] * (n + 1)))
+print("Tabulation:", tabulation(n, k))
 ```
 
 ---
