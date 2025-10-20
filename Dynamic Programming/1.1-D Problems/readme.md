@@ -1,3 +1,13 @@
+# 1D DP Problems
+
+1. **Fibonacci Number**
+2. **Climbing Stairs**
+3. **Climbing Stairs with K Steps**
+4. **Frog Jump**
+5. **Frog Jump with K Distances**
+6. **Maximum Sum of Non-Adjacent Elements**
+7. **House Robber (Circular Street)**
+---
 
 # Fibonacci Number
 
