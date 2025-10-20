@@ -783,3 +783,427 @@ print("Optimized:", optimized(m, n))
 ```
 
 ---
+
+# Minimum Path Sum
+
+## Problem Statement
+
+Given an M×N matrix of integers, find a path from the top-left corner to the bottom-right corner such that the sum of values along the path is minimized.
+
+At every cell, we can move in only two directions: **right** or **bottom**.
+
+**Example:**
+```
+Input: matrix = [
+  [1, 2, 10, 4],
+  [100, 3, 2, 1],
+  [1, 1, 20, 2],
+  [1, 2, 2, 1]
+]
+
+Output: 14
+
+Explanation: 
+Path: 1 → 2 → 3 → 2 → 1 → 2 → 2 → 1
+Route: (0,0) → (0,1) → (1,1) → (1,2) → (1,3) → (2,3) → (3,3)
+Sum = 1 + 2 + 3 + 2 + 1 + 2 + 2 + 1 = 14
+```
+
+---
+
+## Step 1: Define the Problem
+
+Given a matrix of size m×n where:
+- **m** = number of rows
+- **n** = number of columns
+
+We need to:
+- Start from top-left corner: `matrix[0][0]`
+- Reach bottom-right corner: `matrix[m-1][n-1]`
+- Move only **right** or **down**
+- Find the path with **minimum sum** of all cell values along the path
+
+---
+
+## Step 2: Represent the Problem Programmatically
+
+We can use a 2D array to represent the matrix of size m×n.
+
+Define: **f(row, col)** = minimum sum to reach `matrix[row][col]` from `matrix[0][0]`
+
+**Goal:** Find `f(m-1, n-1)`
+
+---
+
+## Step 3: Finding Base Cases
+
+1. **Starting position:** `f(0, 0) = matrix[0][0]` (we start here)
+2. **Out of bounds:** `f(row<0, col<0) = ∞` (invalid path, use infinity since we're finding minimum)
+
+---
+
+## Step 4: Finding the Recurrence Relation
+
+To reach `(row, col)`, we can come from:
+- **Top:** `(row-1, col)` - moving down
+- **Left:** `(row, col-1)` - moving right
+
+**Recurrence Relation:**
+```
+f(row, col) = matrix[row][col] + min(f(row-1, col), f(row, col-1))
+```
+
+---
+
+## Recursion Tree Example
+
+Let's visualize for a 3×3 matrix:
+```
+Matrix:
+[1, 3, 1]
+[1, 5, 1]
+[4, 2, 1]
+
+Recursion Tree for f(2,2):
+                              f(2,2)
+                            /        \
+                       f(1,2)        f(2,1)
+                      /      \      /      \
+                 f(0,2)   f(1,1) f(1,1)  f(2,0)
+                /    \    /    \  /   \   /    \
+           f(-1,2) f(0,1) f(0,1) f(1,0) f(1,0) f(2,-1)
+             |     /   \   /   \  /   \   /   \    |
+            [∞] f(-1,1) f(0,0) ... ... ... ... [∞]
+                  |       |
+                 [∞]     [1]
+
+Values computed:
+f(0,0) = 1
+f(0,1) = 1 + 3 = 4
+f(0,2) = 4 + 1 = 5
+f(1,0) = 1 + 1 = 2
+f(1,1) = 5 + min(f(0,1), f(1,0)) = 5 + min(4, 2) = 7
+f(1,2) = 1 + min(f(0,2), f(1,1)) = 1 + min(5, 7) = 6
+f(2,0) = 2 + 1 = 3  (only from top, left is ∞)
+f(2,1) = 2 + min(f(1,1), f(2,0)) = 2 + min(7, 3) = 5
+f(2,2) = 1 + min(f(1,2), f(2,1)) = 1 + min(6, 5) = 6
+
+Legend:
+- [∞] = out of bounds (returns infinity)
+- [1] = base case at (0,0)
+```
+
+**Observations:**
+- Many subproblems are repeated: `f(1,1)`, `f(0,1)`, `f(1,0)` appear multiple times
+- Exponential time complexity due to overlapping subproblems
+- Time Complexity: **O(2^(m+n))**
+
+---
+
+## Step 5: Recursive Solution
+
+```python
+def solve(matrix, row, col):
+    # Base case: starting position
+    if row == 0 and col == 0:
+        return matrix[row][col]
+    
+    # Out of bounds: return infinity
+    if row < 0 or col < 0:
+        return float('inf')
+    
+    # Recursive calls
+    top = matrix[row][col] + solve(matrix, row-1, col)
+    left = matrix[row][col] + solve(matrix, row, col-1)
+    
+    return min(top, left)
+
+# Usage: solve(matrix, m-1, n-1)
+```
+
+**Complexity:**
+- **Time:** O(2^(m+n)) - Exponential, explores all possible paths
+- **Space:** O(m+n) - Recursion stack depth
+
+---
+
+## Step 6: Memoization (Top-Down DP)
+
+**Optimization Strategy:** Store results of computed subproblems in a 2D array to avoid redundant calculations.
+
+**How we convert Recursion → Memoization:**
+1. Create a 2D array `memo` initialized with `-1` to indicate uncomputed states
+2. Before computing `f(row, col)`, check if `memo[row][col]` already has a result
+3. If yes, return the stored value immediately
+4. If no, compute the result, store it in `memo[row][col]`, then return it
+5. This eliminates the repeated calculations seen in the recursion tree
+
+**Example:** In the recursion tree, `f(1,1)` is computed multiple times. With memoization, it's computed once and reused.
+
+```python
+def solve_memo(matrix, row, col, memo):
+    # Base case: starting position
+    if row == 0 and col == 0:
+        return matrix[row][col]
+    
+    # Out of bounds
+    if row < 0 or col < 0:
+        return float('inf')
+    
+    # Check if already computed
+    if memo[row][col] != -1:
+        return memo[row][col]
+    
+    # Compute and store
+    top = matrix[row][col] + solve_memo(matrix, row-1, col, memo)
+    left = matrix[row][col] + solve_memo(matrix, row, col-1, memo)
+    memo[row][col] = min(top, left)
+    
+    return memo[row][col]
+
+# Usage:
+# n, m = len(matrix), len(matrix[0])
+# memo = [[-1]*m for _ in range(n)]
+# result = solve_memo(matrix, n-1, m-1, memo)
+```
+
+**Complexity:**
+- **Time:** O(m×n) - Each cell computed once
+- **Space:** O(m+n) + O(m×n) - Recursion stack + memoization array
+
+**Why this is better:** Each subproblem `f(row, col)` is solved exactly once and its result is stored. Any future call to the same subproblem retrieves the result in O(1) time.
+
+---
+
+## Step 7: Tabulation (Bottom-Up DP)
+
+**Optimization Strategy:** Build solution iteratively from base cases to eliminate recursion overhead.
+
+**How we convert Memoization → Tabulation:**
+1. Replace recursive calls with nested loops that iterate through all states
+2. Start from the base case `dp[0][0] = matrix[0][0]`
+3. Fill the DP table row by row, left to right
+4. Each cell `dp[i][j]` depends only on already computed cells: `dp[i-1][j]` (top) and `dp[i][j-1]` (left)
+5. This follows natural dependency order: we compute smaller subproblems before larger ones
+6. No recursion means no call stack overhead
+
+```python
+def tabulation(matrix):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Create DP table
+    dp = [[float('inf')]*m for _ in range(n)]
+    
+    # Base case
+    dp[0][0] = matrix[0][0]
+    
+    # Fill DP table
+    for row in range(n):
+        for col in range(m):
+            # Skip base case
+            if row == 0 and col == 0:
+                continue
+            
+            top, left = float('inf'), float('inf')
+            
+            # Get value from top cell
+            if row-1 >= 0:
+                top = matrix[row][col] + dp[row-1][col]
+            
+            # Get value from left cell
+            if col-1 >= 0:
+                left = matrix[row][col] + dp[row][col-1]
+            
+            dp[row][col] = min(top, left)
+    
+    return dp[n-1][m-1]
+```
+
+**Complexity:**
+- **Time:** O(m×n) - Single pass through the matrix
+- **Space:** O(m×n) - DP table
+
+**Why this is better:** 
+- No recursion stack overhead
+- Iterative approach is more efficient and easier to optimize further
+- Better cache locality for large matrices
+
+---
+
+## Step 8: Space Optimization
+
+**Optimization Strategy:** Observe that we only need the previous row to compute the current row.
+
+**How we convert Tabulation → Space Optimized:**
+1. Analyze dependencies in tabulation: `dp[i][j]` only needs `dp[i-1][j]` (previous row) and `dp[i][j-1]` (current row, previous column)
+2. We don't need the entire 2D array - just two 1D arrays:
+   - `dp_prev`: stores values from the previous row
+   - `dp_curr`: stores values being computed for the current row
+3. As we process each cell left to right in a row:
+   - `dp_curr[col-1]` gives us the left value (already computed in current row)
+   - `dp_prev[col]` gives us the top value (from previous row)
+4. After completing a row, copy `dp_curr` to `dp_prev` for the next iteration
+5. This reduces space from O(m×n) to O(n)
+
+**Visualization:**
+```
+Processing row i:
+dp_prev: [values from row i-1]
+dp_curr: [computing row i, left to right]
+
+At each cell (i, j):
+- top = dp_prev[j]  ← from previous row
+- left = dp_curr[j-1]  ← from current row
+```
+
+```python
+def optimized(matrix):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Two arrays for previous and current row
+    dp_curr = [float('inf')] * m
+    dp_prev = [float('inf')] * m
+    
+    # Base case
+    dp_curr[0] = matrix[0][0]
+    dp_prev[0] = matrix[0][0]
+    
+    for row in range(n):
+        for col in range(m):
+            # Skip base case
+            if row == 0 and col == 0:
+                continue
+            
+            top, left = float('inf'), float('inf')
+            
+            # Get value from top (previous row)
+            if row-1 >= 0:
+                top = matrix[row][col] + dp_prev[col]
+            
+            # Get value from left (current row)
+            if col-1 >= 0:
+                left = matrix[row][col] + dp_curr[col-1]
+            
+            dp_curr[col] = min(top, left)
+        
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[m-1]
+```
+
+**Complexity:**
+- **Time:** O(m×n) - Same iteration pattern
+- **Space:** O(n) - Only two 1D arrays of size n
+
+**Why this is better:** Achieves the same time complexity with minimal space usage. Critical for large matrices where memory is a constraint.
+
+---
+
+## Summary of Optimization Journey
+
+| Approach | Time | Space | Key Improvement |
+|----------|------|-------|-----------------|
+| **Recursion** | O(2^(m+n)) | O(m+n) | Basic solution, explores all paths with many redundant calculations |
+| **Memoization** | O(m×n) | O(m×n) + O(m+n) | Stores computed results to eliminate redundant subproblem calculations |
+| **Tabulation** | O(m×n) | O(m×n) | Removes recursion overhead by building solution iteratively from base case |
+| **Space Optimized** | O(m×n) | O(n) | Minimizes memory by keeping only previous row needed for computation |
+
+**Progression Summary:**
+1. **Recursion → Memoization:** Add caching to avoid recomputing same subproblems
+2. **Memoization → Tabulation:** Replace recursion with iteration to eliminate call stack
+3. **Tabulation → Space Optimized:** Identify that only adjacent rows are needed, reduce 2D array to two 1D arrays
+
+---
+
+## Complete Code
+
+```python
+def solve(matrix, row, col):
+    if row == 0 and col == 0:
+        return matrix[row][col]
+    if row < 0 or col < 0:
+        return float('inf')
+    top = matrix[row][col] + solve(matrix, row-1, col)
+    left = matrix[row][col] + solve(matrix, row, col-1)
+    return min(top, left)
+
+def solve_memo(matrix, row, col, memo):
+    if row == 0 and col == 0:
+        return matrix[row][col]
+    if row < 0 or col < 0:
+        return float('inf')
+    if memo[row][col] != -1:
+        return memo[row][col]
+    top = matrix[row][col] + solve_memo(matrix, row-1, col, memo)
+    left = matrix[row][col] + solve_memo(matrix, row, col-1, memo)
+    memo[row][col] = min(top, left)
+    return memo[row][col]
+
+def tabulation(matrix):
+    n, m = len(matrix), len(matrix[0])
+    dp = [[float('inf')]*m for _ in range(n)]
+    dp[0][0] = matrix[0][0]
+    for row in range(n):
+        for col in range(m):
+            if row == 0 and col == 0:
+                continue
+            top, left = float('inf'), float('inf')
+            if row-1 >= 0:
+                top = matrix[row][col] + dp[row-1][col]
+            if col-1 >= 0:
+                left = matrix[row][col] + dp[row][col-1]
+            dp[row][col] = min(top, left)
+    return dp[n-1][m-1]
+
+def optimized(matrix):
+    n, m = len(matrix), len(matrix[0])
+    dp_curr = [float('inf')]*m
+    dp_prev = [float('inf')]*m
+    dp_curr[0] = matrix[0][0]
+    dp_prev[0] = matrix[0][0]
+    for row in range(n):
+        for col in range(m):
+            if row == 0 and col == 0:
+                continue
+            top, left = float('inf'), float('inf')
+            if row-1 >= 0:
+                top = matrix[row][col] + dp_prev[col]
+            if col-1 >= 0:
+                left = matrix[row][col] + dp_curr[col-1]
+            dp_curr[col] = min(top, left)
+        dp_prev = dp_curr.copy()
+    return dp_prev[m-1]
+
+# Test
+matrix = [
+    [1, 2, 10, 4],
+    [100, 3, 2, 1],
+    [1, 1, 20, 2],
+    [1, 2, 2, 1]
+]
+
+n, m = len(matrix), len(matrix[0])
+print(solve(matrix, n-1, m-1))  # 14
+print(solve_memo(matrix, n-1, m-1, [[-1]*m for _ in range(n)]))  # 14
+print(tabulation(matrix))  # 14
+print(optimized(matrix))  # 14
+```
+
+---
+
+## Usage
+
+```python
+# Define your matrix
+matrix = [
+    [1, 2, 10, 4],
+    [100, 3, 2, 1],
+    [1, 1, 20, 2],
+    [1, 2, 2, 1]
+]
+
+# Choose the approach based on constraints
+result = optimized(matrix)  # Recommended for most cases
+print(f"Minimum path sum: {result}")
+```
