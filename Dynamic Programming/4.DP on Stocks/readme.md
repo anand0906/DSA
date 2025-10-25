@@ -1108,3 +1108,495 @@ For `arr = [3, 2, 6, 5, 0, 3]`, `k = 2`:
 - Copy `dp_curr` to `dp_next` after each day
 
 ---
+
+# Buy and Sell Stocks With Cooldown (Non-Adjacent Buying)
+
+## 📋 Problem Statement
+
+Given an array `Arr[]` of length `n`, representing the price of a stock on `n` days.
+
+**Objective:** Determine the maximum profit achievable with the following guidelines:
+
+**Constraints:**
+1. Can buy and sell the stock **any number of times**
+2. Must **buy before selling**
+3. Can't buy a stock again after buying it once (must sell first, then can buy again)
+4. **Cooldown:** Can't buy a stock on the **very next day** of selling it
+
+---
+
+## 📊 Examples
+
+### Example 1:
+```
+Input: arr = [1, 2, 3, 0, 2]
+Output: 3
+Explanation: 
+- Buy on day 1 (price = 1), Sell on day 3 (price = 3), profit = 2
+- Cooldown on day 4
+- Buy on day 4 (price = 0), Sell on day 5 (price = 2), profit = 2
+- Total profit = 2 + 2 = 4
+Wait, let me recalculate...
+- Buy on day 1 (price = 1), Sell on day 2 (price = 2), profit = 1
+- Cooldown on day 3
+- Buy on day 4 (price = 0), Sell on day 5 (price = 2), profit = 2
+- Total profit = 1 + 2 = 3
+```
+
+### Example 2:
+```
+Input: arr = [9, 2, 6, 4, 7, 3]
+Output: 5
+Explanation: 
+- Buy on day 2 (price = 2), Sell on day 3 (price = 6), profit = 4
+- Cooldown on day 4
+- Buy on day 5 (price = 4), Sell on day 5 (price = 7)... wait can't buy and sell same day after cooldown
+- Actually: Buy on day 2 (price = 2), Sell on day 5 (price = 7), profit = 5
+```
+
+---
+
+## 🎯 Problem Analysis
+
+### Step 1: Define The Problem
+- Array represents stock prices over time
+- Can buy and sell **unlimited times**
+- Must buy before selling
+- **Cooldown Constraint:** After selling on day `i`, cannot buy on day `i+1`
+- **Profit = Selling Price - Buying Price**
+- Goal: Find **total maximum profit**
+
+### Step 2: Represent the Problem Programmatically
+
+**Function Definition:**
+```
+f(day, buy) → maximum profit from day to n-1
+```
+
+**Parameters:**
+- `day`: Current day (0 to n-1)
+- `buy`: Can we buy or sell?
+  - `buy = 0`: Can only **BUY** stock (we don't currently hold stock)
+  - `buy = 1`: Can only **SELL** stock (we currently hold stock)
+
+**State Space:** 
+- Days: `0` to `n-1`
+- Buy status: `0` or `1`
+- Total states: `n × 2`
+
+---
+
+## 🌳 Recursion Tree
+
+For `arr = [1, 2, 3]`, starting at `day=0, buy=0`:
+
+```
+                            f(0, buy=0)
+                            [Can BUY]
+                    ┌───────────┴───────────┐
+                    │                       │
+            BUY at day 0               DON'T BUY at day 0
+            profit: -1                 profit: 0
+            f(1, buy=1)                f(1, buy=0)
+            [Can SELL]                 [Can BUY]
+         ┌──────┴──────┐           ┌──────┴──────┐
+         │             │           │             │
+    SELL at 1    Don't SELL   BUY at 1     Don't BUY
+    profit: +2   profit: 0    profit: -2   profit: 0
+    f(2, 0)      f(2, 1)      f(2, 1)      f(2, 0)
+    [Cooldown]       │            │            │
+    Skip day 2  SELL at 2    Don't SELL  BUY at 2
+    f(3, 0)     +3           0           -3
+                f(3, 0)      f(3, 1)     f(3, 1)
+```
+
+**Key Observations:**
+- When **buying** (`buy=0`): Move to next day → `f(day+1, 1)`
+- When **selling** (`buy=1`): Skip next day (cooldown) → `f(day+2, 0)`
+- After selling, we can't buy on the immediate next day
+- This creates dependency on `day+2` instead of `day+1`
+
+---
+
+## 📐 Recurrence Relation
+
+### Step 3: Base Case
+```
+if day >= n:
+    return 0  # No more days or out of bounds, no profit
+```
+**Note:** We use `>=` because selling can reference `day+2` which might exceed `n`
+
+### Step 4: Finding The Recurrence Relation
+
+**Case 1: When `buy = 0` (Can BUY stock)**
+```
+include = -arr[day] + f(day+1, 1)   # Buy stock, reduce profit, can sell next day
+exclude = f(day+1, 0)               # Skip buying, move to next day
+result = max(include, exclude)
+```
+
+**Case 2: When `buy = 1` (Can SELL stock)**
+```
+include = arr[day] + f(day+2, 0)    # Sell stock, skip next day (cooldown)
+exclude = f(day+1, 1)               # Skip selling, move to next day
+result = max(include, exclude)
+```
+
+**Complete Relation:**
+```python
+if buy == 0:
+    return max(-arr[day] + f(day+1, 1), f(day+1, 0))
+else:
+    return max(arr[day] + f(day+2, 0), f(day+1, 1))
+```
+
+**Key Difference from Stock II:**
+- When **selling** (`buy=1`): Jump to `day+2` instead of `day+1`
+- This enforces the cooldown period after selling
+- Base case must handle `day >= n` (not just `day == n`)
+
+---
+
+## 💻 Solution Approaches
+
+### 1️⃣ Recursive Solution
+
+```python
+def solve(n, arr, day, buy):
+    """
+    Recursive solution to find maximum profit with cooldown.
+    
+    Args:
+        n: Total number of days
+        arr: Stock prices array
+        day: Current day index
+        buy: 0 (can buy) or 1 (can sell)
+    
+    Returns:
+        Maximum profit from current day to end
+    """
+    # Base case: No more days left or out of bounds
+    if day >= n:
+        return 0
+    
+    # If buy=0, we can BUY stock
+    if buy == 0:
+        include = -arr[day] + solve(n, arr, day+1, 1)  # Buy stock
+        exclude = solve(n, arr, day+1, 0)              # Don't buy
+    # If buy=1, we can SELL stock
+    else:
+        include = arr[day] + solve(n, arr, day+2, 0)   # Sell, skip next day (cooldown)
+        exclude = solve(n, arr, day+1, 1)              # Don't sell
+    
+    # Return maximum profit
+    return max(include, exclude)
+```
+
+**Time Complexity:** O(2^n)  
+**Space Complexity:** O(n) - Recursion stack depth
+
+---
+
+### 2️⃣ Memoization Solution
+
+**Conversion Steps (Recursion → Memoization):**
+1. Identify changing parameters: `day` and `buy`
+2. Create DP table: `memo[n+2][2]` (need n+2 because we access day+2)
+3. Initialize with `-1` to mark uncomputed states
+4. Initialize `memo[n+1][0]` and `memo[n+1][1]` to `0`
+5. Before computing, check if already computed
+6. Store result before returning
+
+```python
+def solve_memo(n, arr, day, buy, memo):
+    """
+    Memoization solution to find maximum profit with cooldown.
+    
+    Args:
+        n: Total number of days
+        arr: Stock prices array
+        day: Current day index
+        buy: 0 (can buy) or 1 (can sell)
+        memo: DP table to store computed results
+    
+    Returns:
+        Maximum profit from current day to end
+    """
+    # Check if already computed
+    if memo[day][buy] != -1:
+        return memo[day][buy]
+    
+    # Base case: No more days left or out of bounds
+    if day >= n:
+        return 0
+    
+    # If buy=0, we can BUY stock
+    if buy == 0:
+        include = -arr[day] + solve_memo(n, arr, day+1, 1, memo)
+        exclude = solve_memo(n, arr, day+1, 0, memo)
+    # If buy=1, we can SELL stock
+    else:
+        include = arr[day] + solve_memo(n, arr, day+2, 0, memo)
+        exclude = solve_memo(n, arr, day+1, 1, memo)
+    
+    # Store and return result
+    memo[day][buy] = max(include, exclude)
+    return memo[day][buy]
+```
+
+**Time Complexity:** O(n × 2) = O(n)  
+**Space Complexity:** O(n) + O(n × 2) = O(n) - Stack + DP table
+
+---
+
+### 3️⃣ Tabulation Solution
+
+**Conversion Steps (Memoization → Tabulation):**
+1. Create DP table: `dp[n+2][2]` (need n+2 for day+2 access)
+2. Initialize base cases: 
+   - `dp[n][0] = 0, dp[n][1] = 0`
+   - `dp[n+1][0] = 0, dp[n+1][1] = 0`
+3. Convert recursion direction: Fill from `n-1` to `0` (bottom-up)
+4. Replace recursive calls with DP table lookups
+5. Return `dp[0][0]` (start at day 0 with buy option)
+
+```python
+def tabulation(n, arr):
+    """
+    Tabulation (bottom-up DP) solution to find maximum profit.
+    
+    Args:
+        n: Total number of days
+        arr: Stock prices array
+    
+    Returns:
+        Maximum profit from all transactions
+    """
+    # Create DP table: dp[day][buy]
+    # Size is n+2 because we access day+2 when selling
+    dp = [[-1]*2 for _ in range(n+2)]
+    
+    # Base cases: At day n and n+1, no profit possible
+    dp[n][0] = 0
+    dp[n][1] = 0
+    dp[n+1][0] = 0
+    dp[n+1][1] = 0
+    
+    # Fill table from day n-1 to 0 (bottom-up)
+    for day in range(n-1, -1, -1):
+        for buy in range(2):
+            # If buy=0, we can BUY stock
+            if buy == 0:
+                include = -arr[day] + dp[day+1][1]  # Buy stock
+                exclude = dp[day+1][0]              # Don't buy
+            # If buy=1, we can SELL stock
+            else:
+                include = arr[day] + dp[day+2][0]   # Sell, skip next day
+                exclude = dp[day+1][1]              # Don't sell
+            
+            # Store maximum profit for current state
+            dp[day][buy] = max(include, exclude)
+    
+    # Return result: start at day 0 with option to buy
+    return dp[0][0]
+```
+
+**Time Complexity:** O(n × 2) = O(n)  
+**Space Complexity:** O(n × 2) = O(n)
+
+---
+
+### 4️⃣ Space Optimized Solution
+
+**Conversion Steps (Tabulation → Space Optimized):**
+1. Observe dependency: `dp[day]` depends on `dp[day+1]` and `dp[day+2]`
+2. Need **three** arrays: `dp_curr` (current), `dp_next` (day+1), `dp_next2` (day+2)
+3. Use `dp_next` for next day's values
+4. Use `dp_next2` for day after next values
+5. Use `dp_curr` to compute current day's values
+6. After each iteration: `dp_next2 = dp_next`, `dp_next = dp_curr`
+7. Return `dp_next[0]`
+
+```python
+def optimized(n, arr):
+    """
+    Space optimized solution to find maximum profit.
+    
+    Args:
+        n: Total number of days
+        arr: Stock prices array
+    
+    Returns:
+        Maximum profit from all transactions
+    """
+    # Use three arrays for day, day+1, and day+2
+    dp_next = [-1] * 2    # Stores day+1 values
+    dp_next2 = [-1] * 2   # Stores day+2 values
+    dp_curr = [-1] * 2    # Stores current day values
+    
+    # Base cases: At days beyond n, no profit possible
+    dp_next[0] = 0
+    dp_next[1] = 0
+    dp_next2[0] = 0
+    dp_next2[1] = 0
+    
+    # Fill from day n-1 to 0
+    for day in range(n-1, -1, -1):
+        for buy in range(2):
+            # If buy=0, we can BUY stock
+            if buy == 0:
+                include = -arr[day] + dp_next[1]    # Buy stock
+                exclude = dp_next[0]                # Don't buy
+            # If buy=1, we can SELL stock
+            else:
+                include = arr[day] + dp_next2[0]    # Sell, cooldown (use day+2)
+                exclude = dp_next[1]                # Don't sell
+            
+            # Store maximum profit for current state
+            dp_curr[buy] = max(include, exclude)
+        
+        # Shift arrays: current becomes next, next becomes next2
+        dp_next2 = dp_next.copy()
+        dp_next = dp_curr.copy()
+    
+    # Return result: start at day 0 with option to buy
+    return dp_next[0]
+```
+
+**Time Complexity:** O(n × 2) = O(n)  
+**Space Complexity:** O(3 × 2) = O(1) - Only 3 arrays of size 2
+
+---
+
+## 🧪 Test Code
+
+```python
+arr = [9, 2, 6, 4, 7, 3]
+n = len(arr)
+
+# Recursive Solution
+print(solve(n, arr, 0, 0))  # Output: 5
+
+# Memoization Solution
+memo = [[-1]*2 for _ in range(n+2)]
+memo[n+1][0] = 0
+memo[n+1][1] = 0
+print(solve_memo(n, arr, 0, 0, memo))  # Output: 5
+
+# Tabulation Solution
+print(tabulation(n, arr))  # Output: 5
+
+# Space Optimized Solution
+print(optimized(n, arr))  # Output: 5
+```
+
+---
+
+## 🔍 Step-by-Step Execution
+
+For `arr = [9, 2, 6, 4, 7, 3]`:
+
+### Tabulation DP Table (Partial):
+
+| Day | Price | buy=0 (Can BUY) | buy=1 (Can SELL)      |
+|-----|-------|-----------------|------------------------|
+| 6   | -     | 0               | 0                      |
+| 7   | -     | 0               | 0                      |
+| 5   | 3     | 0               | 3 (sell at 3, +day 7) |
+| 4   | 7     | 3               | 7 (sell at 7, +day 6) |
+| 3   | 4     | 4 (buy at 4)    | 7                      |
+| 2   | 6     | 4               | 6 (sell at 6, +day 4) |
+| 1   | 2     | 5 (buy at 2)    | 6                      |
+| 0   | 9     | **5**           | 6                      |
+
+**Final Answer:** `dp[0][0] = 5`
+
+**Transaction Breakdown:**
+- Buy on day 1 (price = 2), Sell on day 2 (price = 6), profit = 4
+- Cooldown on day 3
+- Buy on day 4 (price = 4), Sell on day 5 (price = 7), profit = 3
+- But wait... max is 5, so: Buy at day 1 (price = 2), Sell at day 4 (price = 7), profit = 5
+
+---
+
+## ⏱️ Complexity Analysis
+
+### 1. Recursive Solution
+- **Time Complexity:** O(2^n)
+  - Each state has 2 choices (include/exclude)
+  - Total recursive calls ≈ 2^n
+- **Space Complexity:** O(n)
+  - Recursion stack depth = n (maximum call depth)
+
+### 2. Memoization Solution
+- **Time Complexity:** O(n × 2) = **O(n)**
+  - Total unique states = n days × 2 buy options = 2n
+  - Each state computed once
+- **Space Complexity:** O(n) + O(n × 2) = **O(n)**
+  - Recursion stack: O(n)
+  - DP table: O((n+2) × 2) = O(n)
+
+### 3. Tabulation Solution
+- **Time Complexity:** O(n × 2) = **O(n)**
+  - Two nested loops: n iterations × 2 iterations
+- **Space Complexity:** O(n × 2) = **O(n)**
+  - DP table of size (n+2) × 2
+
+### 4. Space Optimized Solution
+- **Time Complexity:** O(n × 2) = **O(n)**
+  - Same as tabulation
+- **Space Complexity:** O(3 × 2) = **O(1)**
+  - Three arrays of size 2 each
+  - No recursion stack
+
+---
+
+## 📊 Complexity Comparison Table
+
+| Approach          | Time Complexity | Space Complexity | Notes                               |
+|-------------------|-----------------|------------------|-------------------------------------|
+| Recursion         | O(2^n)          | O(n)             | Exponential, very slow              |
+| Memoization       | O(n)            | O(n)             | Top-down DP, uses recursion         |
+| Tabulation        | O(n)            | O(n)             | Bottom-up DP, iterative             |
+| Space Optimized   | O(n)            | O(1)             | Uses 3 arrays instead of 2          |
+
+---
+
+## 🔄 Conversion Summary
+
+### Recursion → Memoization
+- Add 2D memo table `[n+2][2]` (extra space for day+2 access)
+- Initialize `memo[n+1][0] = 0` and `memo[n+1][1] = 0`
+- Check memo before computation
+- Store result in memo before returning
+
+### Memoization → Tabulation
+- Convert top-down to bottom-up
+- Create DP table of size `[n+2][2]`
+- Initialize base cases: `dp[n][0] = dp[n][1] = dp[n+1][0] = dp[n+1][1] = 0`
+- Loop from `n-1` to `0`
+- Replace recursive calls with table lookups
+- When selling, access `dp[day+2][0]`
+
+### Tabulation → Space Optimized
+- Observe: `dp[day]` depends on `dp[day+1]` and `dp[day+2]`
+- Use **three** 1D arrays instead of 2D table:
+  - `dp_curr` for current day
+  - `dp_next` for day+1
+  - `dp_next2` for day+2
+- After computing current day: shift arrays
+  - `dp_next2 = dp_next`
+  - `dp_next = dp_curr`
+
+---
+
+## 🔑 Key Differences from Stock II
+
+| Aspect                  | Stock II (Unlimited)        | Stock with Cooldown          |
+|-------------------------|-----------------------------|------------------------------|
+| After selling           | `f(day+1, 0)`               | `f(day+2, 0)` ← Skip next day|
+| Base case               | `day == n`                  | `day >= n` ← Can exceed n    |
+| DP table size           | `[n+1][2]`                  | `[n+2][2]` ← Extra row       |
+| Space optimization      | 2 arrays                    | 3 arrays ← Need day+2        |
+| Cooldown enforcement    | None                        | Jump 2 days after selling    |
