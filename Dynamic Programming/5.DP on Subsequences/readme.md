@@ -288,3 +288,532 @@ print(optimized(n, arr, target))
 | Space Optimized | O(n × target) | O(target) |
 
 ---
+
+# Partition Equal Subset Sum
+
+## Problem Statement
+
+Given an array `arr` of `n` integers, return `true` if the array can be partitioned into two subsets such that the sum of elements in both subsets is equal, else return `false`.
+
+### Examples
+
+**Example 1:**
+```
+Input: arr = [1, 10, 21, 10]
+Output: True
+Explanation: The array can be partitioned as [1, 10, 10] and [21].
+```
+
+**Example 2:**
+```
+Input: arr = [1, 2, 3, 5]
+Output: False
+Explanation: The array cannot be partitioned into equal sum subsets.
+```
+
+---
+
+## Problem Definition
+
+We are given an array and need to check whether we can divide it into two subsequences such that their sums are equal.
+
+### Key Insight
+
+This problem can be reduced to the **Subset Sum Problem**!
+
+Let's say:
+- `totalSum = sum(arr)`
+- `half = totalSum // 2`
+
+**Observations**:
+1. If we can partition the array into two equal sum subsets, each subset must have sum = `totalSum / 2`
+2. If we find **one** subset with sum = `half`, the remaining elements automatically form the other subset with sum = `half`
+3. If `totalSum` is **odd**, it's impossible to partition into two equal sums
+
+**Therefore**: Check if there exists a subset with sum equal to `half` of total sum.
+
+---
+
+## Problem Reduction
+
+```
+Original Problem: Partition array into two equal sum subsets
+                         ↓
+Reduced Problem: Find if subset exists with sum = totalSum/2
+                         ↓
+                  Subset Sum Problem!
+```
+
+### Why This Works
+
+For `arr = [1, 10, 21, 10]`:
+- `totalSum = 42`
+- `half = 21`
+- If we find subset `[21]` with sum = 21
+- Remaining elements `[1, 10, 10]` automatically have sum = 42 - 21 = 21 ✓
+
+---
+
+## Edge Case: Odd Total Sum
+
+**Important Check**: If `totalSum` is odd, return `False` immediately.
+
+```python
+if totalSum & 1:  # Bitwise check if odd
+    return False
+```
+
+**Why?** 
+- To partition into two equal sums, each must be `totalSum / 2`
+- If `totalSum` is odd, `totalSum / 2` is not an integer
+- Example: `arr = [1, 2, 3, 5]`, `totalSum = 11`, cannot divide 11 into two equal integers
+
+---
+
+## Solution: Space Optimized Subset Sum
+
+Since this is a direct application of Subset Sum, we use the space-optimized approach.
+
+```python
+def optimized(n, arr, targetSum):
+    # Two arrays to track current and previous states
+    dp_curr = [False]*(targetSum+1)
+    dp_prev = [False]*(targetSum+1)
+    
+    # Base case: target = 0 is always achievable (empty subset)
+    dp_prev[0] = True
+    dp_curr[0] = True
+    
+    # Base case: first element
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = True
+    
+    # Fill the arrays for each element
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            # Include current element (if it doesn't exceed target)
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = False
+            
+            # Exclude current element
+            exclude = dp_prev[target]
+            
+            # Current state is True if either include or exclude works
+            dp_curr[target] = include or exclude
+        
+        # Move current to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[targetSum]
+```
+
+**Time Complexity**: O(n × targetSum) = O(n × sum/2) = O(n × sum)  
+**Space Complexity**: O(targetSum) = O(sum)
+
+---
+
+## Complete Solution
+
+```python
+def optimized(n, arr, targetSum):
+    dp_curr = [False]*(targetSum+1)
+    dp_prev = [False]*(targetSum+1)
+    dp_prev[0] = True
+    dp_curr[0] = True
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = True
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = False
+            exclude = dp_prev[target]
+            dp_curr[target] = include or exclude
+        dp_prev = dp_curr.copy()
+    return dp_prev[targetSum]
+
+# Main logic
+n = int(input())
+arr = list(map(int, input().split()))
+totalSum = sum(arr)
+
+# Check if totalSum is odd
+if totalSum & 1:
+    print(False)
+else:
+    half = totalSum // 2
+    print(optimized(n, arr, half))
+```
+
+---
+
+## Example Walkthrough
+
+### Example 1: `arr = [1, 10, 21, 10]`
+
+1. Calculate `totalSum = 1 + 10 + 21 + 10 = 42`
+2. Check if odd: `42 & 1 = 0` (even) ✓
+3. Calculate `half = 42 // 2 = 21`
+4. Find if subset with sum = 21 exists
+5. **Result**: `True` (subset `[21]` has sum 21)
+
+### Example 2: `arr = [1, 2, 3, 5]`
+
+1. Calculate `totalSum = 1 + 2 + 3 + 5 = 11`
+2. Check if odd: `11 & 1 = 1` (odd) ✗
+3. **Result**: `False` (cannot partition odd sum into two equal parts)
+
+---
+
+## Tabulation Table Example
+
+For `arr = [1, 5, 5]` and `target = 5` (half of totalSum = 11... wait, 11 is odd!)
+
+Let's use `arr = [2, 3, 5]` and `target = 5` (half of totalSum = 10):
+
+| index/target | 0 | 1 | 2 | 3 | 4 | 5 |
+|--------------|---|---|---|---|---|---|
+| 0 (arr[0]=2) | T | F | T | F | F | F |
+| 1 (arr[1]=3) | T | F | T | T | F | T |
+| 2 (arr[2]=5) | T | F | T | T | F | T |
+
+**Explanation**:
+- Row 0: Can make sum 0 (empty) and sum 2 (using element 2)
+- Row 1: Can make 0, 2, 3 (using element 3), 5 (using 2+3)
+- Row 2: Can make 0, 2, 3, 5 (existing sums; element 5 alone also makes 5)
+- **Result**: `dp[2][5] = True` ✓
+
+---
+
+## Complexity Analysis
+
+| Metric | Complexity |
+|--------|------------|
+| **Time** | O(n × sum) |
+| **Space** | O(sum) |
+
+Where:
+- `n` = length of array
+- `sum` = total sum of array elements
+- We process each element once and check all possible targets up to `sum/2`
+
+---
+
+# Partition a Set into Two Subsets with Minimum Absolute Sum Difference
+
+## Problem Statement
+
+Given an array `arr` of `n` integers, partition the array into two subsets such that the absolute difference between their sums is minimized.
+
+### Examples
+
+**Example 1:**
+```
+Input: arr = [1, 7, 14, 5]
+Output: 1
+Explanation: The array can be partitioned as [1, 7, 5] and [14], with an absolute difference of 1.
+```
+
+**Example 2:**
+```
+Input: arr = [3, 1, 6, 2, 2]
+Output: 0
+Explanation: The array can be partitioned as [3, 2, 2] and [6, 1], with an absolute difference of 0.
+```
+
+---
+
+## Problem Definition
+
+We are given an array and need to split it into two subsequences such that the difference in their sums is **minimum**.
+
+### Key Insight
+
+This problem builds upon the **Subset Sum Problem**!
+
+**Observation from Subset Sum**:
+- In the Subset Sum tabulation approach, we check for each index whether a subsequence sum exists for all values from 1 to target
+- The **last row** of the DP table shows which subsequence sums are achievable for the entire array
+- From this row, we can extract **all possible subsequence sums**
+
+**How to use this**:
+1. Find all possible sums that can be formed using array elements (using Subset Sum DP)
+2. For each possible sum `S1`, the other subset has sum `S2 = total - S1`
+3. Calculate difference: `|S1 - S2|`
+4. Find the minimum difference across all valid partitions
+
+---
+
+## Mathematical Formulation
+
+Let:
+- `total = sum(arr)` (total sum of array)
+- `S1` = sum of first subset
+- `S2` = sum of second subset
+
+We know: `S1 + S2 = total`
+
+Therefore: `S2 = total - S1`
+
+**Difference**: 
+```
+|S1 - S2| = |S1 - (total - S1)| = |2×S1 - total|
+```
+
+**Goal**: Minimize `|2×S1 - total|` where `S1` is an achievable subset sum.
+
+---
+
+## Optimization Insight
+
+To minimize `|S1 - S2|`:
+- We want `S1` and `S2` to be as close as possible
+- Ideally, `S1 ≈ total/2` and `S2 ≈ total/2`
+- We should check subset sums from `0` to `total/2` (no need to check beyond, as it's symmetric)
+
+**Why?**
+- If `S1 > total/2`, then `S2 = total - S1 < total/2`
+- The pair `(S1, S2)` and `(S2, S1)` give the same difference
+- So we only need to consider `S1 ≤ total/2`
+
+---
+
+## Approach
+
+### Step 1: Find All Possible Subset Sums
+
+Use the Subset Sum DP approach to generate the last row, which tells us which sums are achievable.
+
+### Step 2: Iterate Through Possible Sums
+
+For each achievable sum from `1` to `total`:
+- Calculate `current_sum = target_sum`
+- Calculate `other_sum = total - current_sum`
+- Calculate `diff = |current_sum - other_sum|`
+- Track minimum difference
+
+---
+
+## Solution
+
+```python
+def optimized(n, arr, targetSum):
+    # Two arrays for space-optimized DP
+    dp_curr = [False]*(targetSum+1)
+    dp_prev = [False]*(targetSum+1)
+    
+    # Base case: sum 0 is always achievable
+    dp_prev[0] = True
+    dp_curr[0] = True
+    
+    # Base case: first element
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = True
+    
+    # Fill DP arrays for each element
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            # Include current element
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = False
+            
+            # Exclude current element
+            exclude = dp_prev[target]
+            
+            # Update current state
+            dp_curr[target] = include or exclude
+        
+        # Move current to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    # Return last row showing all achievable sums
+    return dp_prev
+```
+
+### Main Logic
+
+```python
+arr = [1, 7, 14, 5]
+n = len(arr)
+total = sum(arr)
+
+# Get all achievable subset sums
+last_row = optimized(n, arr, total)
+
+# Initialize minimum difference as total (worst case)
+min_diff = total
+
+# Check all possible subset sums
+for target_sum in range(1, total):
+    if last_row[target_sum]:  # If this sum is achievable
+        current_sum = target_sum
+        other_sum = total - current_sum
+        diff = abs(current_sum - other_sum)
+        min_diff = min(min_diff, diff)
+
+print(min_diff)
+```
+
+**Time Complexity**: O(n × total)  
+**Space Complexity**: O(total)
+
+---
+
+## Example Walkthrough
+
+### Example 1: `arr = [1, 7, 14, 5]`
+
+**Step 1**: Calculate `total = 1 + 7 + 14 + 5 = 27`
+
+**Step 2**: Run Subset Sum DP to find achievable sums
+
+`last_row` (showing True/False for each sum):
+```
+sum:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+      T  T  F  F  F  T  T  T  T  F  F  F  T  T  T  T  F  F  T  T  T  T  T  F  F  F  T  T
+```
+
+**Step 3**: Find minimum difference
+
+| Subset Sum (S1) | Other Sum (S2) | Difference |
+|-----------------|----------------|------------|
+| 1 | 26 | 25 |
+| 5 | 22 | 17 |
+| 6 | 21 | 15 |
+| 7 | 20 | 13 |
+| 8 | 19 | 11 |
+| 12 | 15 | 3 |
+| 13 | 14 | **1** ← minimum |
+| 14 | 13 | 1 |
+
+**Result**: Minimum difference = **1**
+
+Partition: `[1, 7, 5] = 13` and `[14] = 14`
+
+---
+
+### Example 2: `arr = [3, 1, 6, 2, 2]`
+
+**Step 1**: Calculate `total = 3 + 1 + 6 + 2 + 2 = 14`
+
+**Step 2**: Run Subset Sum DP
+
+`last_row`:
+```
+sum:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
+      T  T  T  T  T  T  T  T  T  T  T  T  T  T  T
+```
+
+(All sums from 0 to 14 are achievable!)
+
+**Step 3**: Find minimum difference
+
+When `S1 = 7`:
+- `S2 = 14 - 7 = 7`
+- `diff = |7 - 7| = 0`
+
+**Result**: Minimum difference = **0**
+
+Partition: `[3, 2, 2] = 7` and `[6, 1] = 7`
+
+---
+
+## Visualization: DP Table
+
+For `arr = [1, 7, 14, 5]` and `total = 27`:
+
+| index/sum | 0 | 1 | 5 | 6 | 7 | 8 | 12 | 13 | 14 | ... |
+|-----------|---|---|---|---|---|---|----|----|----|-----|
+| 0 (1) | T | T | F | F | F | F | F | F | F | ... |
+| 1 (7) | T | T | F | F | T | T | F | F | F | ... |
+| 2 (14) | T | T | F | F | T | T | F | F | T | ... |
+| 3 (5) | T | T | T | T | T | T | T | T | T | ... |
+
+**Last Row Interpretation**:
+- `True` at position `i` means we can form a subset with sum = `i`
+- We check each achievable sum to find the one that minimizes the partition difference
+
+---
+
+## Why Check Range `1` to `total`?
+
+```python
+for target_sum in range(1, total):
+```
+
+- We skip `0` because an empty subset doesn't help (other subset would be the entire array)
+- We check up to `total-1` because if one subset has sum = `total`, the other is empty
+- For each achievable sum, we calculate the minimum difference
+
+**Optimization**: We could check only up to `total//2` since partitions are symmetric:
+```python
+for target_sum in range(1, (total//2) + 1):
+    if last_row[target_sum]:
+        diff = total - 2 * target_sum
+        min_diff = min(min_diff, diff)
+```
+
+---
+
+## Complete Code
+
+```python
+def optimized(n, arr, targetSum):
+    dp_curr = [False]*(targetSum+1)
+    dp_prev = [False]*(targetSum+1)
+    dp_prev[0] = True
+    dp_curr[0] = True
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = True
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = False
+            exclude = dp_prev[target]
+            dp_curr[target] = include or exclude
+        dp_prev = dp_curr.copy()
+    return dp_prev
+
+arr = [1, 7, 14, 5]
+n = len(arr)
+total = sum(arr)
+
+# Get all achievable subset sums
+last_row = optimized(n, arr, total)
+
+# Find minimum difference
+min_diff = total
+for target_sum in range(1, total):
+    if last_row[target_sum]:
+        current_sum = target_sum
+        other_sum = total - current_sum
+        diff = abs(current_sum - other_sum)
+        min_diff = min(min_diff, diff)
+
+print(min_diff)
+```
+
+---
+
+## Complexity Analysis
+
+| Metric | Complexity |
+|--------|------------|
+| **Time** | O(n × total) |
+| **Space** | O(total) |
+
+Where:
+- `n` = length of array
+- `total` = sum of all array elements
+- DP computation: O(n × total)
+- Finding minimum: O(total)
+- **Overall**: O(n × total)
+
+---
