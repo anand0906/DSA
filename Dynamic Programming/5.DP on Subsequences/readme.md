@@ -1346,61 +1346,62 @@ else:
     dp_prev[0] = 1  # Just empty subset
 ```
 
-**More Generally**:
-```python
-if targetSum == 0:
-    dp_prev[0] = 2  # Special case when target itself is 0
-else:
-    dp_prev[0] = 1  # Normal case
-```
+**Why `dp_prev[0] = 2` when `arr[0] = 0`?**
+- Option 1: Don't pick the zero → subset = `[]`, sum = 0
+- Option 2: Pick the zero → subset = `[0]`, sum = 0
+- Both options give sum = 0, so there are 2 ways!
 
 **For first element**:
 ```python
-if arr[0] <= targetSum and arr[0] != 0:
+if arr[0] != 0 and arr[0] <= targetSum:
     dp_prev[arr[0]] = 1
 ```
 - We only set `dp_prev[arr[0]]` if `arr[0] != 0`
 - If `arr[0] = 0`, it's already handled by `dp_prev[0] = 2`
+- This avoids double-counting
 
 ---
 
 ## Solution with Zero Handling
 
 ```python
+MOD = 10**9 + 7
+
 def optimized(n, arr, targetSum):
-    dp_curr = [0]*(targetSum+1)
-    dp_prev = [0]*(targetSum+1)
-    
-    # Special handling for target = 0 and zeros in array
-    if targetSum == 0:
-        dp_prev[0] = 2  # Include or exclude first element (if it's 0)
+    dp_prev = [0] * (targetSum + 1)
+    dp_curr = [0] * (targetSum + 1)
+
+    # Base case: Handle first element
+    if arr[0] == 0:
+        # If first element is 0, we have two options: pick or not pick
+        # Both give sum = 0, so there are 2 ways to achieve sum 0
+        dp_prev[0] = 2
     else:
-        dp_prev[0] = 1  # Normal case: empty subset
-    
-    # First element handling (avoid double counting if arr[0] = 0)
-    if arr[0] <= targetSum and arr[0] != 0:
+        # If first element is non-zero, only empty subset gives sum 0
+        dp_prev[0] = 1
+
+    # If first element is non-zero and within target, mark it
+    if arr[0] != 0 and arr[0] <= targetSum:
         dp_prev[arr[0]] = 1
-    
-    # Fill DP arrays
+
+    # Process remaining elements
     for index in range(1, n):
-        dp_curr = [0]*(targetSum+1)  # Reset current array
-        
-        for target in range(targetSum+1):
-            # Include current element
+        for target in range(targetSum + 1):
+            # Include current element (if possible)
+            include = 0
             if arr[index] <= target:
-                include = dp_prev[target-arr[index]]
-            else:
-                include = 0
-            
+                include = dp_prev[target - arr[index]]
+
             # Exclude current element
             exclude = dp_prev[target]
             
-            # Total count
-            dp_curr[target] = include + exclude
-        
-        dp_prev = dp_curr.copy()
-    
-    return dp_prev[targetSum]
+            # Total count with modulo
+            dp_curr[target] = (include + exclude) % MOD
+
+        # Copy current to previous for next iteration
+        dp_prev = dp_curr[:]
+
+    return dp_prev[targetSum] % MOD
 ```
 
 ---
@@ -1408,43 +1409,55 @@ def optimized(n, arr, targetSum):
 ## Complete Code
 
 ```python
-def optimized(n, arr, targetSum):
-    dp_curr = [0]*(targetSum+1)
-    dp_prev = [0]*(targetSum+1)
-    
-    if targetSum == 0:
-        dp_prev[0] = 2
-    else:
-        dp_prev[0] = 1
-    
-    if arr[0] <= targetSum and arr[0] != 0:
-        dp_prev[arr[0]] = 1
-    
-    for index in range(1, n):
-        dp_curr = [0]*(targetSum+1)
-        for target in range(targetSum+1):
-            if arr[index] <= target:
-                include = dp_prev[target-arr[index]]
-            else:
-                include = 0
-            exclude = dp_prev[target]
-            dp_curr[target] = include + exclude
-        dp_prev = dp_curr.copy()
-    
-    return dp_prev[targetSum]
+MOD = 10**9 + 7
 
-# Main logic
+def optimized(n, arr, targetSum):
+    dp_prev = [0] * (targetSum + 1)
+    dp_curr = [0] * (targetSum + 1)
+
+    # Base case: Handle first element
+    if arr[0] == 0:
+        dp_prev[0] = 2  # Two ways: pick or not pick the zero
+    else:
+        dp_prev[0] = 1  # One way: empty subset
+
+    # If first element is non-zero and within target
+    if arr[0] != 0 and arr[0] <= targetSum:
+        dp_prev[arr[0]] = 1
+
+    # Process remaining elements
+    for index in range(1, n):
+        for target in range(targetSum + 1):
+            include = 0
+            if arr[index] <= target:
+                include = dp_prev[target - arr[index]]
+
+            exclude = dp_prev[target]
+            dp_curr[target] = (include + exclude) % MOD
+
+        dp_prev = dp_curr[:]  # Copy for next iteration
+
+    return dp_prev[targetSum] % MOD
+
+
+class Solution:
+    def countPartitions(self, n, diff, arr):
+        total = sum(arr)
+
+        # Check validity of partition
+        if (total - diff) < 0 or (total - diff) % 2 != 0:
+            return 0
+
+        s2 = (total - diff) // 2
+        return optimized(n, arr, s2)
+
+
+# Test
+sol = Solution()
 arr = [1, 1, 2, 3]
 n = len(arr)
 diff = 1
-total = sum(arr)
-
-# Check for invalid cases
-if (total - diff) < 0 or (total - diff) & 1:
-    print(0)
-else:
-    s2 = (total - diff) // 2
-    print(optimized(n, arr, s2))
+print(sol.countPartitions(n, diff, arr))  # Output: 3
 ```
 
 ---
@@ -1506,14 +1519,27 @@ With zero handling:
 
 ## Why Reset `dp_curr` in Loop?
 
+**Important Note**: In the corrected code, we DON'T reset `dp_curr` inside the loop!
+
 ```python
 for index in range(1, n):
-    dp_curr = [0]*(targetSum+1)  # Reset current array
+    for target in range(targetSum + 1):
+        # Process all targets
+        dp_curr[target] = (include + exclude) % MOD
+    
+    dp_prev = dp_curr[:]  # Copy entire array at once
 ```
 
-**Reason**: Prevents accumulation from previous iterations
-- Without reset, values would keep adding up
-- Each iteration should start fresh based on `dp_prev`
+**Why this works**:
+- We process ALL targets (0 to targetSum) in the inner loop
+- Each `dp_curr[target]` is explicitly set, overwriting any previous value
+- No need to reset because we're overwriting, not accumulating
+- We use `dp_curr[:]` to create a proper copy (not just reference)
+
+**Key Difference**:
+- `dp_prev = dp_curr.copy()` ✓ Creates a new copy
+- `dp_prev = dp_curr[:]` ✓ Creates a new copy (slice notation)
+- `dp_prev = dp_curr` ✗ Just creates a reference (both point to same array)
 
 ---
 
@@ -1548,12 +1574,25 @@ Where:
 
 ## Key Takeaways
 
-1. **Problem Reduction**: Target sum assignment reduces to counting subsets
-2. **Mathematical Derivation**: `S2 = (total - diff) / 2`
-3. **Edge Cases**: Check for negative or odd `(total - diff)`
+1. **Problem Reduction**: Target sum assignment reduces to counting subsets with `S2 = (total - diff) / 2`
+
+2. **Mathematical Derivation**: 
+   - `S1 - S2 = diff` and `S1 + S2 = total`
+   - Solving gives `S2 = (total - diff) / 2`
+
+3. **Edge Cases**: 
+   - Check for negative: `(total - diff) < 0`
+   - Check for odd: `(total - diff) % 2 != 0`
+
 4. **Zero Handling**: Critical for arrays containing zeros
-   - Use `dp_prev[0] = 2` when `targetSum = 0`
-   - Avoid double-counting first element if it's 0
-5. **Array Reset**: Reset `dp_curr` in each iteration to prevent accumulation
+   - Use `dp_prev[0] = 2` when `arr[0] = 0` (two ways: pick or not pick)
+   - Use `dp_prev[0] = 1` when `arr[0] != 0` (one way: empty subset)
+   - Only set `dp_prev[arr[0]]` if `arr[0] != 0` to avoid double-counting
+
+5. **Modulo Operation**: Apply `% MOD` to prevent overflow
+   - Use during computation: `(include + exclude) % MOD`
+   - Final return: `dp_prev[targetSum] % MOD`
+
+6. **Array Copying**: Use `dp_prev = dp_curr[:]` or `dp_curr.copy()` to create proper copies, not references
 
 ---
