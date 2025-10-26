@@ -1650,3 +1650,148 @@ Where:
    - Prevents integer overflow for large counts
 
 ---
+
+# Target Sum
+
+## Problem Statement
+
+Given an array `nums` of `n` integers and an integer `target`, build an expression using the integers from `nums` where each integer can be prefixed with either a `+` or `-` sign.
+
+The goal is to achieve the target sum by evaluating all possible combinations of these signs.
+
+Determine the number of ways to achieve the target sum and return your answer modulo (10⁹ + 7).
+
+### Examples
+
+**Example 1:**
+```
+Input: nums = [1, 2, 7, 1, 5], target = 4
+Output: 2
+Explanation: There are 2 ways to assign symbols to make the sum of nums be target 4.
+  +1 + 2 + 7 - 1 - 5 = 4
+  -1 + 2 + 7 + 1 - 5 = 4
+```
+
+**Example 2:**
+```
+Input: nums = [1], target = 1
+Output: 1
+Explanation: There is only one way to assign symbols to make the sum of nums be target 1.
+  +1 = 1
+```
+
+**Example 3:**
+```
+Input: nums = [1, 1, 1, 1, 1], target = 3
+Output: 5
+Explanation: There are 5 ways to assign symbols to make the sum of nums be target 3.
+  +1 + 1 + 1 + 1 - 1 = 3
+  +1 + 1 + 1 - 1 + 1 = 3
+  +1 + 1 - 1 + 1 + 1 = 3
+  +1 - 1 + 1 + 1 + 1 = 3
+  -1 + 1 + 1 + 1 + 1 = 3
+```
+
+---
+
+## Why This Is The Same As "Count Partitions with Given Difference"
+
+This problem is **mathematically identical** to the "Count Partitions with Given Difference" problem!
+
+### The Connection
+
+**Target Sum Problem**:
+- Assign `+` or `-` to each element
+- Elements with `+` contribute positively
+- Elements with `-` contribute negatively
+- Goal: `(sum of + elements) - (sum of - elements) = target`
+
+**Partition with Difference Problem**:
+- Partition array into two subsets `S1` and `S2`
+- Goal: `S1 - S2 = diff`
+
+### They're The Same Thing!
+
+Let's say:
+- `Positive` = sum of all elements with `+` sign
+- `Negative` = sum of all elements with `-` sign
+
+Then:
+- `Positive - Negative = target`
+- `Positive + Negative = total` (sum of all elements)
+
+This is **exactly** the same as:
+- `S1 - S2 = diff`
+- `S1 + S2 = total`
+
+**Mapping**:
+- Elements with `+` sign → belong to subset `S1`
+- Elements with `-` sign → belong to subset `S2`
+- `target` in Target Sum = `diff` in Partition problem
+
+### Visual Example
+
+For `nums = [1, 2, 7, 1, 5]`, `target = 4`:
+
+**As Target Sum**:
+```
++1 + 2 + 7 - 1 - 5 = 4
+Positive group: {1, 2, 7} = 10
+Negative group: {1, 5} = 6
+Result: 10 - 6 = 4 ✓
+```
+
+**As Partition Problem** (diff = 4):
+```
+S1 = {1, 2, 7} = 10
+S2 = {1, 5} = 6
+Difference: 10 - 6 = 4 ✓
+```
+
+**They're identical!**
+
+---
+
+## Solution Approach
+
+Use the **exact same solution** as "Count Partitions with Given Difference":
+
+1. Calculate `total = sum(nums)`
+2. Check if `(total - target) < 0` or `(total - target)` is odd → return 0
+3. Calculate `S2 = (total - target) / 2`
+4. Count subsets with sum = `S2` using DP
+
+The code is identical, just replace `diff` with `target`!
+
+---
+
+## Test Cases
+
+```python
+# Test Case 1
+nums = [1, 2, 7, 1, 5]
+target = 4
+# Output: 2
+
+# Test Case 2
+nums = [1]
+target = 1
+# Output: 1
+
+# Test Case 3
+nums = [1, 1, 1, 1, 1]
+target = 3
+# Output: 5
+
+# Test Case 4
+nums = [0, 0, 0, 0, 0, 0, 1]
+target = 1
+# Output: 64 (2^6 = 64 ways to distribute 6 zeros)
+
+# Test Case 5
+nums = [100]
+target = -200
+# Output: 0 (impossible)
+```
+
+---
