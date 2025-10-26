@@ -1222,13 +1222,17 @@ result = solve(n, arr, n-1, target) % MOD
 
 ---
 
-# Target Sum with +/- Assignment
+# Count Partitions with Given Difference
 
 ## Problem Statement
 
-Given an array `arr` of `n` non-negative integers and a target difference `diff`, count the number of ways to assign `+` or `-` signs to each element such that the resulting sum equals `diff`.
+Given an array `arr` of `n` integers and an integer `diff`, count the number of ways to partition the array into two subsets `S1` and `S2` such that:
+- `|S1 - S2| = diff` where `S1 ≥ S2`
+- `|S1|` and `|S2|` represent the **sum** of subsets `S1` and `S2` respectively
 
-Alternatively: Partition the array into two subsets `S1` (positive) and `S2` (negative) such that `S1 - S2 = diff`.
+Return the result modulo (10⁹ + 7).
+
+**Note**: A partition means that the union of `S1` and `S2` is the original array, and no element is left out or used twice — every element belongs to exactly one of the two subsets.
 
 ### Examples
 
@@ -1236,158 +1240,182 @@ Alternatively: Partition the array into two subsets `S1` (positive) and `S2` (ne
 ```
 Input: arr = [1, 1, 2, 3], diff = 1
 Output: 3
-Explanation: 
-  +1 +1 +2 -3 = 1
-  +1 -1 +2 -3 = 1  (Wait, this is -1)
-  -1 +1 +2 -3 = 1  (Wait, this is -1)
-  +1 +1 -2 +3 = 1  (This is 3)
-  
-Let me recalculate:
-  Total = 7, diff = 1
-  S1 - S2 = 1 and S1 + S2 = 7
-  => S1 = 4, S2 = 3
-  
-  Subsets with sum 4: [1,3], [1,1,2]
-  Actually need to count carefully...
+Explanation: The subsets are [1, 2] and [1, 3], [1, 3] and [1, 2], [1, 1, 2] and [3].
 ```
 
 **Example 2:**
 ```
-Input: arr = [1, 2, 3], diff = 0
+Input: arr = [1, 2, 3, 4], diff = 2
 Output: 2
-Explanation: Partitions where S1 - S2 = 0 (equal sums):
-  S1 = [3], S2 = [1, 2] → 3 - 3 = 0 ✓
-  S1 = [1, 2], S2 = [3] → 3 - 3 = 0 ✓
+Explanation: The subsets are [1, 3] and [2, 4], [1, 2, 3] and [4].
 ```
 
 ---
 
-## Problem Reduction
+## Problem Definition
 
-This problem reduces to **Count Subsets with Sum K**!
+We need to partition the array into two subsets such that the absolute difference of their sums equals `diff`.
+
+Since `S1 ≥ S2`, the problem is equivalent to: `S1 - S2 = diff`
+
+---
+
+## Problem Reduction to Subset Sum
+
+This problem reduces to the **Count Subsets with Sum K** problem!
 
 ### Mathematical Derivation
 
-Let:
-- `S1` = sum of elements assigned `+` sign
-- `S2` = sum of elements assigned `-` sign
+Given:
+- `S1` = sum of first subset (larger)
+- `S2` = sum of second subset (smaller)
 - `total` = sum of all array elements
+- `S1 ≥ S2` (given constraint)
 
-**Given Constraints**:
+**Constraints**:
 1. `S1 - S2 = diff` (target difference)
-2. `S1 + S2 = total` (all elements used)
+2. `S1 + S2 = total` (all elements must be used)
 
 **Solving for S2**:
 ```
-From (1): S1 = S2 + diff
-Substitute in (2): (S2 + diff) + S2 = total
-                   2×S2 + diff = total
-                   S2 = (total - diff) / 2
+From equation (1): S1 = S2 + diff
+
+Substitute in equation (2):
+(S2 + diff) + S2 = total
+2×S2 + diff = total
+2×S2 = total - diff
+S2 = (total - diff) / 2
 ```
 
-**Therefore**: Count subsets with sum = `(total - diff) / 2`
+**Also**:
+```
+S1 = total - S2 = total - (total - diff)/2 = (total + diff) / 2
+```
+
+**Conclusion**: Count subsets with sum = `(total - diff) / 2`
 
 ---
 
-## Edge Cases to Handle
+## Why This Reduction Works
 
-### 1. Invalid Cases
+**Key Insight**:
+- Once we choose elements for subset `S2`, the remaining elements automatically form `S1`
+- We don't need to count both `S1` and `S2` separately
+- Counting subsets with sum `S2` gives us all valid partitions
 
-**Case 1**: If `total - diff < 0`
-- This means `S2 < 0`, which is impossible
-- Return `0`
+**Example**: `arr = [1, 1, 2, 3]`, `diff = 1`
+- `total = 7`
+- `S2 = (7 - 1) / 2 = 3`
+- Subsets with sum 3: `{3}`, `{1, 2}` (first 1), `{1, 2}` (second 1)
+- Count = 3 ✓
 
-**Case 2**: If `(total - diff)` is odd
-- `S2 = (total - diff) / 2` must be an integer
-- If odd, no valid partition exists
-- Return `0`
+For each subset with sum 3, the remaining elements have sum `7 - 3 = 4`, giving difference `4 - 3 = 1` ✓
 
+---
+
+## Base Cases
+
+Before applying the subset sum algorithm, check for invalid cases:
+
+### Invalid Case 1: Negative Sum
 ```python
-if (total - diff) < 0 or (total - diff) & 1:
+if (total - diff) < 0:
     return 0
 ```
+**Reason**: `S2 = (total - diff) / 2` cannot be negative
 
-### 2. Zeros in Array - Critical Case!
+**Example**: `arr = [1, 2]`, `diff = 5`
+- `total = 3`, `S2 = (3 - 5) / 2 = -1` (impossible)
 
-When the array contains zeros, special handling is needed for the base case.
+### Invalid Case 2: Odd Result
+```python
+if (total - diff) % 2 != 0:
+    return 0
+```
+**Reason**: `S2` must be an integer
 
-**Why?**
-- If `target = 0` and array has zeros, each zero can be included or excluded
-- If we have `k` zeros, there are `2^k` ways to achieve sum 0
+**Example**: `arr = [1, 2, 3]`, `diff = 2`
+- `total = 6`, `S2 = (6 - 2) / 2 = 2` ✓ (even, valid)
 
-**Example**: `arr = [0, 0, 1]`, `target = 1`
-- Subsets with sum 1: `[1]`, `[0, 1]`, `[0, 1]`, `[0, 0, 1]`
-- But wait, `[0, 1]` and `[0, 1]` are the same!
-- Actually: We can include/exclude zeros independently
-  - `[1]` ✓
-  - `[0, 1]` (first zero) ✓
-  - `[0, 1]` (second zero) ✓
-  - `[0, 0, 1]` (both zeros) ✓
-- Total: 4 ways = `2^2 × 1` (2 zeros, 1 way without zeros)
-
-**Problem**: Standard DP doesn't distinguish between multiple zeros at index 0!
+**Example**: `arr = [1, 2]`, `diff = 2`
+- `total = 3`, `S2 = (3 - 2) / 2 = 0.5` (not an integer, invalid)
 
 ---
 
-## Handling Zeros - The Fix
+## Recurrence Relation
 
-### Standard Base Case (No Zeros)
-```python
-dp_prev[0] = 1  # One way to make sum 0: empty subset
+Once we have `targetSum = (total - diff) / 2`, we apply the subset sum counting logic:
+
+```
+f(index, target) = f(index-1, target-arr[index]) + f(index-1, target)
 ```
 
-### Modified Base Case (With Zeros)
+Where:
+- `f(index-1, target-arr[index])` → **Include** current element (if `arr[index] ≤ target`)
+- `f(index-1, target)` → **Exclude** current element
 
-**If first element is 0**:
+**Base Cases for Subset Sum**:
+1. `f(index, 0) = 1` (empty subset)
+2. `f(0, target) = 1` if `arr[0] == target`, else `0`
+
+---
+
+## Handling Zeros in Array
+
+**Critical Edge Case**: When array contains zeros, special handling is needed!
+
+### Why Zeros Need Special Treatment
+
+- A zero doesn't change the sum, so it can be placed in either subset
+- If first element is 0, there are **2 ways** to achieve sum 0:
+  1. Empty subset (don't pick the zero)
+  2. Subset with just the zero (pick the zero)
+
+**Example**: `arr = [0, 0, 1, 2]`, `diff = 1`
+- `total = 3`, `S2 = (3 - 1) / 2 = 1`
+- Subsets with sum 1: `{1}`, `{0, 1}`, `{0, 1}`, `{0, 0, 1}`
+- Each zero can independently go into either subset
+- With 2 zeros and 1 non-zero subset, we have `2² × 1 = 4` ways
+
+### Base Case for Zeros
+
 ```python
 if arr[0] == 0:
-    dp_prev[0] = 2  # Include or exclude the zero
+    dp_prev[0] = 2  # Two ways: pick or not pick the zero
 else:
-    dp_prev[0] = 1  # Just empty subset
+    dp_prev[0] = 1  # One way: empty subset
 ```
 
-**Why `dp_prev[0] = 2` when `arr[0] = 0`?**
-- Option 1: Don't pick the zero → subset = `[]`, sum = 0
-- Option 2: Pick the zero → subset = `[0]`, sum = 0
-- Both options give sum = 0, so there are 2 ways!
-
-**For first element**:
 ```python
 if arr[0] != 0 and arr[0] <= targetSum:
-    dp_prev[arr[0]] = 1
+    dp_prev[arr[0]] = 1  # Only mark if non-zero to avoid double-counting
 ```
-- We only set `dp_prev[arr[0]]` if `arr[0] != 0`
-- If `arr[0] = 0`, it's already handled by `dp_prev[0] = 2`
-- This avoids double-counting
 
 ---
 
-## Solution with Zero Handling
+## Solution: Space Optimized DP
 
 ```python
 MOD = 10**9 + 7
 
-def optimized(n, arr, targetSum):
+def countSubsetsWithSum(n, arr, targetSum):
     dp_prev = [0] * (targetSum + 1)
     dp_curr = [0] * (targetSum + 1)
 
-    # Base case: Handle first element
+    # Base case: Handle first element and zeros
     if arr[0] == 0:
-        # If first element is 0, we have two options: pick or not pick
-        # Both give sum = 0, so there are 2 ways to achieve sum 0
-        dp_prev[0] = 2
+        dp_prev[0] = 2  # Include or exclude the zero
     else:
-        # If first element is non-zero, only empty subset gives sum 0
-        dp_prev[0] = 1
+        dp_prev[0] = 1  # Only empty subset gives sum 0
 
-    # If first element is non-zero and within target, mark it
+    # If first element is non-zero and within target
     if arr[0] != 0 and arr[0] <= targetSum:
         dp_prev[arr[0]] = 1
 
     # Process remaining elements
     for index in range(1, n):
         for target in range(targetSum + 1):
-            # Include current element (if possible)
+            # Include current element
             include = 0
             if arr[index] <= target:
                 include = dp_prev[target - arr[index]]
@@ -1398,34 +1426,36 @@ def optimized(n, arr, targetSum):
             # Total count with modulo
             dp_curr[target] = (include + exclude) % MOD
 
-        # Copy current to previous for next iteration
+        # Copy for next iteration
         dp_prev = dp_curr[:]
 
     return dp_prev[targetSum] % MOD
 ```
 
+**Time Complexity**: O(n × targetSum)  
+**Space Complexity**: O(targetSum)
+
 ---
 
-## Complete Code
+## Complete Solution
 
 ```python
 MOD = 10**9 + 7
 
-def optimized(n, arr, targetSum):
+def countSubsetsWithSum(n, arr, targetSum):
     dp_prev = [0] * (targetSum + 1)
     dp_curr = [0] * (targetSum + 1)
 
-    # Base case: Handle first element
+    # Base case
     if arr[0] == 0:
-        dp_prev[0] = 2  # Two ways: pick or not pick the zero
+        dp_prev[0] = 2
     else:
-        dp_prev[0] = 1  # One way: empty subset
+        dp_prev[0] = 1
 
-    # If first element is non-zero and within target
     if arr[0] != 0 and arr[0] <= targetSum:
         dp_prev[arr[0]] = 1
 
-    # Process remaining elements
+    # Fill DP
     for index in range(1, n):
         for target in range(targetSum + 1):
             include = 0
@@ -1435,7 +1465,7 @@ def optimized(n, arr, targetSum):
             exclude = dp_prev[target]
             dp_curr[target] = (include + exclude) % MOD
 
-        dp_prev = dp_curr[:]  # Copy for next iteration
+        dp_prev = dp_curr[:]
 
     return dp_prev[targetSum] % MOD
 
@@ -1444,20 +1474,18 @@ class Solution:
     def countPartitions(self, n, diff, arr):
         total = sum(arr)
 
-        # Check validity of partition
+        # Check validity
         if (total - diff) < 0 or (total - diff) % 2 != 0:
             return 0
 
         s2 = (total - diff) // 2
-        return optimized(n, arr, s2)
+        return countSubsetsWithSum(n, arr, s2)
 
 
-# Test
+# Test cases
 sol = Solution()
-arr = [1, 1, 2, 3]
-n = len(arr)
-diff = 1
-print(sol.countPartitions(n, diff, arr))  # Output: 3
+print(sol.countPartitions(4, 1, [1, 1, 2, 3]))  # Output: 3
+print(sol.countPartitions(4, 2, [1, 2, 3, 4]))  # Output: 2
 ```
 
 ---
@@ -1466,133 +1494,159 @@ print(sol.countPartitions(n, diff, arr))  # Output: 3
 
 ### Example 1: `arr = [1, 1, 2, 3]`, `diff = 1`
 
-**Step 1**: Calculate `total = 7`
-
-**Step 2**: Check validity
-- `total - diff = 7 - 1 = 6` (≥ 0) ✓
-- `6 & 1 = 0` (even) ✓
-
-**Step 3**: Calculate `s2 = 6 // 2 = 3`
-
-**Step 4**: Count subsets with sum = 3
-- `[3]` ✓
-- `[1, 2]` ✓
-- `[1, 2]` (using second 1) ✓
-
-**Result**: 3 ways
-
-**Verification**:
-- `S1 = 4, S2 = 3`: `[1, 3]` and `[1, 2]` → `4 - 3 = 1` ✓
-- `S1 = 4, S2 = 3`: `[1, 3]` and `[1, 2]` → `4 - 3 = 1` ✓
-- `S1 = 4, S2 = 3`: `[1, 1, 2]` and `[3]` → `4 - 3 = 1` ✓
-
----
-
-### Example 2: `arr = [0, 0, 1]`, `diff = 1`
-
-**Step 1**: Calculate `total = 1`
-
-**Step 2**: Check validity
-- `total - diff = 1 - 1 = 0` (≥ 0) ✓
-- `0 & 1 = 0` (even) ✓
-
-**Step 3**: Calculate `s2 = 0 // 2 = 0`
-
-**Step 4**: Count subsets with sum = 0 (THIS IS WHERE ZERO HANDLING MATTERS!)
-
-Without zero handling:
-- Only `[]` (empty subset) → 1 way ✗
-
-With zero handling:
-- `[]` ✓
-- `[0]` (first) ✓
-- `[0]` (second) ✓
-- `[0, 0]` ✓
-
-**Result**: 4 ways = `2^2` (two zeros)
-
-**Verification**:
-- All 4 ways assign `[1]` to `S1` and `[]`, `[0]`, `[0]`, `[0,0]` to `S2`
-- Each gives `1 - 0 = 1` ✓
-
----
-
-## Why Reset `dp_curr` in Loop?
-
-**Important Note**: In the corrected code, we DON'T reset `dp_curr` inside the loop!
-
-```python
-for index in range(1, n):
-    for target in range(targetSum + 1):
-        # Process all targets
-        dp_curr[target] = (include + exclude) % MOD
-    
-    dp_prev = dp_curr[:]  # Copy entire array at once
+**Step 1**: Calculate total sum
+```
+total = 1 + 1 + 2 + 3 = 7
 ```
 
-**Why this works**:
-- We process ALL targets (0 to targetSum) in the inner loop
-- Each `dp_curr[target]` is explicitly set, overwriting any previous value
-- No need to reset because we're overwriting, not accumulating
-- We use `dp_curr[:]` to create a proper copy (not just reference)
+**Step 2**: Check validity
+```
+(total - diff) = 7 - 1 = 6 ≥ 0 ✓
+6 % 2 = 0 (even) ✓
+```
 
-**Key Difference**:
-- `dp_prev = dp_curr.copy()` ✓ Creates a new copy
-- `dp_prev = dp_curr[:]` ✓ Creates a new copy (slice notation)
-- `dp_prev = dp_curr` ✗ Just creates a reference (both point to same array)
+**Step 3**: Calculate target
+```
+S2 = (total - diff) / 2 = (7 - 1) / 2 = 3
+```
+
+**Step 4**: Count subsets with sum = 3
+
+Build DP table:
+
+| index/target | 0 | 1 | 2 | 3 |
+|--------------|---|---|---|---|
+| 0 (val=1) | 1 | 1 | 0 | 0 |
+| 1 (val=1) | 1 | 2 | 1 | 1 |
+| 2 (val=2) | 1 | 2 | 2 | 2 |
+| 3 (val=3) | 1 | 2 | 2 | **3** |
+
+**Subsets with sum 3**:
+1. `{3}` → Remaining: `{1, 1, 2}` with sum 4 → `4 - 3 = 1` ✓
+2. `{1, 2}` (first 1) → Remaining: `{1, 3}` with sum 4 → `4 - 3 = 1` ✓
+3. `{1, 2}` (second 1) → Remaining: `{1, 3}` with sum 4 → `4 - 3 = 1` ✓
+
+**Answer**: 3
 
 ---
 
-## Comparison: With vs Without Zero Handling
+### Example 2: `arr = [1, 2, 3, 4]`, `diff = 2`
 
-### Test Case: `arr = [0, 0, 0, 0, 1]`, `target = 1`
+**Step 1**: Calculate total sum
+```
+total = 1 + 2 + 3 + 4 = 10
+```
 
-| Method | Base Case | Result | Correct? |
-|--------|-----------|--------|----------|
-| Standard | `dp_prev[0] = 1` | 1 | ✗ |
-| With Zero Handling | `dp_prev[0] = 2` (if target=0) | 16 | ✓ |
+**Step 2**: Check validity
+```
+(total - diff) = 10 - 2 = 8 ≥ 0 ✓
+8 % 2 = 0 (even) ✓
+```
+
+**Step 3**: Calculate target
+```
+S2 = (total - diff) / 2 = (10 - 2) / 2 = 4
+```
+
+**Step 4**: Count subsets with sum = 4
+
+Build DP table:
+
+| index/target | 0 | 1 | 2 | 3 | 4 |
+|--------------|---|---|---|---|---|
+| 0 (val=1) | 1 | 1 | 0 | 0 | 0 |
+| 1 (val=2) | 1 | 1 | 1 | 1 | 0 |
+| 2 (val=3) | 1 | 1 | 1 | 2 | 1 |
+| 3 (val=4) | 1 | 1 | 1 | 2 | **2** |
+
+**Subsets with sum 4**:
+1. `{1, 3}` → Remaining: `{2, 4}` with sum 6 → `6 - 4 = 2` ✓
+2. `{4}` → Remaining: `{1, 2, 3}` with sum 6 → `6 - 4 = 2` ✓
+
+**Answer**: 2
+
+---
+
+### Example 3: `arr = [0, 0, 1]`, `diff = 1` (Zero Handling)
+
+**Step 1**: Calculate total sum
+```
+total = 0 + 0 + 1 = 1
+```
+
+**Step 2**: Check validity
+```
+(total - diff) = 1 - 1 = 0 ≥ 0 ✓
+0 % 2 = 0 (even) ✓
+```
+
+**Step 3**: Calculate target
+```
+S2 = (total - diff) / 2 = (1 - 1) / 2 = 0
+```
+
+**Step 4**: Count subsets with sum = 0
+
+**Key Point**: First element is 0, so `dp_prev[0] = 2`
+
+Build DP table:
+
+| index/target | 0 |
+|--------------|---|
+| 0 (val=0) | 2 |
+| 1 (val=0) | 4 |
+| 2 (val=1) | 4 |
 
 **Explanation**:
-- 4 zeros can be arranged in `2^4 = 16` ways
-- Each arrangement combined with `[1]` gives sum = 1
-- Standard approach misses the multiple ways zeros can be included/excluded
+- Row 0: `dp_prev[0] = 2` (pick or not pick first zero)
+- Row 1: For each way in row 0, we can pick or not pick second zero → `2 × 2 = 4`
+- Row 2: Element 1 doesn't contribute to sum 0, so count remains 4
+
+**Subsets with sum 0**:
+1. `{}` → Remaining: `{0, 0, 1}` with sum 1 → `1 - 0 = 1` ✓
+2. `{0}` (first) → Remaining: `{0, 1}` with sum 1 → `1 - 0 = 1` ✓
+3. `{0}` (second) → Remaining: `{0, 1}` with sum 1 → `1 - 0 = 1` ✓
+4. `{0, 0}` → Remaining: `{1}` with sum 1 → `1 - 0 = 1` ✓
+
+**Answer**: 4 = 2² (two zeros)
 
 ---
 
 ## Complexity Analysis
 
-| Metric | Complexity |
-|--------|------------|
-| **Time** | O(n × target) |
-| **Space** | O(target) |
+| Operation | Complexity |
+|-----------|------------|
+| **Time** | O(n × S2) = O(n × sum) |
+| **Space** | O(S2) = O(sum) |
 
 Where:
 - `n` = length of array
-- `target = (total - diff) / 2`
+- `S2 = (total - diff) / 2`
+- `sum` = total sum of array
 
 ---
 
-## Key Takeaways
+## Key Insights
 
-1. **Problem Reduction**: Target sum assignment reduces to counting subsets with `S2 = (total - diff) / 2`
+1. **Problem Reduction**: 
+   - Partition with difference → Count subsets with specific sum
+   - Formula: `S2 = (total - diff) / 2`
 
-2. **Mathematical Derivation**: 
-   - `S1 - S2 = diff` and `S1 + S2 = total`
-   - Solving gives `S2 = (total - diff) / 2`
+2. **Validity Checks**:
+   - `(total - diff) < 0` → Impossible (negative sum)
+   - `(total - diff) % 2 != 0` → Impossible (non-integer sum)
 
-3. **Edge Cases**: 
-   - Check for negative: `(total - diff) < 0`
-   - Check for odd: `(total - diff) % 2 != 0`
+3. **Zero Handling**:
+   - If `arr[0] = 0`: `dp_prev[0] = 2` (two ways)
+   - If `arr[0] ≠ 0`: `dp_prev[0] = 1` (one way)
+   - Check `arr[0] != 0` before marking `dp_prev[arr[0]]`
 
-4. **Zero Handling**: Critical for arrays containing zeros
-   - Use `dp_prev[0] = 2` when `arr[0] = 0` (two ways: pick or not pick)
-   - Use `dp_prev[0] = 1` when `arr[0] != 0` (one way: empty subset)
-   - Only set `dp_prev[arr[0]]` if `arr[0] != 0` to avoid double-counting
+4. **Space Optimization**:
+   - Use two 1D arrays instead of 2D table
+   - Proper copying: `dp_prev = dp_curr[:]`
 
-5. **Modulo Operation**: Apply `% MOD` to prevent overflow
-   - Use during computation: `(include + exclude) % MOD`
-   - Final return: `dp_prev[targetSum] % MOD`
-
-6. **Array Copying**: Use `dp_prev = dp_curr[:]` or `dp_curr.copy()` to create proper copies, not references
+5. **Modulo Operation**:
+   - Apply during computation: `(include + exclude) % MOD`
+   - Prevents integer overflow for large counts
 
 ---
