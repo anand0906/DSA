@@ -817,3 +817,743 @@ Where:
 - **Overall**: O(n × total)
 
 ---
+
+# Count Subsets with Sum K
+
+## Problem Statement
+
+Given an array `arr` of `n` integers and an integer `K`, count the number of subsets of the given array that have a sum equal to `K`. Return the result modulo (10⁹ + 7).
+
+### Examples
+
+**Example 1:**
+```
+Input: arr = [2, 3, 5, 16, 8, 10], K = 10
+Output: 3
+Explanation: The subsets are [2, 8], [10], and [2, 3, 5].
+```
+
+**Example 2:**
+```
+Input: arr = [1, 2, 3, 4, 5], K = 5
+Output: 3
+Explanation: The subsets are [5], [2, 3], and [1, 4].
+```
+
+---
+
+## Problem Definition
+
+We are given an array and need to find the **count** of different subsequences whose sum equals `K`.
+
+### Programmatic Representation
+
+- **Function Definition**: `f(index, target)` → number of subsequences from index 0 to `index` whose sum equals `target`
+- **Goal**: Find `f(n-1, K)`, where `n = len(arr)` and `K` is the target sum
+
+---
+
+## Base Cases
+
+1. **If target = 0**: We found a valid way (empty subsequence)
+   ```
+   f(index, 0) = 1
+   ```
+
+2. **If index = 0**: Array contains only one element
+   - If that element equals target: 1 way
+   - Otherwise: 0 ways
+   ```
+   f(0, target) = 1 if arr[0] == target else 0
+   ```
+
+---
+
+## Recurrence Relation
+
+We use the **pick and not-pick** technique for subsequence generation.
+
+Since we need the **count** of subsequences, we **add** the counts:
+
+1. **Include** current element: `f(index-1, target-arr[index])`
+2. **Exclude** current element: `f(index-1, target)`
+
+### Formula:
+```
+f(index, target) = f(index-1, target-arr[index]) + f(index-1, target)
+```
+
+**Condition**: We can only include the current element if `arr[index] <= target`
+
+---
+
+## Difference from Subset Sum Problem
+
+| Aspect | Subset Sum (Exists?) | Count Subsets |
+|--------|---------------------|---------------|
+| **Return Type** | Boolean (True/False) | Integer (count) |
+| **Combination** | `include OR exclude` | `include + exclude` |
+| **DP Initialization** | `False` | `0` |
+| **Base Case (target=0)** | `True` | `1` |
+
+---
+
+## Recursion Tree
+
+For `arr = [1, 2, 3]` and `target = 3`:
+
+```
+                          f(2, 3)
+                         /        \
+                   (include 3)   (exclude 3)
+                      /              \
+                  f(1, 0)          f(1, 3)
+                    |              /     \
+                    1         f(0,1)   f(0,3)
+                                |        |
+                                0        0
+
+                  f(1, 0) = 1
+                  f(0, 1) = 1 (arr[0]=1 equals target)
+                  f(0, 3) = 0
+                  
+                  f(1, 3) = 1 + 0 = 1
+                  f(2, 0) = 1
+                  f(2, 3) = 1 + 1 = 2
+
+Wait, let's trace more carefully...
+
+                          f(2, 3)
+                         /        \
+                  f(1, 0)          f(1, 3)
+                    |              /     \
+                    1         f(0,1)   f(0,3)
+                                |        |
+                                1        0
+                  
+                  f(1, 3) = 1 + 0 = 1  (subset [1,2])
+                  f(1, 0) = 1  (empty subset, but wait...)
+                  f(2, 3) = 1 + 1 = 2
+
+Actual answer: 2 subsets → [3] and [1, 2]
+```
+
+---
+
+## Solution Approaches
+
+### 1. Recursive Solution
+
+```python
+def solve(n, arr, index, target):
+    # Base case: target achieved (found one way)
+    if target == 0:
+        return 1
+    
+    # Base case: first element
+    if index == 0:
+        return 1 if arr[0] == target else 0
+    
+    # Include current element (if possible)
+    if arr[index] <= target:
+        include = solve(n, arr, index-1, target-arr[index])
+    else:
+        include = 0
+    
+    # Exclude current element
+    exclude = solve(n, arr, index-1, target)
+    
+    # Return total count
+    return include + exclude
+```
+
+**Time Complexity**: O(2^n)  
+**Space Complexity**: O(n) - Recursion stack
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion**:
+- Added memo table `memo[index][target]` to cache counts
+- Check memo before computing
+- Store count in memo after computing
+- Changed from Boolean to Integer storage
+
+```python
+def solve_memo(n, arr, index, target, memo):
+    # Return cached count if available
+    if memo[index][target] != None:
+        return memo[index][target]
+    
+    if target == 0:
+        return 1
+    
+    if index == 0:
+        return 1 if arr[0] == target else 0
+    
+    if arr[index] <= target:
+        include = solve_memo(n, arr, index-1, target-arr[index], memo)
+    else:
+        include = 0
+    
+    exclude = solve_memo(n, arr, index-1, target, memo)
+    
+    # Cache and return count
+    memo[index][target] = include + exclude
+    return memo[index][target]
+```
+
+**Time Complexity**: O(n × target)  
+**Space Complexity**: O(n × target) + O(n) recursion stack
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization**:
+- Eliminated recursion with iterative approach
+- Changed DP table initialization from `False` to `0`
+- Base case: `dp[index][0] = 1` (one way to make sum 0)
+- Changed operation from `OR` to `+` (addition)
+
+```python
+def tabulation(n, arr, targetSum):
+    # Create DP table initialized with 0
+    dp = [[0]*(targetSum+1) for _ in range(n)]
+    
+    # Base case: target = 0 has one way (empty subset)
+    for index in range(n):
+        dp[index][0] = 1
+    
+    # Base case: first element
+    if arr[0] <= targetSum:
+        dp[0][arr[0]] = 1
+    
+    # Fill DP table
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp[index-1][target-arr[index]]
+            else:
+                include = 0
+            
+            exclude = dp[index-1][target]
+            
+            # Add counts instead of OR
+            dp[index][target] = include + exclude
+    
+    return dp[n-1][targetSum]
+```
+
+**Time Complexity**: O(n × target)  
+**Space Complexity**: O(n × target)
+
+#### Tabulation Table Example
+
+For `arr = [1, 2, 3]` and `target = 3`:
+
+| index/target | 0 | 1 | 2 | 3 |
+|--------------|---|---|---|---|
+| 0 (arr[0]=1) | 1 | 1 | 0 | 0 |
+| 1 (arr[1]=2) | 1 | 1 | 1 | 1 |
+| 2 (arr[2]=3) | 1 | 1 | 1 | 2 |
+
+**Explanation**:
+- **Row 0**: Can make sum 0 (1 way: empty) and sum 1 (1 way: [1])
+- **Row 1**: 
+  - Sum 0: 1 way (empty)
+  - Sum 1: 1 way ([1])
+  - Sum 2: 1 way ([2])
+  - Sum 3: 1 way ([1,2])
+- **Row 2**: 
+  - Sum 0: 1 way (empty)
+  - Sum 1: 1 way ([1])
+  - Sum 2: 1 way ([2])
+  - Sum 3: 2 ways ([3] and [1,2])
+
+**Answer**: `dp[2][3] = 2`
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation**:
+- Reduced 2D array to two 1D arrays: `dp_prev` and `dp_curr`
+- Only store previous and current row
+- Copy `dp_curr` to `dp_prev` after each iteration
+
+```python
+def optimized(n, arr, targetSum):
+    # Two arrays for space optimization
+    dp_curr = [0]*(targetSum+1)
+    dp_prev = [0]*(targetSum+1)
+    
+    # Base case: target = 0
+    dp_prev[0] = 1
+    dp_curr[0] = 1
+    
+    # Base case: first element
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = 1
+    
+    # Fill arrays
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = 0
+            
+            exclude = dp_prev[target]
+            dp_curr[target] = include + exclude
+        
+        # Copy current to previous
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[targetSum]
+```
+
+**Time Complexity**: O(n × target)  
+**Space Complexity**: O(target)
+
+---
+
+## Complete Code
+
+```python
+def solve(n, arr, index, target):
+    if target == 0:
+        return 1
+    if index == 0:
+        return 1 if arr[0] == target else 0
+    if arr[index] <= target:
+        include = solve(n, arr, index-1, target-arr[index])
+    else:
+        include = 0
+    exclude = solve(n, arr, index-1, target)
+    return include + exclude
+
+def solve_memo(n, arr, index, target, memo):
+    if memo[index][target] != None:
+        return memo[index][target]
+    if target == 0:
+        return 1
+    if index == 0:
+        return 1 if arr[0] == target else 0
+    if arr[index] <= target:
+        include = solve_memo(n, arr, index-1, target-arr[index], memo)
+    else:
+        include = 0
+    exclude = solve_memo(n, arr, index-1, target, memo)
+    memo[index][target] = include + exclude
+    return memo[index][target]
+
+def tabulation(n, arr, targetSum):
+    dp = [[0]*(targetSum+1) for _ in range(n)]
+    for index in range(n):
+        dp[index][0] = 1
+    if arr[0] <= targetSum:
+        dp[0][arr[0]] = 1
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp[index-1][target-arr[index]]
+            else:
+                include = 0
+            exclude = dp[index-1][target]
+            dp[index][target] = include + exclude
+    return dp[n-1][targetSum]
+
+def optimized(n, arr, targetSum):
+    dp_curr = [0]*(targetSum+1)
+    dp_prev = [0]*(targetSum+1)
+    dp_prev[0] = 1
+    dp_curr[0] = 1
+    if arr[0] <= targetSum:
+        dp_prev[arr[0]] = 1
+    for index in range(1, n):
+        for target in range(1, targetSum+1):
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = 0
+            exclude = dp_prev[target]
+            dp_curr[target] = include + exclude
+        dp_prev = dp_curr.copy()
+    return dp_prev[targetSum]
+
+# Test
+arr = [1, 2, 7, 3]
+n = len(arr)
+target = 3
+MOD = 10**9 + 7
+
+print(solve(n, arr, n-1, target) % MOD)
+print(solve_memo(n, arr, n-1, target, [[None]*(target+1) for _ in range(n)]) % MOD)
+print(tabulation(n, arr, target) % MOD)
+print(optimized(n, arr, target) % MOD)
+```
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × target) | O(n × target) + O(n) |
+| Tabulation | O(n × target) | O(n × target) |
+| Space Optimized | O(n × target) | O(target) |
+
+---
+
+## Why Modulo 10⁹ + 7?
+
+For large arrays, the count can become extremely large. Taking modulo ensures:
+- The result fits within standard integer limits
+- Prevents overflow errors
+- Standard practice in competitive programming
+
+```python
+MOD = 10**9 + 7
+result = solve(n, arr, n-1, target) % MOD
+```
+
+---
+
+# Target Sum with +/- Assignment
+
+## Problem Statement
+
+Given an array `arr` of `n` non-negative integers and a target difference `diff`, count the number of ways to assign `+` or `-` signs to each element such that the resulting sum equals `diff`.
+
+Alternatively: Partition the array into two subsets `S1` (positive) and `S2` (negative) such that `S1 - S2 = diff`.
+
+### Examples
+
+**Example 1:**
+```
+Input: arr = [1, 1, 2, 3], diff = 1
+Output: 3
+Explanation: 
+  +1 +1 +2 -3 = 1
+  +1 -1 +2 -3 = 1  (Wait, this is -1)
+  -1 +1 +2 -3 = 1  (Wait, this is -1)
+  +1 +1 -2 +3 = 1  (This is 3)
+  
+Let me recalculate:
+  Total = 7, diff = 1
+  S1 - S2 = 1 and S1 + S2 = 7
+  => S1 = 4, S2 = 3
+  
+  Subsets with sum 4: [1,3], [1,1,2]
+  Actually need to count carefully...
+```
+
+**Example 2:**
+```
+Input: arr = [1, 2, 3], diff = 0
+Output: 2
+Explanation: Partitions where S1 - S2 = 0 (equal sums):
+  S1 = [3], S2 = [1, 2] → 3 - 3 = 0 ✓
+  S1 = [1, 2], S2 = [3] → 3 - 3 = 0 ✓
+```
+
+---
+
+## Problem Reduction
+
+This problem reduces to **Count Subsets with Sum K**!
+
+### Mathematical Derivation
+
+Let:
+- `S1` = sum of elements assigned `+` sign
+- `S2` = sum of elements assigned `-` sign
+- `total` = sum of all array elements
+
+**Given Constraints**:
+1. `S1 - S2 = diff` (target difference)
+2. `S1 + S2 = total` (all elements used)
+
+**Solving for S2**:
+```
+From (1): S1 = S2 + diff
+Substitute in (2): (S2 + diff) + S2 = total
+                   2×S2 + diff = total
+                   S2 = (total - diff) / 2
+```
+
+**Therefore**: Count subsets with sum = `(total - diff) / 2`
+
+---
+
+## Edge Cases to Handle
+
+### 1. Invalid Cases
+
+**Case 1**: If `total - diff < 0`
+- This means `S2 < 0`, which is impossible
+- Return `0`
+
+**Case 2**: If `(total - diff)` is odd
+- `S2 = (total - diff) / 2` must be an integer
+- If odd, no valid partition exists
+- Return `0`
+
+```python
+if (total - diff) < 0 or (total - diff) & 1:
+    return 0
+```
+
+### 2. Zeros in Array - Critical Case!
+
+When the array contains zeros, special handling is needed for the base case.
+
+**Why?**
+- If `target = 0` and array has zeros, each zero can be included or excluded
+- If we have `k` zeros, there are `2^k` ways to achieve sum 0
+
+**Example**: `arr = [0, 0, 1]`, `target = 1`
+- Subsets with sum 1: `[1]`, `[0, 1]`, `[0, 1]`, `[0, 0, 1]`
+- But wait, `[0, 1]` and `[0, 1]` are the same!
+- Actually: We can include/exclude zeros independently
+  - `[1]` ✓
+  - `[0, 1]` (first zero) ✓
+  - `[0, 1]` (second zero) ✓
+  - `[0, 0, 1]` (both zeros) ✓
+- Total: 4 ways = `2^2 × 1` (2 zeros, 1 way without zeros)
+
+**Problem**: Standard DP doesn't distinguish between multiple zeros at index 0!
+
+---
+
+## Handling Zeros - The Fix
+
+### Standard Base Case (No Zeros)
+```python
+dp_prev[0] = 1  # One way to make sum 0: empty subset
+```
+
+### Modified Base Case (With Zeros)
+
+**If first element is 0**:
+```python
+if arr[0] == 0:
+    dp_prev[0] = 2  # Include or exclude the zero
+else:
+    dp_prev[0] = 1  # Just empty subset
+```
+
+**More Generally**:
+```python
+if targetSum == 0:
+    dp_prev[0] = 2  # Special case when target itself is 0
+else:
+    dp_prev[0] = 1  # Normal case
+```
+
+**For first element**:
+```python
+if arr[0] <= targetSum and arr[0] != 0:
+    dp_prev[arr[0]] = 1
+```
+- We only set `dp_prev[arr[0]]` if `arr[0] != 0`
+- If `arr[0] = 0`, it's already handled by `dp_prev[0] = 2`
+
+---
+
+## Solution with Zero Handling
+
+```python
+def optimized(n, arr, targetSum):
+    dp_curr = [0]*(targetSum+1)
+    dp_prev = [0]*(targetSum+1)
+    
+    # Special handling for target = 0 and zeros in array
+    if targetSum == 0:
+        dp_prev[0] = 2  # Include or exclude first element (if it's 0)
+    else:
+        dp_prev[0] = 1  # Normal case: empty subset
+    
+    # First element handling (avoid double counting if arr[0] = 0)
+    if arr[0] <= targetSum and arr[0] != 0:
+        dp_prev[arr[0]] = 1
+    
+    # Fill DP arrays
+    for index in range(1, n):
+        dp_curr = [0]*(targetSum+1)  # Reset current array
+        
+        for target in range(targetSum+1):
+            # Include current element
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = 0
+            
+            # Exclude current element
+            exclude = dp_prev[target]
+            
+            # Total count
+            dp_curr[target] = include + exclude
+        
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[targetSum]
+```
+
+---
+
+## Complete Code
+
+```python
+def optimized(n, arr, targetSum):
+    dp_curr = [0]*(targetSum+1)
+    dp_prev = [0]*(targetSum+1)
+    
+    if targetSum == 0:
+        dp_prev[0] = 2
+    else:
+        dp_prev[0] = 1
+    
+    if arr[0] <= targetSum and arr[0] != 0:
+        dp_prev[arr[0]] = 1
+    
+    for index in range(1, n):
+        dp_curr = [0]*(targetSum+1)
+        for target in range(targetSum+1):
+            if arr[index] <= target:
+                include = dp_prev[target-arr[index]]
+            else:
+                include = 0
+            exclude = dp_prev[target]
+            dp_curr[target] = include + exclude
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[targetSum]
+
+# Main logic
+arr = [1, 1, 2, 3]
+n = len(arr)
+diff = 1
+total = sum(arr)
+
+# Check for invalid cases
+if (total - diff) < 0 or (total - diff) & 1:
+    print(0)
+else:
+    s2 = (total - diff) // 2
+    print(optimized(n, arr, s2))
+```
+
+---
+
+## Example Walkthrough
+
+### Example 1: `arr = [1, 1, 2, 3]`, `diff = 1`
+
+**Step 1**: Calculate `total = 7`
+
+**Step 2**: Check validity
+- `total - diff = 7 - 1 = 6` (≥ 0) ✓
+- `6 & 1 = 0` (even) ✓
+
+**Step 3**: Calculate `s2 = 6 // 2 = 3`
+
+**Step 4**: Count subsets with sum = 3
+- `[3]` ✓
+- `[1, 2]` ✓
+- `[1, 2]` (using second 1) ✓
+
+**Result**: 3 ways
+
+**Verification**:
+- `S1 = 4, S2 = 3`: `[1, 3]` and `[1, 2]` → `4 - 3 = 1` ✓
+- `S1 = 4, S2 = 3`: `[1, 3]` and `[1, 2]` → `4 - 3 = 1` ✓
+- `S1 = 4, S2 = 3`: `[1, 1, 2]` and `[3]` → `4 - 3 = 1` ✓
+
+---
+
+### Example 2: `arr = [0, 0, 1]`, `diff = 1`
+
+**Step 1**: Calculate `total = 1`
+
+**Step 2**: Check validity
+- `total - diff = 1 - 1 = 0` (≥ 0) ✓
+- `0 & 1 = 0` (even) ✓
+
+**Step 3**: Calculate `s2 = 0 // 2 = 0`
+
+**Step 4**: Count subsets with sum = 0 (THIS IS WHERE ZERO HANDLING MATTERS!)
+
+Without zero handling:
+- Only `[]` (empty subset) → 1 way ✗
+
+With zero handling:
+- `[]` ✓
+- `[0]` (first) ✓
+- `[0]` (second) ✓
+- `[0, 0]` ✓
+
+**Result**: 4 ways = `2^2` (two zeros)
+
+**Verification**:
+- All 4 ways assign `[1]` to `S1` and `[]`, `[0]`, `[0]`, `[0,0]` to `S2`
+- Each gives `1 - 0 = 1` ✓
+
+---
+
+## Why Reset `dp_curr` in Loop?
+
+```python
+for index in range(1, n):
+    dp_curr = [0]*(targetSum+1)  # Reset current array
+```
+
+**Reason**: Prevents accumulation from previous iterations
+- Without reset, values would keep adding up
+- Each iteration should start fresh based on `dp_prev`
+
+---
+
+## Comparison: With vs Without Zero Handling
+
+### Test Case: `arr = [0, 0, 0, 0, 1]`, `target = 1`
+
+| Method | Base Case | Result | Correct? |
+|--------|-----------|--------|----------|
+| Standard | `dp_prev[0] = 1` | 1 | ✗ |
+| With Zero Handling | `dp_prev[0] = 2` (if target=0) | 16 | ✓ |
+
+**Explanation**:
+- 4 zeros can be arranged in `2^4 = 16` ways
+- Each arrangement combined with `[1]` gives sum = 1
+- Standard approach misses the multiple ways zeros can be included/excluded
+
+---
+
+## Complexity Analysis
+
+| Metric | Complexity |
+|--------|------------|
+| **Time** | O(n × target) |
+| **Space** | O(target) |
+
+Where:
+- `n` = length of array
+- `target = (total - diff) / 2`
+
+---
+
+## Key Takeaways
+
+1. **Problem Reduction**: Target sum assignment reduces to counting subsets
+2. **Mathematical Derivation**: `S2 = (total - diff) / 2`
+3. **Edge Cases**: Check for negative or odd `(total - diff)`
+4. **Zero Handling**: Critical for arrays containing zeros
+   - Use `dp_prev[0] = 2` when `targetSum = 0`
+   - Avoid double-counting first element if it's 0
+5. **Array Reset**: Reset `dp_curr` in each iteration to prevent accumulation
+
+---
