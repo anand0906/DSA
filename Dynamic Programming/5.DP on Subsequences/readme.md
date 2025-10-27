@@ -2093,6 +2093,332 @@ print(optimized(n, weight, cost, capacity))  # Space Optimized
 Where n = number of items, W = knapsack capacity
 
 ---
+# Unbounded Knapsack Problem
+
+## Problem Statement
+
+Given two integer arrays, `val` and `wt`, each of size N, representing the values and weights of N items respectively, and an integer W, representing the maximum capacity of a knapsack, determine the maximum value achievable by selecting a subset of the items such that the total weight of the selected items does not exceed the knapsack capacity W.
+
+**Key Difference from 0/1 Knapsack:** An infinite supply of each item is available. Items can be picked multiple times.
+
+### Examples
+
+**Example 1:**
+```
+Input: val = [5, 11, 13], wt = [2, 4, 6], W = 10
+Output: 27
+Explanation: Select 2 items with weights 4 and 1 item with weight 2 for a total value of 11+11+5 = 27.
+```
+
+**Example 2:**
+```
+Input: val = [10, 40, 50, 70], wt = [1, 3, 4, 5], W = 8
+Output: 110
+Explanation: Select items with weights 3 and 5 for a total value of 40 + 70 = 110.
+```
+
+---
+
+## Step-by-Step Approach
+
+### Step 1: Define The Problem
+
+We have a set of items, each with an associated weight and value. We have a knapsack with a maximum weight capacity. We need to fill the knapsack to maximize the total value of items, and **we can include the same item multiple times** (unbounded property).
+
+### Step 2: Represent the Problem Programmatically
+
+Given `cost` and `weight` arrays where:
+- `index` represents the item
+- `cost[index]` represents the value of the item
+- `weight[index]` represents the weight of the item
+
+**Function Definition:**
+```
+f(index, capacity) → Maximum value that can be obtained using items from index 0 to index with at most 'capacity' weight (items can be reused)
+```
+
+We need to find `f(n-1, W)` where n is the number of items and W is the knapsack capacity.
+
+### Step 3: Base Cases
+
+1. **If we're at the first item (index == 0):**
+   - We can take it multiple times: `f(0, capacity) = cost[0] × (capacity // weight[0])`
+   
+2. **If capacity is 0:**
+   - `f(index, 0) = 0`
+
+### Step 4: Recurrence Relation
+
+For each item at index, we have two choices:
+
+1. **Include the item:** `include = cost[index] + f(index, capacity - weight[index])`
+   - **Key Difference:** We stay at the same index (not index-1) because we can pick the same item again
+   - Only possible if `weight[index] <= capacity`
+
+2. **Exclude the item:** `exclude = f(index-1, capacity)`
+   - Move to the previous item
+
+**Recurrence:** `f(index, capacity) = max(include, exclude)`
+
+**Critical Distinction from 0/1 Knapsack:**
+- **0/1 Knapsack:** `include = cost[index] + f(index-1, capacity - weight[index])` ← moves to next item
+- **Unbounded Knapsack:** `include = cost[index] + f(index, capacity - weight[index])` ← stays at same item
+
+---
+
+## Recursion Tree Diagram
+
+```
+Example: val=[5,11,13], wt=[2,4,6], W=10
+
+                        f(2, 10)
+                       /        \
+              (include)          (exclude)
+            13+f(2,4)            f(1,10)
+               /    \            /     \
+         13+f(2,-2) f(1,4)  11+f(1,6)  f(0,10)
+              |       |        |         |
+              0      11       11+f(1,2)  5×5=25
+           (invalid)           |
+                            11+f(1,-2)
+                               |
+                               0
+                            (invalid)
+
+Key Observations:
+- When including item at index i, we call f(i, ...) not f(i-1, ...)
+- This allows taking the same item multiple times
+- f(0,10) = 5×(10//2) = 5×5 = 25 (item 0 taken 5 times)
+- Optimal: Take item 1 twice and item 0 once → 11+11+5 = 27
+```
+
+---
+
+## Solutions
+
+### 1. Recursive Solution
+
+```python
+def solve(n, weight, cost, index, capacity):
+    # Base case: first item (can be taken multiple times)
+    if index == 0:
+        return cost[0] * (capacity // weight[0])
+    
+    # Option 1: Include current item (if weight allows)
+    if weight[index] <= capacity:
+        # Stay at same index to allow multiple picks
+        include = cost[index] + solve(n, weight, cost, index, capacity - weight[index])
+    else:
+        include = 0
+    
+    # Option 2: Exclude current item
+    exclude = solve(n, weight, cost, index-1, capacity)
+    
+    return max(include, exclude)
+```
+
+**Time Complexity:** O(2^n) in worst case  
+**Space Complexity:** O(n) - Recursion stack depth
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion → Memoization:**
+
+1. Create a memoization table `memo[index][capacity]` initialized with `None`
+2. Before computing, check if `memo[index][capacity]` already exists
+3. If yes, return the cached value
+4. If no, compute the result, store it in `memo[index][capacity]`, and return it
+
+```python
+def solve_memo(n, weight, cost, index, capacity, memo):
+    # Check if already computed
+    if memo[index][capacity] != None:
+        return memo[index][capacity]
+    
+    # Base case: first item (can be taken multiple times)
+    if index == 0:
+        return cost[0] * (capacity // weight[0])
+    
+    # Option 1: Include current item (if weight allows)
+    if weight[index] <= capacity:
+        # Stay at same index to allow multiple picks
+        include = cost[index] + solve_memo(n, weight, cost, index, capacity - weight[index], memo)
+    else:
+        include = 0
+    
+    # Option 2: Exclude current item
+    exclude = solve_memo(n, weight, cost, index-1, capacity, memo)
+    
+    # Store result in memo table
+    memo[index][capacity] = max(include, exclude)
+    return memo[index][capacity]
+```
+
+**Time Complexity:** O(n × W) - Each state computed once  
+**Space Complexity:** O(n × W) - Memoization table + O(n) recursion stack
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization → Tabulation:**
+
+1. Replace recursion with iteration
+2. Create a DP table `dp[index][capacity]`
+3. Fill base cases first (index 0)
+4. Iterate through indices and capacities
+5. **Key Change:** When including, use `dp[index][cap - weight[index]]` instead of `dp[index-1][...]` to allow multiple picks of the same item
+
+```python
+def tabulation(n, weight, cost, capacity):
+    # Create DP table
+    dp = [[0] * (capacity + 1) for _ in range(n)]
+    
+    # Base case: first item (can be taken multiple times)
+    for wt in range(capacity + 1):
+        dp[0][wt] = cost[0] * (wt // weight[0])
+    
+    # Fill table for remaining items
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Include current item
+            if weight[index] <= cap:
+                # Use dp[index] (same row) to allow multiple picks
+                include = cost[index] + dp[index][cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current item
+            exclude = dp[index-1][cap]
+            
+            dp[index][cap] = max(include, exclude)
+    
+    return dp[n-1][capacity]
+```
+
+**Time Complexity:** O(n × W)  
+**Space Complexity:** O(n × W) - DP table
+
+---
+
+### Tabulation Example
+
+**Input:** val = [5, 11, 13], wt = [2, 4, 6], W = 10
+
+**DP Table:**
+
+| Index\Cap | 0 | 2 | 4 | 6 | 8 | 10 |
+|-----------|---|---|---|---|---|-----|
+| 0 (wt=2, val=5) | 0 | 5 | 10 | 15 | 20 | 25 |
+| 1 (wt=4, val=11) | 0 | 5 | 11 | 15 | 22 | 27 |
+| 2 (wt=6, val=13) | 0 | 5 | 11 | 15 | 22 | **27** |
+
+**Explanation:**
+- **Row 0:** Only item 0 (wt=2, val=5). Can take it cap//2 times.
+  - At cap=10: 5×(10//2) = 5×5 = 25
+- **Row 1:** Items 0-1 available.
+  - At cap=4: Take item 1 once = 11
+  - At cap=8: Take item 1 twice = 11+11 = 22
+  - At cap=10: Take item 1 twice + item 0 once = 11+11+5 = **27**
+- **Row 2:** All items available.
+  - At cap=10: Best remains 27 (items 1+1+0)
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation → Space Optimization:**
+
+1. Observe that `dp[index][cap]` depends on:
+   - `dp[index][cap - weight[index]]` (same row, earlier column)
+   - `dp[index-1][cap]` (previous row, same column)
+
+2. Use two 1D arrays: `dp_prev` and `dp_curr`
+3. **Important:** When including, use `dp_curr[cap - weight[index]]` because we're filling the current row left-to-right, and the earlier values are already computed
+
+```python
+def optimized(n, weight, cost, capacity):
+    # Two arrays instead of 2D table
+    dp_curr = [0] * (capacity + 1)
+    dp_prev = [0] * (capacity + 1)
+    
+    # Base case: first item
+    for wt in range(capacity + 1):
+        dp_prev[wt] = cost[0] * (wt // weight[0])
+    
+    # Fill for remaining items
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Include current item
+            if weight[index] <= cap:
+                # Use dp_curr (current row) for same-item multiple picks
+                include = cost[index] + dp_curr[cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current item
+            exclude = dp_prev[cap]
+            
+            dp_curr[cap] = max(include, exclude)
+        
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[capacity]
+```
+
+**Time Complexity:** O(n × W)  
+**Space Complexity:** O(W) - Only two 1D arrays
+
+---
+
+## Usage
+
+```python
+capacity = 50
+weight = [10, 20, 30]
+cost = [60, 100, 120]
+n = len(weight)
+
+print(solve(n, weight, cost, n-1, capacity))  # Recursion
+
+memo = [[None] * (capacity + 1) for _ in range(n)]
+print(solve_memo(n, weight, cost, n-1, capacity, memo))  # Memoization
+
+print(tabulation(n, weight, cost, capacity))  # Tabulation
+
+print(optimized(n, weight, cost, capacity))  # Space Optimized
+```
+
+**Output:** 300 (item 2 taken once for 120, item 1 taken once for 100, item 0 taken twice for 60+60+60 = 180, total weight = 30+20 = 50, but actually 10+10+10+20 = 50, total = 60+60+60+100+20 = 300)
+
+---
+
+## Key Difference from 0/1 Knapsack
+
+| Aspect | 0/1 Knapsack | Unbounded Knapsack |
+|--------|--------------|-------------------|
+| Item Usage | Each item used at most once | Each item can be used unlimited times |
+| Include Recurrence | `f(index-1, cap - wt[index])` | `f(index, cap - wt[index])` |
+| Tabulation Include | `dp[index-1][cap - wt[index]]` | `dp[index][cap - wt[index]]` |
+| Base Case | Simple return of cost[0] or 0 | `cost[0] × (capacity // weight[0])` |
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × W) | O(n × W) + O(n) |
+| Tabulation | O(n × W) | O(n × W) |
+| Space Optimized | O(n × W) | O(W) |
+
+Where n = number of items, W = knapsack capacity
+
+---
 
 # Rod Cutting Problem
 
