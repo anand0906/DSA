@@ -1795,3 +1795,1442 @@ target = -200
 ```
 
 ---
+
+
+# 0/1 Knapsack Problem
+
+## Problem Statement
+
+Given two integer arrays, `val` and `wt`, each of size N, which represent the values and weights of N items respectively, and an integer W representing the maximum capacity of a knapsack, determine the maximum value achievable by selecting a subset of the items such that the total weight of the selected items does not exceed the knapsack capacity W.
+
+Each item can either be picked in its entirety or not picked at all (0-1 property). The goal is to maximize the sum of the values of the selected items while keeping the total weight within the knapsack's capacity.
+
+### Examples
+
+**Example 1:**
+```
+Input: val = [60, 100, 120], wt = [10, 20, 30], W = 50
+Output: 220
+Explanation: Select items with weights 20 and 30 for a total value of 100 + 120 = 220.
+```
+
+**Example 2:**
+```
+Input: val = [10, 40, 30, 50], wt = [5, 4, 6, 3], W = 10
+Output: 90
+Explanation: Select items with weights 4 and 3 for a total value of 40 + 50 = 90.
+```
+
+---
+
+## Step-by-Step Approach
+
+### Step 1: Define The Problem
+
+We have a knapsack with a maximum weight capacity and n items, where each item has a weight and value. We can include items in the bag such that we don't exceed the bag's weight capacity while maximizing the total value.
+
+### Step 2: Represent the Problem Programmatically
+
+Since we need to check all possible ways to select items and find the maximum value, we use the **pick or not-pick technique**.
+
+**Function Definition:**
+```
+f(index, capacity) → Maximum value that can be obtained using items from index 0 to index with at most 'capacity' weight
+```
+
+### Step 3: Base Cases
+
+1. **If we've processed all items (index < 0):** Return 0
+2. **If we're at the first item (index == 0):**
+   - If `weight[0] <= capacity`, return `cost[0]`
+   - Otherwise, return 0
+
+### Step 4: Recurrence Relation
+
+For each item at index, we have two choices:
+
+1. **Include the item:** `include = cost[index] + f(index-1, capacity - weight[index])`
+   - Only possible if `weight[index] <= capacity`
+2. **Exclude the item:** `exclude = f(index-1, capacity)`
+
+**Recurrence:** `f(index, capacity) = max(include, exclude)`
+
+---
+
+## Recursion Tree Diagram
+
+```
+Example: val=[60,100,120], wt=[10,20,30], W=50
+
+                        f(2, 50)
+                       /        \
+              (include)          (exclude)
+            120+f(1,20)          f(1,50)
+               /    \            /     \
+         100+f(0,-10) f(0,20) 100+f(0,30) f(0,50)
+              |         |         |          |
+              0        60        60         60
+            (invalid)
+
+Result Paths:
+- f(2,50) → include item 2 → f(1,20) → exclude item 1 → f(0,20) → include item 0 = 120+60 = 180
+- f(2,50) → include item 2 → f(1,20) → include item 1 → invalid (weight exceeded)
+- f(2,50) → exclude item 2 → f(1,50) → include item 1 → f(0,30) → include item 0 = 100+60 = 160
+- f(2,50) → exclude item 2 → f(1,50) → exclude item 1 → f(0,50) → include item 0 = 60
+
+Maximum = 220 comes from including items 1 and 2 (weights 20+30=50, values 100+120=220)
+Note: The tree shows partial exploration; complete tree would show path yielding 220.
+```
+
+---
+
+## Solutions
+
+### 1. Recursive Solution
+
+```python
+def solve(n, weight, cost, index, capacity):
+    # Base case: first item
+    if index == 0:
+        if weight[0] <= capacity:
+            return cost[0]
+        return 0
+    
+    # Option 1: Include current item (if weight allows)
+    if weight[index] <= capacity:
+        include = cost[index] + solve(n, weight, cost, index-1, capacity - weight[index])
+    else:
+        include = 0
+    
+    # Option 2: Exclude current item
+    exclude = solve(n, weight, cost, index-1, capacity)
+    
+    return max(include, exclude)
+```
+
+**Time Complexity:** O(2^n) - Each item has 2 choices  
+**Space Complexity:** O(n) - Recursion stack depth
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion → Memoization:**
+
+1. Create a memoization table `memo[index][capacity]` initialized with `None`
+2. Before computing, check if `memo[index][capacity]` already has a value
+3. If yes, return the cached value
+4. If no, compute the result and store it in `memo[index][capacity]` before returning
+
+```python
+def solve_memo(n, weight, cost, index, capacity, memo):
+    # Check if already computed
+    if memo[index][capacity] != None:
+        return memo[index][capacity]
+    
+    # Base case: first item
+    if index == 0:
+        if weight[0] <= capacity:
+            return cost[0]
+        return 0
+    
+    # Option 1: Include current item (if weight allows)
+    if weight[index] <= capacity:
+        include = cost[index] + solve_memo(n, weight, cost, index-1, capacity - weight[index], memo)
+    else:
+        include = 0
+    
+    # Option 2: Exclude current item
+    exclude = solve_memo(n, weight, cost, index-1, capacity, memo)
+    
+    # Store result in memo table
+    memo[index][capacity] = max(include, exclude)
+    return memo[index][capacity]
+```
+
+**Time Complexity:** O(n × W) - Each state computed once  
+**Space Complexity:** O(n × W) - Memoization table + O(n) recursion stack
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization → Tabulation:**
+
+1. Replace recursion with iteration
+2. Create a DP table `dp[index][capacity]` where `dp[i][c]` represents the maximum value using items 0 to i with capacity c
+3. Fill base cases first (index 0)
+4. Iterate through indices and capacities, filling the table using the recurrence relation
+5. Replace recursive calls with table lookups: `dp[index-1][...]`
+
+```python
+def tabulation(n, weight, cost, capacity):
+    # Create DP table
+    dp = [[0] * (capacity + 1) for _ in range(n)]
+    
+    # Base case: first item (index 0)
+    for wt in range(capacity + 1):
+        if weight[0] <= wt:
+            dp[0][wt] = cost[0]
+    
+    # Fill table for remaining items
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Include current item
+            if weight[index] <= cap:
+                include = cost[index] + dp[index-1][cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current item
+            exclude = dp[index-1][cap]
+            
+            dp[index][cap] = max(include, exclude)
+    
+    return dp[n-1][capacity]
+```
+
+**Time Complexity:** O(n × W)  
+**Space Complexity:** O(n × W) - DP table
+
+---
+
+### Tabulation Example
+
+**Input:** val = [60, 100, 120], wt = [10, 20, 30], W = 50
+
+**DP Table:**
+
+| Index\Cap | 0 | 10 | 20 | 30 | 40 | 50 |
+|-----------|---|----|----|----|----|-----|
+| 0 (wt=10, val=60) | 0 | 60 | 60 | 60 | 60 | 60 |
+| 1 (wt=20, val=100) | 0 | 60 | 100 | 160 | 160 | 160 |
+| 2 (wt=30, val=120) | 0 | 60 | 100 | 160 | 180 | **220** |
+
+**Explanation:**
+- **Row 0:** Only item 0 available (wt=10, val=60). If capacity ≥ 10, we can take it.
+- **Row 1:** Items 0-1 available. At cap=20, we can take item 1 (val=100). At cap=30+, we can take both items (60+100=160).
+- **Row 2:** All items available. At cap=50, we can take items 1 and 2 (wt=20+30=50, val=100+120=**220**).
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation → Space Optimization:**
+
+1. Observe that `dp[index][cap]` only depends on `dp[index-1][...]`
+2. Replace 2D table with two 1D arrays: `dp_prev` (previous row) and `dp_curr` (current row)
+3. After computing each row, copy `dp_curr` to `dp_prev`
+4. This reduces space from O(n × W) to O(W)
+
+```python
+def optimized(n, weight, cost, capacity):
+    # Two arrays instead of 2D table
+    dp_curr = [0] * (capacity + 1)
+    dp_prev = [0] * (capacity + 1)
+    
+    # Base case: first item
+    for wt in range(capacity + 1):
+        if weight[0] <= wt:
+            dp_prev[wt] = cost[0]
+    
+    # Fill for remaining items
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Include current item
+            if weight[index] <= cap:
+                include = cost[index] + dp_prev[cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current item
+            exclude = dp_prev[cap]
+            
+            dp_curr[cap] = max(include, exclude)
+        
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[capacity]
+```
+
+**Time Complexity:** O(n × W)  
+**Space Complexity:** O(W) - Only two 1D arrays
+
+---
+
+## Usage
+
+```python
+capacity = 50
+weight = [10, 20, 30]
+cost = [60, 100, 120]
+n = len(weight)
+
+print(solve(n, weight, cost, n-1, capacity))  # Recursion
+
+memo = [[None] * (capacity + 1) for _ in range(n)]
+print(solve_memo(n, weight, cost, n-1, capacity, memo))  # Memoization
+
+print(tabulation(n, weight, cost, capacity))  # Tabulation
+
+print(optimized(n, weight, cost, capacity))  # Space Optimized
+```
+
+**Output:** 220
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × W) | O(n × W) + O(n) |
+| Tabulation | O(n × W) | O(n × W) |
+| Space Optimized | O(n × W) | O(W) |
+
+Where n = number of items, W = knapsack capacity
+
+---
+
+# Rod Cutting Problem
+
+## Problem Statement
+
+Given a rod of length N inches and an array price[] where price[i] denotes the value of a piece of rod of length i inches (1-based indexing). Determine the maximum value obtainable by cutting up the rod and selling the pieces. Make any number of cuts, or none at all, and sell the resulting pieces.
+
+### Examples
+
+**Example 1:**
+```
+Input: price = [1, 6, 8, 9, 10, 19, 7, 20], N = 8
+Output: 25
+Explanation: Cut the rod into lengths of 2 and 6 for a total price of 6 + 19 = 25.
+```
+
+**Example 2:**
+```
+Input: price = [1, 5, 8, 9], N = 4
+Output: 10
+Explanation: Cut the rod into lengths of 2 and 2 for a total price of 5 + 5 = 10.
+```
+
+---
+
+## How Rod Cutting is Similar to Unbounded Knapsack
+
+The Rod Cutting problem is **exactly the Unbounded Knapsack problem** with a clever transformation. Once you understand this mapping, you can directly apply the unbounded knapsack solution!
+
+### Problem Mapping
+
+| Rod Cutting Concept | Unbounded Knapsack Equivalent |
+|---------------------|-------------------------------|
+| Rod length (N) | Knapsack capacity (W) |
+| Piece lengths [1, 2, 3, ..., N] | Item weights [1, 2, 3, ..., N] |
+| Price array [price[0], price[1], ...] | Item values [val[0], val[1], ...] |
+| Cut the rod into pieces | Select items to fill knapsack |
+| Maximize total price | Maximize total value |
+| Can use same length multiple times | Can use same item multiple times (unbounded) |
+
+### Transformation
+
+```python
+# Rod Cutting Input
+price = [1, 6, 8, 9, 10, 19, 7, 20]
+N = 8  # Total rod length
+
+# Transform to Unbounded Knapsack Input
+capacity = N  # Rod length becomes knapsack capacity
+weight = [1, 2, 3, 4, 5, 6, 7, 8]  # Possible piece lengths
+cost = price  # Prices become item values
+
+# Now solve as unbounded knapsack!
+```
+
+### Why It's Unbounded Knapsack
+
+1. **Same piece can be cut multiple times:** Just like unbounded knapsack where you can pick the same item multiple times, you can cut multiple pieces of the same length.
+   - Example: Rod of length 8 can be cut into four pieces of length 2: [2, 2, 2, 2]
+
+2. **Maximize value within capacity:** 
+   - Rod Cutting: Maximize price while total cut lengths ≤ N
+   - Unbounded Knapsack: Maximize value while total weight ≤ W
+
+3. **Decision at each step:**
+   - Rod Cutting: "Should I cut a piece of length i?"
+   - Unbounded Knapsack: "Should I pick item i?"
+
+### Example Walkthrough
+
+**Rod Cutting:**
+- Rod length N = 8
+- price = [1, 6, 8, 9, 10, 19, 7, 20]
+- Question: How to cut rod of length 8 to maximize price?
+
+**Converted to Unbounded Knapsack:**
+- Capacity W = 8
+- weights = [1, 2, 3, 4, 5, 6, 7, 8]
+- values = [1, 6, 8, 9, 10, 19, 7, 20]
+- Question: Which items to pick (can repeat) to maximize value with weight ≤ 8?
+
+**Solution:**
+- Cut pieces of length 2 and 6 (or pick items with weight 2 and 6)
+- Total length: 2 + 6 = 8 ✓
+- Total price: 6 + 19 = 25 ✓
+
+---
+
+## Solutions
+
+### Setup: Transform Rod Cutting to Unbounded Knapsack
+
+```python
+# Rod Cutting Input
+price = [1, 6, 8, 9, 10, 19, 7, 20]
+n = len(price)
+
+# Transform to Unbounded Knapsack
+capacity = n  # Total rod length
+weight = [length for length in range(1, n+1)]  # [1, 2, 3, 4, 5, 6, 7, 8]
+cost = price  # Same as price array
+```
+
+---
+
+### 1. Recursive Solution
+
+```python
+def solve(n, weight, cost, index, capacity):
+    # Base case: only first piece length available
+    if index == 0:
+        return cost[0] * (capacity // weight[0])
+    
+    # Option 1: Cut a piece of current length (if fits)
+    if weight[index] <= capacity:
+        # Stay at same index to allow multiple cuts of same length
+        include = cost[index] + solve(n, weight, cost, index, capacity - weight[index])
+    else:
+        include = 0
+    
+    # Option 2: Don't cut this length
+    exclude = solve(n, weight, cost, index-1, capacity)
+    
+    return max(include, exclude)
+```
+
+**Time Complexity:** O(2^n)  
+**Space Complexity:** O(n)
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion → Memoization:**
+
+Add a memo table to cache results and avoid recomputation of overlapping subproblems.
+
+```python
+def solve_memo(n, weight, cost, index, capacity, memo):
+    # Return cached result if available
+    if memo[index][capacity] != None:
+        return memo[index][capacity]
+    
+    # Base case: only first piece length available
+    if index == 0:
+        return cost[0] * (capacity // weight[0])
+    
+    # Option 1: Cut a piece of current length (if fits)
+    if weight[index] <= capacity:
+        # Stay at same index to allow multiple cuts of same length
+        include = cost[index] + solve_memo(n, weight, cost, index, capacity - weight[index], memo)
+    else:
+        include = 0
+    
+    # Option 2: Don't cut this length
+    exclude = solve_memo(n, weight, cost, index-1, capacity, memo)
+    
+    # Cache and return result
+    memo[index][capacity] = max(include, exclude)
+    return memo[index][capacity]
+```
+
+**Time Complexity:** O(n × N)  
+**Space Complexity:** O(n × N) + O(n)
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization → Tabulation:**
+
+Replace recursion with iterative DP table filling.
+
+```python
+def tabulation(n, weight, cost, capacity):
+    # Create DP table
+    dp = [[0] * (capacity + 1) for _ in range(n)]
+    
+    # Base case: only first piece length available
+    for wt in range(capacity + 1):
+        dp[0][wt] = cost[0] * (wt // weight[0])
+    
+    # Fill table for remaining piece lengths
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Cut a piece of current length
+            if weight[index] <= cap:
+                # Use dp[index] (same row) to allow multiple cuts
+                include = cost[index] + dp[index][cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Don't cut this length
+            exclude = dp[index-1][cap]
+            
+            dp[index][cap] = max(include, exclude)
+    
+    return dp[n-1][capacity]
+```
+
+**Time Complexity:** O(n × N)  
+**Space Complexity:** O(n × N)
+
+---
+
+### Tabulation Example
+
+**Input:** price = [1, 5, 8, 9], N = 4
+
+**DP Table:**
+
+| Index\Length | 0 | 1 | 2 | 3 | 4 |
+|--------------|---|---|---|---|---|
+| 0 (len=1, price=1) | 0 | 1 | 2 | 3 | 4 |
+| 1 (len=2, price=5) | 0 | 1 | 5 | 6 | 10 |
+| 2 (len=3, price=8) | 0 | 1 | 5 | 8 | 10 |
+| 3 (len=4, price=9) | 0 | 1 | 5 | 8 | **10** |
+
+**Explanation:**
+- **Row 0:** Only cuts of length 1 available. Rod of length 4 → cut 4 pieces of length 1 → 1×4 = 4
+- **Row 1:** Cuts of length 1 and 2 available.
+  - Length 4: Best is 2 cuts of length 2 → 5+5 = **10**
+- **Row 2:** Cuts of length 1, 2, 3 available.
+  - Length 4: Still best is 2 cuts of length 2 → **10** (better than 8+1=9)
+- **Row 3:** All cuts available.
+  - Length 4: Best remains **10** (2 cuts of length 2)
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation → Space Optimization:**
+
+Use two 1D arrays instead of 2D table since each row only depends on the previous row.
+
+```python
+def optimized(n, weight, cost, capacity):
+    # Two arrays instead of 2D table
+    dp_curr = [0] * (capacity + 1)
+    dp_prev = [0] * (capacity + 1)
+    
+    # Base case: only first piece length available
+    for wt in range(capacity + 1):
+        dp_prev[wt] = cost[0] * (wt // weight[0])
+    
+    # Fill for remaining piece lengths
+    for index in range(1, n):
+        for cap in range(1, capacity + 1):
+            # Option 1: Cut a piece of current length
+            if weight[index] <= cap:
+                # Use dp_curr (current row) for multiple cuts
+                include = cost[index] + dp_curr[cap - weight[index]]
+            else:
+                include = 0
+            
+            # Option 2: Don't cut this length
+            exclude = dp_prev[cap]
+            
+            dp_curr[cap] = max(include, exclude)
+        
+        # Move current to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[capacity]
+```
+
+**Time Complexity:** O(n × N)  
+**Space Complexity:** O(N)
+
+---
+
+## Usage
+
+```python
+price = [1, 6, 8, 9, 10, 19, 7, 20]
+n = len(price)
+capacity = n
+weight = [length for length in range(1, n+1)]
+cost = price
+
+print(solve(n, weight, cost, n-1, capacity))  # Recursion
+
+memo = [[None] * (capacity + 1) for _ in range(n)]
+print(solve_memo(n, weight, cost, n-1, capacity, memo))  # Memoization
+
+print(tabulation(n, weight, cost, capacity))  # Tabulation
+
+print(optimized(n, weight, cost, capacity))  # Space Optimized
+```
+
+**Output:** 25
+
+---
+
+## Key Insights: Rod Cutting vs Unbounded Knapsack
+
+### Similarities
+
+1. **Both allow unlimited picks:** 
+   - Rod Cutting: Cut same length multiple times
+   - Unbounded Knapsack: Pick same item multiple times
+
+2. **Both use same index in include case:**
+   - `f(index, capacity - weight[index])` not `f(index-1, ...)`
+
+3. **Both have same recurrence relation:**
+   - `f(index, capacity) = max(cost[index] + f(index, capacity - weight[index]), f(index-1, capacity))`
+
+4. **Both have same base case pattern:**
+   - `f(0, capacity) = cost[0] × (capacity // weight[0])`
+
+### The Only Difference
+
+**Rod Cutting** has a special constraint: `weight = [1, 2, 3, ..., N]`
+- The "items" (piece lengths) are always sequential: 1, 2, 3, up to N
+- But algorithmically, it's solved exactly like unbounded knapsack!
+
+### Visual Comparison
+
+```
+Rod Cutting Problem:
+┌─────────────────────────┐
+│   Rod of length N       │
+│   Cut into pieces       │
+│   [1, 2, 3, ..., N]     │
+│   Maximize total price  │
+└─────────────────────────┘
+           ↓
+      Transform
+           ↓
+┌─────────────────────────┐
+│   Knapsack capacity N   │
+│   Items with weights    │
+│   [1, 2, 3, ..., N]     │
+│   Maximize total value  │
+└─────────────────────────┘
+Unbounded Knapsack Problem
+```
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × N) | O(n × N) + O(n) |
+| Tabulation | O(n × N) | O(n × N) |
+| Space Optimized | O(n × N) | O(N) |
+
+Where n = number of different piece lengths (= N), N = total rod length
+
+---
+
+# Minimum Coins Problem
+
+## Problem Statement
+
+Given an integer array of coins representing coins of different denominations and an integer amount representing a total amount of money. Return the fewest number of coins that are needed to make up that amount. If that amount of money cannot be made up by any combination of the coins, return -1.
+
+**Note:** There are infinite numbers of coins of each type (unbounded).
+
+### Examples
+
+**Example 1:**
+```
+Input: coins = [1, 2, 5], amount = 11
+Output: 3
+Explanation: 11 = 5 + 5 + 1. We need 3 coins to make up the amount 11.
+```
+
+**Example 2:**
+```
+Input: coins = [2, 5], amount = 3
+Output: -1
+Explanation: It's not possible to make amount 3 with coins 2 and 5.
+```
+
+---
+
+## Step-by-Step Approach
+
+### Step 1: Define The Problem
+
+We have a target sum and an array of coin denominations. We need to make the target sum using the **minimum number of coins**. Each coin can be used multiple times (unbounded).
+
+### Step 2: Represent the Problem Programmatically
+
+Since we need to check all possible ways and find the minimum count, we use the **pick or not-pick technique**.
+
+**Key Difference from Unbounded Knapsack:** Instead of maximizing value, we're **minimizing count**.
+
+**Function Definition:**
+```
+f(index, amount) → Minimum number of coins needed to make 'amount' using coins from index 0 to index
+```
+
+### Step 3: Base Cases
+
+1. **If amount is 0:** No coins needed
+   - `f(index, 0) = 0`
+
+2. **If we're at the first coin (index == 0):**
+   - If `amount % coins[0] == 0`, we need `amount // coins[0]` coins
+   - Otherwise, impossible to make the amount: `return infinity`
+   - `f(0, amount) = amount // coins[0]` if divisible, else `∞`
+
+### Step 4: Recurrence Relation
+
+For each coin at index, we have two choices:
+
+1. **Include the coin:** `include = 1 + f(index, amount - coins[index])`
+   - Add 1 to count (we took one coin)
+   - Stay at same index (unbounded - can use same coin again)
+   - Only possible if `coins[index] <= amount`
+
+2. **Exclude the coin:** `exclude = f(index-1, amount)`
+   - Move to previous coin
+
+**Recurrence:** `f(index, amount) = min(include, exclude)`
+
+**Key Differences from Unbounded Knapsack:**
+- Use `min()` instead of `max()` (minimizing count vs maximizing value)
+- Add `1` instead of `cost[index]` (counting coins vs summing values)
+- Use `infinity` for impossible cases instead of `0`
+
+---
+
+## Recursion Tree Diagram
+
+```
+Example: coins=[1,2,5], amount=11
+
+                        f(2, 11)
+                       /        \
+              (include)          (exclude)
+            1+f(2,6)             f(1,11)
+               /    \            /     \
+         1+f(2,1)  f(1,6)   1+f(1,9)  f(0,11)
+            /  \      |         |         |
+      1+f(2,-4) ...  ...       ...       11
+          |                              (11 coins
+         ∞                               of value 1)
+      (invalid)
+
+Optimal Path:
+f(2,11) → include coin 5 → f(2,6) → include coin 5 → f(2,1) → exclude → f(1,1) → include coin 1 → f(1,0) = 0
+Result: 1 + 1 + 1 = 3 coins (5 + 5 + 1)
+```
+
+---
+
+## Solutions
+
+### 1. Recursive Solution
+
+```python
+def solve(n, coins, index, amount):
+    # Base case: amount is 0, no coins needed
+    if amount == 0:
+        return 0
+    
+    # Base case: only first coin available
+    if index == 0:
+        if amount % coins[0] == 0:
+            return amount // coins[0]
+        else:
+            return float('inf')  # Impossible to make amount
+    
+    # Option 1: Include current coin (if it fits)
+    if coins[index] <= amount:
+        # Add 1 to count and stay at same index
+        include = 1 + solve(n, coins, index, amount - coins[index])
+    else:
+        include = float('inf')
+    
+    # Option 2: Exclude current coin
+    exclude = solve(n, coins, index-1, amount)
+    
+    # Return minimum
+    return min(include, exclude)
+```
+
+**Time Complexity:** O(2^n) in worst case  
+**Space Complexity:** O(n) - Recursion stack depth
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion → Memoization:**
+
+1. Create a memoization table `memo[index][amount]` initialized with `None`
+2. Before computing, check if result already exists
+3. If yes, return cached value
+4. If no, compute, cache, and return
+
+```python
+def solve_memo(n, coins, index, amount, memo):
+    # Return cached result if available
+    if memo[index][amount] != None:
+        return memo[index][amount]
+    
+    # Base case: amount is 0, no coins needed
+    if amount == 0:
+        return 0
+    
+    # Base case: only first coin available
+    if index == 0:
+        if amount % coins[0] == 0:
+            return amount // coins[0]
+        else:
+            return float('inf')
+    
+    # Option 1: Include current coin (if it fits)
+    if coins[index] <= amount:
+        # Add 1 to count and stay at same index
+        include = 1 + solve_memo(n, coins, index, amount - coins[index], memo)
+    else:
+        include = float('inf')
+    
+    # Option 2: Exclude current coin
+    exclude = solve_memo(n, coins, index-1, amount, memo)
+    
+    # Cache and return minimum
+    memo[index][amount] = min(include, exclude)
+    return memo[index][amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(n × amount) + O(n)
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization → Tabulation:**
+
+1. Replace recursion with iteration
+2. Create DP table `dp[index][amount]` initialized with `infinity`
+3. Fill base cases first
+4. Iterate through indices and amounts
+5. Use table lookups instead of recursive calls
+
+```python
+def tabulation(n, coins, amount):
+    # Create DP table initialized with infinity
+    dp = [[float('inf')] * (amount + 1) for _ in range(n)]
+    
+    # Base case: amount = 0, need 0 coins
+    for index in range(n):
+        dp[index][0] = 0
+    
+    # Base case: only first coin available
+    for amt in range(1, amount + 1):
+        if amt % coins[0] == 0:
+            dp[0][amt] = amt // coins[0]
+        else:
+            dp[0][amt] = float('inf')
+    
+    # Fill table for remaining coins
+    for index in range(1, n):
+        for amt in range(1, amount + 1):
+            # Option 1: Include current coin
+            if coins[index] <= amt:
+                # Use dp[index] (same row) for unbounded property
+                include = 1 + dp[index][amt - coins[index]]
+            else:
+                include = float('inf')
+            
+            # Option 2: Exclude current coin
+            exclude = dp[index-1][amt]
+            
+            dp[index][amt] = min(include, exclude)
+    
+    return dp[n-1][amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(n × amount)
+
+---
+
+### Tabulation Example
+
+**Input:** coins = [1, 2, 5], amount = 11
+
+**DP Table:**
+
+| Index\Amount | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|--------------|---|---|---|---|---|---|---|---|---|---|----|----|
+| 0 (coin=1) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| 1 (coin=2) | 0 | 1 | 1 | 2 | 2 | 3 | 3 | 4 | 4 | 5 | 5 | 6 |
+| 2 (coin=5) | 0 | 1 | 1 | 2 | 2 | 1 | 2 | 2 | 3 | 3 | 2 | **3** |
+
+**Explanation:**
+- **Row 0 (coin=1):** Can make any amount using coins of 1. Amount 11 needs 11 coins.
+- **Row 1 (coins=1,2):** Can use coin 2 to reduce count.
+  - Amount 11: Use 5 coins of 2 and 1 coin of 1 → 6 coins
+- **Row 2 (coins=1,2,5):** Can use coin 5 to further reduce count.
+  - Amount 11: Use 2 coins of 5 and 1 coin of 1 → **3 coins** (5+5+1)
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation → Space Optimization:**
+
+1. Observe that `dp[index][amt]` depends on:
+   - `dp[index][amt - coins[index]]` (same row, earlier column)
+   - `dp[index-1][amt]` (previous row, same column)
+
+2. Use two 1D arrays: `dp_prev` and `dp_curr`
+
+```python
+def optimized(n, coins, amount):
+    # Two arrays instead of 2D table
+    dp_curr = [float('inf')] * (amount + 1)
+    dp_prev = [float('inf')] * (amount + 1)
+    
+    # Base case: amount = 0
+    for index in range(n):
+        dp_prev[0] = 0
+        dp_curr[0] = 0
+    
+    # Base case: only first coin available
+    for amt in range(1, amount + 1):
+        if amt % coins[0] == 0:
+            dp_prev[amt] = amt // coins[0]
+        else:
+            dp_prev[amt] = float('inf')
+    
+    # Fill for remaining coins
+    for index in range(1, n):
+        for amt in range(1, amount + 1):
+            # Option 1: Include current coin
+            if coins[index] <= amt:
+                # Use dp_curr (current row) for unbounded property
+                include = 1 + dp_curr[amt - coins[index]]
+            else:
+                include = float('inf')
+            
+            # Option 2: Exclude current coin
+            exclude = dp_prev[amt]
+            
+            dp_curr[amt] = min(include, exclude)
+        
+        # Move current to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(amount)
+
+---
+
+## Usage
+
+```python
+amount = 11
+coins = [1, 2, 5]
+n = len(coins)
+
+# Recursion
+ans = solve(n, coins, n-1, amount)
+
+# Memoization
+memo = [[None] * (amount + 1) for _ in range(n)]
+ans = solve_memo(n, coins, n-1, amount, memo)
+
+# Tabulation
+ans = tabulation(n, coins, amount)
+
+# Space Optimized
+ans = optimized(n, coins, amount)
+
+# Handle impossible case
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
+```
+
+**Output:** 3
+
+---
+
+## Comparison with Unbounded Knapsack
+
+| Aspect | Unbounded Knapsack | Minimum Coins |
+|--------|-------------------|---------------|
+| **Goal** | Maximize value | Minimize count |
+| **Optimization Function** | `max(include, exclude)` | `min(include, exclude)` |
+| **Include Formula** | `cost[index] + f(...)` | `1 + f(...)` |
+| **Impossible Case Value** | 0 | `infinity` |
+| **Base Case (index=0)** | `cost[0] × (capacity // weight[0])` | `amount // coins[0]` if divisible, else `∞` |
+| **Unbounded Property** | Both use `f(index, ...)` | Both use `f(index, ...)` |
+
+### Structural Similarity
+
+Both problems share the same structure:
+- **Unbounded property:** Can pick same item/coin multiple times
+- **Recurrence uses same index:** `f(index, remaining)` not `f(index-1, remaining)`
+- **Two choices:** Include or exclude current item/coin
+
+The only differences are:
+- **Objective:** Maximize vs minimize
+- **What we're adding:** Value vs count (1)
+- **Invalid state representation:** 0 vs infinity
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × amount) | O(n × amount) + O(n) |
+| Tabulation | O(n × amount) | O(n × amount) |
+| Space Optimized | O(n × amount) | O(amount) |
+
+Where n = number of coin denominations, amount = target amount
+
+---
+
+# Coin Change II Problem
+
+## Problem Statement
+
+Given an array coins of n integers representing coin denominations, find the number of distinct combinations that sum up to a specified amount of money. If it's impossible to achieve the exact amount with any combination of coins, return 0.
+
+**Note:** 
+- A single coin can be used any number of times (unbounded)
+- Return answer modulo 10^9 + 7
+
+### Examples
+
+**Example 1:**
+```
+Input: coins = [2, 4, 10], amount = 10
+Output: 4
+Explanation: The four combinations are:
+10 = 10
+10 = 4 + 4 + 2
+10 = 4 + 2 + 2 + 2
+10 = 2 + 2 + 2 + 2 + 2
+```
+
+**Example 2:**
+```
+Input: coins = [5], amount = 5
+Output: 1
+Explanation: There is one combination: 5 = 5.
+```
+
+---
+
+## Step-by-Step Approach
+
+### Step 1: Define The Problem
+
+We have a target sum and an array of coin denominations. We need to find the **total number of ways** to make the target sum. Each coin can be used multiple times (unbounded).
+
+### Step 2: Represent the Problem Programmatically
+
+Since we need to count all possible ways, we use the **pick or not-pick technique**.
+
+**Function Definition:**
+```
+f(index, amount) → Number of ways to make 'amount' using coins from index 0 to index
+```
+
+### Step 3: Base Cases
+
+1. **If amount is 0:** There's exactly one way - use no coins
+   - `f(index, 0) = 1`
+
+2. **If we're at the first coin (index == 0):**
+   - If `amount % coins[0] == 0`, there's exactly 1 way (use coin 0 multiple times)
+   - Otherwise, 0 ways
+   - `f(0, amount) = 1` if divisible, else `0`
+
+### Step 4: Recurrence Relation
+
+For each coin at index, we have two choices:
+
+1. **Include the coin:** `include = f(index, amount - coins[index])`
+   - Stay at same index (unbounded - can use same coin again)
+   - Only possible if `coins[index] <= amount`
+
+2. **Exclude the coin:** `exclude = f(index-1, amount)`
+   - Move to previous coin
+
+**Recurrence:** `f(index, amount) = include + exclude`
+
+**Key Differences from Other Coin Problems:**
+- **Coin Change II:** Use `+` (count all ways)
+- **Minimum Coins:** Use `min()` (find minimum count)
+- **Unbounded Knapsack:** Use `max()` (maximize value)
+
+---
+
+## Recursion Tree Diagram
+
+```
+Example: coins=[2,4,10], amount=10
+
+                        f(2, 10)
+                       /        \
+              (include)          (exclude)
+              f(2,0)             f(1,10)
+                |                /     \
+                1           f(1,6)    f(0,10)
+                            /   \        |
+                      f(1,2)  f(0,6)     1
+                       /  \      |    (10=2+2+2+2+2)
+                 f(1,0) f(0,2)   0
+                   |      |
+                   1      1
+               (10=4+4+2) (10=2+4+4 or 10=4+2+4)
+
+Total combinations found: 4
+1. 10 = 10
+2. 10 = 4 + 4 + 2
+3. 10 = 4 + 2 + 2 + 2
+4. 10 = 2 + 2 + 2 + 2 + 2
+```
+
+---
+
+## Solutions
+
+### 1. Recursive Solution
+
+```python
+def solve(n, coins, index, amount):
+    # Base case: amount is 0, one way (use no coins)
+    if amount == 0:
+        return 1
+    
+    # Base case: only first coin available
+    if index == 0:
+        if amount % coins[0] == 0:
+            return 1  # One way: use coin 0 multiple times
+        else:
+            return 0  # No way to make amount
+    
+    # Option 1: Include current coin (if it fits)
+    if coins[index] <= amount:
+        # Stay at same index to allow multiple uses
+        include = solve(n, coins, index, amount - coins[index])
+    else:
+        include = 0
+    
+    # Option 2: Exclude current coin
+    exclude = solve(n, coins, index-1, amount)
+    
+    # Return sum of both options
+    return include + exclude
+```
+
+**Time Complexity:** O(2^n) in worst case  
+**Space Complexity:** O(n) - Recursion stack depth
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion → Memoization:**
+
+1. Create a memoization table `memo[index][amount]` initialized with `None`
+2. Before computing, check if result already exists
+3. If yes, return cached value
+4. If no, compute, cache, and return
+
+```python
+def solve_memo(n, coins, index, amount, memo):
+    # Return cached result if available
+    if memo[index][amount] != None:
+        return memo[index][amount]
+    
+    # Base case: amount is 0, one way (use no coins)
+    if amount == 0:
+        return 1
+    
+    # Base case: only first coin available
+    if index == 0:
+        if amount % coins[0] == 0:
+            return 1
+        else:
+            return 0
+    
+    # Option 1: Include current coin (if it fits)
+    if coins[index] <= amount:
+        # Stay at same index to allow multiple uses
+        include = solve_memo(n, coins, index, amount - coins[index], memo)
+    else:
+        include = 0
+    
+    # Option 2: Exclude current coin
+    exclude = solve_memo(n, coins, index-1, amount, memo)
+    
+    # Cache and return sum
+    memo[index][amount] = include + exclude
+    return memo[index][amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(n × amount) + O(n)
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization → Tabulation:**
+
+1. Replace recursion with iteration
+2. Create DP table `dp[index][amount]` initialized with 0
+3. Fill base cases first
+4. Iterate through indices and amounts
+5. Use table lookups instead of recursive calls
+
+```python
+def tabulation(n, coins, amount):
+    # Create DP table initialized with 0
+    dp = [[0] * (amount + 1) for _ in range(n)]
+    
+    # Base case: amount = 0, one way
+    for index in range(n):
+        dp[index][0] = 1
+    
+    # Base case: only first coin available
+    for amt in range(1, amount + 1):
+        if amt % coins[0] == 0:
+            dp[0][amt] = 1
+        else:
+            dp[0][amt] = 0
+    
+    # Fill table for remaining coins
+    for index in range(1, n):
+        for amt in range(1, amount + 1):
+            # Option 1: Include current coin
+            if coins[index] <= amt:
+                # Use dp[index] (same row) for unbounded property
+                include = dp[index][amt - coins[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current coin
+            exclude = dp[index-1][amt]
+            
+            # Sum both options
+            dp[index][amt] = include + exclude
+    
+    return dp[n-1][amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(n × amount)
+
+---
+
+### Tabulation Example
+
+**Input:** coins = [2, 4, 10], amount = 10
+
+**DP Table:**
+
+| Index\Amount | 0 | 2 | 4 | 6 | 8 | 10 |
+|--------------|---|---|---|---|---|-----|
+| 0 (coin=2) | 1 | 1 | 1 | 1 | 1 | 1 |
+| 1 (coin=4) | 1 | 1 | 2 | 2 | 3 | 3 |
+| 2 (coin=10) | 1 | 1 | 2 | 2 | 3 | **4** |
+
+**Explanation:**
+- **Row 0 (coin=2):** Can make any even amount using coin 2. One way for each.
+  - Amount 10: [2+2+2+2+2] = 1 way
+  
+- **Row 1 (coins=2,4):** Can combine coins 2 and 4.
+  - Amount 4: [4] or [2+2] = 2 ways
+  - Amount 8: [4+4], [4+2+2], [2+2+2+2] = 3 ways
+  - Amount 10: [4+4+2], [4+2+2+2], [2+2+2+2+2] = 3 ways
+  
+- **Row 2 (coins=2,4,10):** Add coin 10.
+  - Amount 10: Previous 3 ways + [10] = **4 ways**
+    1. 10
+    2. 4 + 4 + 2
+    3. 4 + 2 + 2 + 2
+    4. 2 + 2 + 2 + 2 + 2
+
+---
+
+### 4. Space Optimized Solution
+
+**Conversion from Tabulation → Space Optimization:**
+
+1. Observe that `dp[index][amt]` depends on:
+   - `dp[index][amt - coins[index]]` (same row, earlier column)
+   - `dp[index-1][amt]` (previous row, same column)
+
+2. Use two 1D arrays: `dp_prev` and `dp_curr`
+
+```python
+def optimized(n, coins, amount):
+    # Two arrays instead of 2D table
+    dp_curr = [0] * (amount + 1)
+    dp_prev = [0] * (amount + 1)
+    
+    # Base case: amount = 0
+    for index in range(n):
+        dp_prev[0] = 1
+        dp_curr[0] = 1
+    
+    # Base case: only first coin available
+    for amt in range(1, amount + 1):
+        if amt % coins[0] == 0:
+            dp_prev[amt] = 1
+        else:
+            dp_prev[amt] = 0
+    
+    # Fill for remaining coins
+    for index in range(1, n):
+        for amt in range(1, amount + 1):
+            # Option 1: Include current coin
+            if coins[index] <= amt:
+                # Use dp_curr (current row) for unbounded property
+                include = dp_curr[amt - coins[index]]
+            else:
+                include = 0
+            
+            # Option 2: Exclude current coin
+            exclude = dp_prev[amt]
+            
+            # Sum both options
+            dp_curr[amt] = include + exclude
+        
+        # Move current to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[amount]
+```
+
+**Time Complexity:** O(n × amount)  
+**Space Complexity:** O(amount)
+
+---
+
+## Usage
+
+```python
+amount = 10
+coins = [2, 4, 10]
+n = len(coins)
+
+# Recursion
+ans = solve(n, coins, n-1, amount)
+
+# Memoization
+memo = [[None] * (amount + 1) for _ in range(n)]
+ans = solve_memo(n, coins, n-1, amount, memo)
+
+# Tabulation
+ans = tabulation(n, coins, amount)
+
+# Space Optimized
+ans = optimized(n, coins, amount)
+
+# Apply modulo
+print(ans % (10**9 + 7))
+```
+
+**Output:** 4
+
+---
+
+## Comparison with Related Problems
+
+| Problem | Goal | Combination Function | Include Formula | Impossible Value |
+|---------|------|---------------------|-----------------|------------------|
+| **Coin Change II** | Count ways | `include + exclude` | `f(index, amt - coin[i])` | 0 |
+| **Minimum Coins** | Minimize count | `min(include, exclude)` | `1 + f(index, amt - coin[i])` | ∞ |
+| **Unbounded Knapsack** | Maximize value | `max(include, exclude)` | `val[i] + f(index, cap - wt[i])` | 0 |
+
+### Structural Similarities
+
+All three problems share:
+1. **Unbounded property:** Can pick same item/coin multiple times
+2. **Same index on include:** `f(index, ...)` not `f(index-1, ...)`
+3. **Two choices per state:** Include or exclude
+4. **Similar base cases:** Special handling for index 0 and capacity/amount 0
+
+### Key Differences
+
+| Aspect | Coin Change II |
+|--------|---------------|
+| **What we're counting** | Number of ways/combinations |
+| **Aggregation** | Addition (`+`) |
+| **Base case (amount=0)** | 1 (one way: use no coins) |
+| **Base case (index=0)** | 1 if divisible, else 0 |
+| **Invalid state** | 0 (no ways) |
+
+---
+
+## Why We Use Addition (+)
+
+In Coin Change II, we're counting **all possible combinations**:
+
+```
+For coins = [2, 4] and amount = 6:
+
+Using coin 4:
+- Take coin 4: f(1, 2) → ways to make 2 with coins [2,4]
+  - Ways: [4+2] = 1 way
+
+Not using coin 4:
+- Skip coin 4: f(0, 6) → ways to make 6 with coins [2]
+  - Ways: [2+2+2] = 1 way
+
+Total ways = 1 + 1 = 2 ways
+```
+
+We **add** because both choices give us distinct, valid combinations.
+
+Compare with:
+- **Minimum Coins:** Use `min()` because we want the best (smallest) count
+- **Unbounded Knapsack:** Use `max()` because we want the best (largest) value
+
+---
+
+## Complexity Summary
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n × amount) | O(n × amount) + O(n) |
+| Tabulation | O(n × amount) | O(n × amount) |
+| Space Optimized | O(n × amount) | O(amount) |
+
+Where n = number of coin denominations, amount = target amount
