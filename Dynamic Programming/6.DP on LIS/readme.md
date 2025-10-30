@@ -917,4 +917,460 @@ Result: [1, 3, 4, 6]
 - `temp` array: O(n)
 
 ---
+# Largest Divisible Subset
+
+## Problem Statement
+
+Given an array `nums` of positive integers, the task is to find the **largest subset** such that every pair `(a, b)` of elements in the subset satisfies `a % b == 0` or `b % a == 0`.
+
+Return the subset in any order. If there are multiple solutions, return any one of them.
+
+### Examples
+
+**Example 1:**
+```
+Input: nums = [3, 5, 10, 20]
+Output: [5, 10, 20]
+Explanation: The subset [5, 10, 20] satisfies the divisibility condition:
+- 10 % 5 == 0 
+- 20 % 10 == 0
+```
+
+**Example 2:**
+```
+Input: nums = [16, 8, 2, 4, 32]
+Output: [2, 4, 8, 16, 32]
+Explanation: The entire array forms a divisible subset:
+- 4 % 2 == 0
+- 8 % 4 == 0
+- 16 % 8 == 0
+- 32 % 16 == 0
+```
+
+---
+
+## Key Concepts
+
+### Subset vs Subsequence
+
+- **Subsequence:** Elements must follow the order of the original array
+- **Subset:** No constraint on the order of elements (order doesn't matter)
+
+### Divisible Subset
+
+A divisible subset is one where if we pick any two elements `i` and `j`, then either:
+- `arr[i] % arr[j] == 0`, OR
+- `arr[j] % arr[i] == 0`
+
+**Example:** `[16, 8, 4]` is a divisible subset because:
+- 16 % 8 == 0
+- 8 % 4 == 0
+- 16 % 4 == 0
+
+---
+
+## The Key Insight
+
+### Why Sorting Helps
+
+If we sort the array, and element `a` divides element `b`, and `b` divides element `c`, then **`a` automatically divides `c`**.
+
+**Mathematical Property:**
+```
+If a | b and b | c, then a | c (transitivity of divisibility)
+```
+
+**Example:**
+```
+Sorted: [2, 4, 8, 16]
+
+- 4 % 2 == 0 (4 is divisible by 2)
+- 8 % 4 == 0 (8 is divisible by 4)
+- Therefore, 8 % 2 == 0 automatically! (transitivity)
+```
+
+### Transformation to LIS-like Problem
+
+After sorting:
+- We only need to check if `arr[i] % arr[j] == 0` where `j < i`
+- We don't need to check all pairs explicitly
+- This becomes similar to Longest Increasing Subsequence, but with divisibility condition
+
+---
+
+## Approach 1: Find Length of Largest Subset
+
+### Algorithm
+
+1. **Sort the array** to leverage transitivity
+2. Use DP where `dp[i]` = length of largest divisible subset ending at index `i`
+3. For each index, check all previous indices
+4. If `arr[index] % arr[last_index] == 0`, we can extend the subset
+
+### Code
+
+```python
+def lengthOfLargestSubset(n, arr):
+    # Sort to leverage transitivity property
+    arr.sort()
+    
+    # dp[i] = length of largest divisible subset ending at index i
+    dp = [1] * n
+    
+    for index in range(n):
+        for last_index in range(index):
+            # Check if current element is divisible by previous element
+            if arr[index] % arr[last_index] == 0:
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+    
+    # Find maximum length
+    maxLength = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+    
+    return maxLength
+```
+
+---
+
+## Visual Example: Length Calculation
+
+Let's trace `arr = [3, 5, 10, 20]`
+
+### After Sorting: `[3, 5, 10, 20]`
+
+| Index | Element | Check Previous | Divisibility | Update | dp |
+|-------|---------|----------------|--------------|--------|-----|
+| 0 | 3 | - | - | Base | [1, ...] |
+| 1 | 5 | 5 % 3 = 2 | ❌ Not divisible | No update | [1, 1, ...] |
+| 2 | 10 | 10 % 3 = 1<br>10 % 5 = 0 | ❌<br>✅ | dp[2] = 1 + dp[1] = 2 | [1, 1, 2, ...] |
+| 3 | 20 | 20 % 3 = 2<br>20 % 5 = 0<br>20 % 10 = 0 | ❌<br>✅ (dp=2)<br>✅ (dp=3) | dp[3] = 1 + dp[2] = 3 | [1, 1, 2, 3] |
+
+**Final:** `dp = [1, 1, 2, 3]`  
+**Maximum Length = 3**
+
+### Why 20 % 10 gives better result?
+
+```
+From index 1 (5): dp[1] = 1, so extending gives length = 2
+From index 2 (10): dp[2] = 2, so extending gives length = 3 ✓ Better!
+```
+
+---
+
+## Approach 2: Print the Largest Subset
+
+### Algorithm Enhancement
+
+Same as finding length, but also track **parent pointers** to reconstruct the subset.
+
+### Code
+
+```python
+def printLargestSubset(n, arr):
+    # Sort the array
+    arr.sort()
+    
+    # dp[i] = length of largest divisible subset ending at index i
+    dp = [1] * n
+    
+    # parent[i] = previous index in the largest subset ending at i
+    parent = {}
+    
+    for index in range(n):
+        parent[index] = index  # Initially points to itself
+        
+        for last_index in range(index):
+            # Check divisibility
+            if arr[index] % arr[last_index] == 0:
+                length = 1 + dp[last_index]
+                
+                # Update if we found a longer subset
+                if length > dp[index]:
+                    dp[index] = length
+                    parent[index] = last_index  # Track parent
+    
+    # Find index with maximum length
+    maxLength = 0
+    maxIndex = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+            maxIndex = i
+    
+    # Backtrack to construct the subset
+    temp = []
+    index = maxIndex
+    
+    while parent[index] != index:
+        temp.append(arr[index])
+        index = parent[index]
+    
+    temp.append(arr[index])  # Add the starting element
+    
+    # Reverse to get correct order
+    ans = temp[::-1]
+    return ans
+```
+
+---
+
+## Detailed Trace: Print Subset
+
+### Array: `[3, 5, 10, 20]`
+
+After sorting: `[3, 5, 10, 20]`
+
+### Step-by-Step Execution:
+
+**Index 0 (3):**
+```
+dp[0] = 1
+parent[0] = 0
+```
+
+**Index 1 (5):**
+```
+Check index 0: 5 % 3 = 2 ❌
+dp[1] = 1
+parent[1] = 1
+```
+
+**Index 2 (10):**
+```
+Check index 0: 10 % 3 = 1 ❌
+Check index 1: 10 % 5 = 0 ✅
+  - length = 1 + dp[1] = 2
+  - dp[2] = 2
+  - parent[2] = 1
+```
+
+**Index 3 (20):**
+```
+Check index 0: 20 % 3 = 2 ❌
+Check index 1: 20 % 5 = 0 ✅
+  - length = 1 + dp[1] = 2
+  - dp[3] = 2
+  - parent[3] = 1
+Check index 2: 20 % 10 = 0 ✅
+  - length = 1 + dp[2] = 3
+  - dp[3] = 3 (updated!)
+  - parent[3] = 2 (updated!)
+```
+
+### Final State:
+```
+dp     = [1, 1, 2, 3]
+parent = [0, 1, 1, 2]
+```
+
+**maxLength = 3 at maxIndex = 3**
+
+### Backtracking from Index 3:
+
+```
+Start at index 3 (20):
+  - temp = [20]
+  - parent[3] = 2, move to index 2
+
+At index 2 (10):
+  - temp = [20, 10]
+  - parent[2] = 1, move to index 1
+
+At index 1 (5):
+  - temp = [20, 10, 5]
+  - parent[1] = 1, STOP (self-pointing)
+
+Reverse: [5, 10, 20]
+```
+
+**Result:** `[5, 10, 20]`
+
+---
+
+## Visual Parent Pointer Chain
+
+```
+Array:   [3,  5, 10, 20]
+Index:    0   1   2   3
+
+Parent:   0   1   1   2
+          ↓   ↓   ↑   ↑
+          3   5 ←─10←─20
+
+Largest subset ending at index 3:
+  3 → 2 → 1
+ (20)(10)(5)
+
+Result: [5, 10, 20]
+```
+
+---
+
+## Example 2 Trace
+
+### Array: `[16, 8, 2, 4, 32]`
+
+**After Sorting:** `[2, 4, 8, 16, 32]`
+
+| Index | Element | Divisibility Checks | dp | parent |
+|-------|---------|---------------------|----|----|
+| 0 | 2 | - | 1 | 0 |
+| 1 | 4 | 4 % 2 = 0 ✅ | 2 | 0 |
+| 2 | 8 | 8 % 2 = 0 ✅<br>8 % 4 = 0 ✅ (better) | 3 | 1 |
+| 3 | 16 | 16 % 8 = 0 ✅ (best) | 4 | 2 |
+| 4 | 32 | 32 % 16 = 0 ✅ (best) | 5 | 3 |
+
+**Final:**
+```
+dp     = [1, 2, 3, 4, 5]
+parent = [0, 0, 1, 2, 3]
+```
+
+**Backtrack from index 4:**
+```
+4 → 3 → 2 → 1 → 0
+(32)(16)(8)(4)(2)
+
+Result: [2, 4, 8, 16, 32]
+```
+
+---
+
+## Why Sorting is Critical
+
+### Without Sorting:
+
+Array: `[10, 5, 20, 3]`
+
+```
+- At index 2 (20): We check 10 and 5
+- 20 % 10 = 0 ✅
+- But we don't know that 10 % 5 = 0
+- We might miss the chain [5, 10, 20]
+```
+
+### With Sorting:
+
+Array: `[3, 5, 10, 20]`
+
+```
+- At index 2 (10): We know 10 % 5 = 0
+- At index 3 (20): We know 20 % 10 = 0
+- Transitivity guarantees 20 % 5 = 0
+- We correctly build [5, 10, 20]
+```
+
+---
+
+## Mathematical Proof: Why This Works
+
+### Claim: If array is sorted and we build chains using divisibility, the result is valid.
+
+**Proof:**
+
+1. **Base case:** Single element is always a valid divisible subset ✓
+
+2. **Inductive step:** Assume we have a valid subset ending at index `j`: `[a₁, a₂, ..., aⱼ]`
+   - All pairs in this subset satisfy divisibility
+   - Array is sorted, so `a₁ < a₂ < ... < aⱼ`
+
+3. **Adding element at index `i` (i > j):**
+   - We check: `arr[i] % arr[j] == 0`
+   - By transitivity: if `arr[j] % arr[k] == 0` for any `k < j`, then `arr[i] % arr[k] == 0`
+   - Therefore, adding `arr[i]` maintains the divisibility property ✓
+
+---
+
+## Complete Code
+
+```python
+def lengthOfLargestSubset(n, arr):
+    arr.sort()
+    dp = [1] * n
+    
+    for index in range(n):
+        for last_index in range(index):
+            if arr[index] % arr[last_index] == 0:
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+    
+    maxLength = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+    
+    return maxLength
+
+def printLargestSubset(n, arr):
+    arr.sort()
+    dp = [1] * n
+    parent = {}
+    
+    for index in range(n):
+        parent[index] = index
+        for last_index in range(index):
+            if arr[index] % arr[last_index] == 0:
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+                    parent[index] = last_index
+    
+    maxLength = 0
+    maxIndex = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+            maxIndex = i
+    
+    temp = []
+    index = maxIndex
+    while parent[index] != index:
+        temp.append(arr[index])
+        index = parent[index]
+    temp.append(arr[index])
+    
+    ans = temp[::-1]
+    return ans
+
+# Test
+arr = [3, 5, 10, 20]
+n = len(arr)
+print(lengthOfLargestSubset(n, arr))    # Output: 3
+print(printLargestSubset(n, arr))       # Output: [5, 10, 20]
+```
+
+---
+
+## Complexity Analysis
+
+**Time Complexity:** O(n² + n log n)
+- Sorting: O(n log n)
+- Two nested loops: O(n²)
+- Finding max and backtracking: O(n)
+- **Overall: O(n²)**
+
+**Space Complexity:** O(n)
+- `dp` array: O(n)
+- `parent` dictionary: O(n)
+- `temp` array: O(n) in worst case
+
+---
+
+## Comparison with LIS
+
+| Aspect | LIS | Largest Divisible Subset |
+|--------|-----|--------------------------|
+| **Order matters** | Yes (subsequence) | No (subset) |
+| **Preprocessing** | Not required | Sort array |
+| **Condition** | `arr[i] > arr[j]` | `arr[i] % arr[j] == 0` |
+| **Property used** | Ordering | Divisibility transitivity |
+| **DP Definition** | Same structure | Same structure |
+
+---
+
 
