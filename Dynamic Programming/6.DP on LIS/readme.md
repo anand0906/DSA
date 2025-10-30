@@ -381,3 +381,256 @@ print(algorithmic(n, arr))
 | Algorithmic | O(n²) | O(n) |
 
 ---
+
+# Longest Increasing Subsequence - Binary Search Approach
+
+## Problem Statement
+
+Given an integer array `nums`, return the length of the longest strictly increasing subsequence.
+
+A subsequence is a sequence derived from an array by deleting some or no elements without changing the order of the remaining elements. For example, `[3, 6, 2, 7]` is a subsequence of `[0, 3, 1, 6, 2, 2, 7]`.
+
+### Examples
+
+**Example 1:**
+```
+Input: nums = [10, 9, 2, 5, 3, 7, 101, 18]
+Output: 4
+Explanation: The longest increasing subsequence is [2, 3, 7, 101], length = 4
+```
+
+**Example 2:**
+```
+Input: nums = [0, 1, 0, 3, 2, 3]
+Output: 4
+Explanation: The longest increasing subsequence is [0, 1, 2, 3], length = 4
+```
+
+---
+
+## The Intuition Behind Binary Search Approach
+
+### Core Idea
+
+Instead of exploring all possible subsequences, we maintain a smart auxiliary array `temp` where:
+
+**`temp[i]` = the smallest tail element of all increasing subsequences of length `i+1`**
+
+### Why "Smallest Tail"?
+
+Because a smaller tail element gives us **more opportunities** to extend the subsequence with future elements.
+
+**Example:**
+- Subsequence 1: `[2, 5]` (tail = 5)
+- Subsequence 2: `[2, 3]` (tail = 3)
+
+Both have length 2, but subsequence 2 with tail `3` is better because more future elements (like 4, 5, 6...) can extend it.
+
+---
+
+## Algorithm Steps
+
+```python
+import bisect
+
+def solve(n, arr):
+    temp = [arr[0]]  # Initialize with first element
+    
+    for index in range(1, n):
+        if arr[index] > temp[-1]:
+            # Current element is larger than all elements in temp
+            # Extend the longest subsequence
+            temp.append(arr[index])
+        else:
+            # Find the position where arr[index] should be placed
+            # Replace the element at that position to maintain smallest tails
+            lower_bound = bisect.bisect_left(temp, arr[index])
+            temp[lower_bound] = arr[index]
+    
+    return len(temp)
+```
+
+### Two Cases:
+
+1. **If `arr[index] > temp[-1]`:** 
+   - Current element is larger than all elements in `temp`
+   - We can extend the longest subsequence
+   - **Action:** Append to `temp`
+
+2. **If `arr[index] <= temp[-1]`:**
+   - Current element cannot extend the longest subsequence
+   - But it might help create a better (smaller tail) subsequence of some length
+   - **Action:** Find the first element in `temp` that is >= `arr[index]` and replace it
+
+---
+
+## Visual Walkthrough
+
+Let's trace through `arr = [10, 9, 2, 5, 3, 7, 101, 18]`
+
+### Step-by-Step Execution:
+
+```
+Initial: temp = [10]
+```
+
+| Step | Element | Comparison | Action | temp | Explanation |
+|------|---------|------------|--------|------|-------------|
+| 1 | 9 | 9 < 10 | Replace | `[9]` | 9 is better tail for length-1 subsequence |
+| 2 | 2 | 2 < 9 | Replace | `[2]` | 2 is even better tail for length-1 |
+| 3 | 5 | 5 > 2 | Append | `[2, 5]` | Extend: now we have length-2 subsequence |
+| 4 | 3 | 3 < 5 | Replace | `[2, 3]` | 3 is better tail than 5 for length-2 |
+| 5 | 7 | 7 > 3 | Append | `[2, 3, 7]` | Extend: now we have length-3 subsequence |
+| 6 | 101 | 101 > 7 | Append | `[2, 3, 7, 101]` | Extend: now we have length-4 subsequence |
+| 7 | 18 | 18 < 101 | Replace | `[2, 3, 7, 18]` | 18 is better tail than 101 for length-4 |
+
+**Final Answer:** `len(temp) = 4`
+
+---
+
+## Why This Works: Detailed Explanation
+
+### Key Insight 1: Length Preservation
+
+The length of `temp` always equals the length of the longest increasing subsequence found so far.
+
+### Key Insight 2: Maintaining Invariant
+
+At any point, `temp` is sorted in increasing order and represents:
+- `temp[0]` = smallest tail for LIS of length 1
+- `temp[1]` = smallest tail for LIS of length 2
+- `temp[2]` = smallest tail for LIS of length 3
+- And so on...
+
+### Key Insight 3: Replacement Strategy
+
+When we replace `temp[i]` with a smaller value:
+- We're saying: "I found a better (smaller tail) subsequence of length `i+1`"
+- This doesn't change the current LIS length
+- But it **increases the chances** of extending subsequences in the future
+
+### Example to Understand Replacement
+
+Consider array: `[3, 5, 6, 2, 4]`
+
+```
+After [3, 5, 6]: temp = [3, 5, 6], LIS length = 3
+
+Process 2:
+- 2 < 6, so we can't extend
+- But we replace temp[0] = 3 with 2
+- temp = [2, 5, 6]
+- Why? Because [2] is a better starting point than [3]
+
+Process 4:
+- 4 < 6, so we can't extend to length 4
+- But 4 > 2, so we can create length-2 subsequence [2, 4]
+- Replace temp[1] = 5 with 4
+- temp = [2, 4, 6]
+- This gives us subsequence [2, 4, 6] which is valid!
+```
+
+Without the replacement of 3→2, we couldn't have built [2, 4, 6].
+
+---
+
+## Why Binary Search?
+
+Since `temp` is always sorted, we can use **binary search** to find the position for replacement in O(log n) time instead of O(n).
+
+`bisect.bisect_left(temp, arr[index])` finds the **leftmost position** where `arr[index]` can be inserted to keep `temp` sorted.
+
+---
+
+## Important Notes
+
+### What temp IS:
+- ✅ A tool to find the **length** of LIS
+- ✅ Always maintains sorted order
+- ✅ Represents smallest tails for each length
+
+### What temp IS NOT:
+- ❌ NOT necessarily the actual LIS
+- ❌ NOT all elements form a valid subsequence
+
+**Example:** For `[10, 9, 2, 5, 3, 7, 101, 18]`
+- Final `temp = [2, 3, 7, 18]`
+- Actual LIS = `[2, 3, 7, 101]` or `[2, 3, 7, 18]`
+- Both have length 4, which is what we need!
+
+---
+
+## Complete Code
+
+```python
+import bisect
+
+def solve(n, arr):
+    temp = [arr[0]]
+    
+    for index in range(1, n):
+        if arr[index] > temp[-1]:
+            # Extend the longest subsequence
+            temp.append(arr[index])
+        else:
+            # Find position and replace for better tail
+            lower_bound = bisect.bisect_left(temp, arr[index])
+            temp[lower_bound] = arr[index]
+    
+    return len(temp)
+
+# Test
+arr = [10, 9, 2, 5, 3, 7, 101, 18]
+n = len(arr)
+print(solve(n, arr))  # Output: 4
+```
+
+---
+
+## Complexity Analysis
+
+**Time Complexity:** O(n log n)
+- We iterate through array once: O(n)
+- For each element, binary search takes: O(log n)
+- Total: O(n log n)
+
+**Space Complexity:** O(n)
+- In worst case, `temp` can have all elements (e.g., already sorted array)
+
+---
+
+## Proof of Correctness
+
+### Claim: Length of `temp` = Length of LIS
+
+**Proof by Induction:**
+
+**Base Case:** After first element, `temp = [arr[0]]`, length = 1 ✓
+
+**Inductive Step:** Assume after processing first `k` elements, `len(temp)` = LIS length for those elements.
+
+When processing `k+1`-th element:
+
+1. **If `arr[k+1] > temp[-1]`:**
+   - We can extend the LIS by 1
+   - We append, so `len(temp)` increases by 1 ✓
+
+2. **If `arr[k+1] <= temp[-1]`:**
+   - Cannot extend current LIS
+   - We replace some element, `len(temp)` stays same ✓
+   - But we maintain better tails for future extensions
+
+Therefore, `len(temp)` always equals LIS length.
+
+---
+
+## Comparison with Other Approaches
+
+| Approach | Time Complexity | Space Complexity |
+|----------|----------------|------------------|
+| Recursion | O(2^n) | O(n) |
+| Memoization | O(n²) | O(n²) |
+| Tabulation | O(n²) | O(n²) |
+| **Binary Search** | **O(n log n)** | **O(n)** |
+
+---
