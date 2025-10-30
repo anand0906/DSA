@@ -1909,3 +1909,465 @@ print(printLongestChain(n, arr))       # Output: ['a', 'ab', 'abc', 'abcd', 'abc
 | **String Chain** | Required (by length) | One character insertion | String manipulation |
 
 ---
+
+# Longest Bitonic Subsequence
+
+## Problem Statement
+
+Given an array `arr` of `n` integers, find the length of the longest bitonic subsequence. A sequence is considered **bitonic** if it first increases, then decreases. The subsequence does not have to be contiguous.
+
+## What is a Bitonic Subsequence?
+
+A bitonic subsequence can be any of these three patterns:
+1. **Increase then decrease** (classic bitonic)
+2. **Only increasing** (Longest Increasing Subsequence)
+3. **Only decreasing** (Longest Decreasing Subsequence)
+
+## Examples
+
+### Example 1
+```
+Input: arr = [5, 1, 4, 2, 3, 6, 8, 7]
+Output: 6
+Explanation: The longest bitonic sequence is [1, 2, 3, 6, 8, 7]
+```
+
+### Example 2
+```
+Input: arr = [10, 20, 30, 40, 50, 40, 30, 20]
+Output: 8
+Explanation: The entire array is bitonic (increases to 50, then decreases)
+```
+
+### Example 3
+```
+Input: arr = [10, 9, 2, 5, 3, 7, 101, 18]
+Output: 6
+Explanation: One possible bitonic sequence is [2, 5, 7, 101, 18] or [2, 3, 7, 101, 18]
+```
+
+## Intuition
+
+### 🤔 Core Idea
+
+A bitonic subsequence has a **peak element** where it transitions from increasing to decreasing. To find the longest bitonic subsequence, we need to:
+
+1. For each element, find the longest increasing subsequence **ending at that element**
+2. For each element, find the longest decreasing subsequence **starting from that element**
+3. Combine both to get the bitonic length at that element
+4. The maximum among all elements is our answer
+
+### Why This Works
+
+Think of each element as a potential **peak** of a bitonic sequence:
+- The increasing part comes **before** the peak
+- The decreasing part comes **after** the peak
+- Total length = increasing length + decreasing length - 1 (we count the peak twice, so subtract 1)
+
+### Visual Example
+
+For array `[1, 4, 2, 3, 6, 8, 7]`:
+
+```
+Element:        1   4   2   3   6   8   7
+Increasing:     1   2   2   3   4   5   5
+Decreasing:     1   3   1   2   3   2   1
+Bitonic:        1   4   2   4   6   6   5
+                                    ↑
+                                  Maximum!
+```
+
+At index with element `8`:
+- Increasing length = 5 (subsequence: `1, 2, 3, 6, 8`)
+- Decreasing length = 2 (subsequence: `8, 7`)
+- Bitonic length = 5 + 2 - 1 = **6**
+
+## Algorithm Breakdown
+
+### Step 1: Find Longest Increasing Subsequence (LIS) from Left to Right
+
+For each position `i`, calculate the longest increasing subsequence ending at `i`.
+
+```
+Array:     [1, 4, 2, 3, 6, 8, 7]
+LIS:       [1, 2, 2, 3, 4, 5, 5]
+```
+
+### Step 2: Find Longest Increasing Subsequence from Right to Left
+
+Reverse the array, find LIS, then reverse the result. This gives us the longest **decreasing** subsequence starting from each position.
+
+```
+Array:     [1, 4, 2, 3, 6, 8, 7]
+LDS:       [1, 3, 1, 2, 3, 2, 1]
+```
+
+### Step 3: Combine Results
+
+For each index `i`:
+```
+Bitonic[i] = LIS[i] + LDS[i] - 1
+```
+
+We subtract 1 because the peak element is counted in both LIS and LDS.
+
+### Step 4: Return Maximum
+
+The maximum value in the Bitonic array is our answer.
+
+## Solution Code
+
+```python
+def longestIncreasing(n, arr):
+    """
+    Finds the longest increasing subsequence ending at each index
+    """
+    dp = [1] * n  # Each element is at least a subsequence of length 1
+    
+    for index in range(n):
+        for last_index in range(index):
+            if arr[index] > arr[last_index]:
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+    
+    return dp
+
+
+def solve(n, arr):
+    """
+    Finds the longest bitonic subsequence
+    """
+    # Step 1: Find LIS from left to right
+    increasing = longestIncreasing(n, arr)
+    
+    # Step 2: Find LIS from right to left (which is LDS from left to right)
+    temp = longestIncreasing(n, arr[::-1])
+    decreasing = temp[::-1]
+    
+    # Step 3: Combine both to find bitonic length at each index
+    maxi = 0
+    for i in range(n):
+        length = increasing[i] + decreasing[i] - 1
+        maxi = max(maxi, length)
+    
+    return maxi
+
+
+# Test
+arr = [10, 9, 2, 5, 3, 7, 101, 18]
+n = len(arr)
+print(solve(n, arr))  # Output: 6
+```
+
+## Complexity Analysis
+
+### Time Complexity
+- **O(n²)** for each LIS calculation
+- Total: **O(n²)**
+
+### Space Complexity
+- **O(n)** for storing DP arrays
+
+## Key Takeaways
+
+✅ Every element can be a potential peak of a bitonic sequence
+
+✅ Bitonic length at position `i` = LIS ending at `i` + LDS starting from `i` - 1
+
+✅ Handle edge cases: purely increasing or purely decreasing sequences are also bitonic
+
+✅ The algorithm works by trying every possible peak and taking the maximum
+
+## Common Mistakes to Avoid
+
+❌ Forgetting to subtract 1 when combining LIS and LDS (double-counting the peak)
+
+❌ Not considering purely increasing or decreasing sequences as bitonic
+
+❌ Confusing subsequence with subarray (subsequences don't need to be contiguous)
+
+---
+
+# Number of Longest Increasing Subsequences
+
+## Problem Statement
+
+Given an integer array `nums`, find the **count** of Longest Increasing Subsequences (LIS) in the array.
+
+## Examples
+
+### Example 1
+```
+Input: nums = [1, 3, 5, 4, 7]
+Output: 2
+Explanation: There are two LIS of length 4:
+  - [1, 3, 4, 7]
+  - [1, 3, 5, 7]
+```
+
+### Example 2
+```
+Input: nums = [2, 2, 2, 2, 2]
+Output: 5
+Explanation: All elements are equal, so each element forms an LIS of length 1.
+There are 5 such subsequences.
+```
+
+### Example 3
+```
+Input: nums = [10, 9, 2, 5, 3, 7, 101, 18]
+Output: 4
+Explanation: The LIS has length 5, and there are multiple ways to form it.
+```
+
+## Intuition
+
+### 🤔 Core Idea
+
+This problem extends the classic LIS problem by asking: **"How many different ways can we form the longest increasing subsequence?"**
+
+We need to track **two things** for each position:
+1. **Length**: The length of the longest increasing subsequence ending at this position
+2. **Count**: The number of ways to achieve that length
+
+### Why This Works
+
+Think of building subsequences step by step:
+- When we find a **longer** subsequence, we start fresh with that count
+- When we find an **equally long** subsequence through a different path, we **add** the counts
+
+It's like counting paths to a destination:
+- If you find a shorter path, you abandon old routes (reset count)
+- If you find an equally short path, you have multiple routes (add counts)
+
+### Simple Walkthrough Example
+
+Let's trace `[1, 3, 5, 4, 7]`:
+
+```
+Array:   [1,  3,  5,  4,  7]
+Index:    0   1   2   3   4
+```
+
+#### Step-by-step:
+
+**Index 0 (element = 1):**
+- Length: 1 (just itself)
+- Ways: 1
+```
+dp   = [1, -, -, -, -]
+ways = [1, -, -, -, -]
+```
+
+**Index 1 (element = 3):**
+- Can extend from index 0 (1 < 3)
+- Length: 1 + 1 = 2
+- Ways: Inherit from index 0 = 1
+```
+dp   = [1, 2, -, -, -]
+ways = [1, 1, -, -, -]
+```
+
+**Index 2 (element = 5):**
+- Can extend from index 0: length = 2
+- Can extend from index 1: length = 3 (better!)
+- Length: 3
+- Ways: Inherit from index 1 = 1
+```
+dp   = [1, 2, 3, -, -]
+ways = [1, 1, 1, -, -]
+```
+
+**Index 3 (element = 4):**
+- Can extend from index 0: length = 2
+- Can extend from index 1: length = 3 (better!)
+- Cannot extend from index 2 (5 > 4)
+- Length: 3
+- Ways: Inherit from index 1 = 1
+```
+dp   = [1, 2, 3, 3, -]
+ways = [1, 1, 1, 1, -]
+```
+
+**Index 4 (element = 7):**
+- Can extend from index 0: length = 2
+- Can extend from index 1: length = 3
+- Can extend from index 2: length = 4 (new max!)
+  - Ways = 1 (from index 2)
+- Can extend from index 3: length = 4 (same as current max!)
+  - Ways = 1 + 1 = 2 (add both paths!)
+```
+dp   = [1, 2, 3, 3, 4]
+ways = [1, 1, 1, 1, 2]
+```
+
+**Result:** Max length is 4, and there are **2 ways** to form it!
+
+### Visual Representation
+
+```
+[1, 3, 5, 4, 7]
+
+Path 1: 1 → 3 → 5 → 7
+        └────┴────┴──┘
+
+Path 2: 1 → 3 → 4 → 7
+        └────┴────┴──┘
+
+Both paths have length 4!
+```
+
+## Algorithm Breakdown
+
+### Step 1: Initialize DP Arrays
+
+```python
+dp = [1] * n      # dp[i] = length of LIS ending at index i
+ways = [1] * n    # ways[i] = count of LIS ending at index i
+```
+
+Every element starts as a subsequence of length 1 with 1 way.
+
+### Step 2: Fill DP Arrays
+
+For each position `i`, check all previous positions `j`:
+
+```
+If arr[i] > arr[j]:
+    new_length = dp[j] + 1
+    
+    Case 1: new_length > dp[i]  (Found longer subsequence)
+        → Update dp[i] = new_length
+        → Reset ways[i] = ways[j]
+    
+    Case 2: new_length == dp[i]  (Found another path of same length)
+        → Keep dp[i] unchanged
+        → Add ways[i] += ways[j]
+```
+
+### Step 3: Find Maximum Length
+
+```python
+max_length = max(dp)
+```
+
+### Step 4: Count All Ways
+
+Sum up `ways[i]` for all indices where `dp[i] == max_length`:
+
+```python
+total = sum(ways[i] for i in range(n) if dp[i] == max_length)
+```
+
+## Solution Code
+
+```python
+def solve(n, arr):
+    """
+    Finds the count of Longest Increasing Subsequences
+    """
+    # dp[i] = length of LIS ending at index i
+    dp = [1] * n
+    
+    # ways[i] = number of ways to form LIS of length dp[i] ending at index i
+    ways = [1] * n
+    
+    for index in range(n):
+        for last_index in range(index):
+            if arr[index] > arr[last_index]:
+                length = 1 + dp[last_index]
+                
+                if length > dp[index]:
+                    # Found a longer subsequence
+                    dp[index] = length
+                    ways[index] = ways[last_index]
+                    
+                elif length == dp[index]:
+                    # Found another way to form same length subsequence
+                    ways[index] += ways[last_index]
+    
+    # Find the maximum length
+    max_length = 0
+    for i in range(n):
+        if dp[i] > max_length:
+            max_length = dp[i]
+    
+    # Count all ways to achieve maximum length
+    total = 0
+    for i in range(n):
+        if dp[i] == max_length:
+            total += ways[i]
+    
+    return total
+
+
+# Test
+arr = [10, 9, 2, 5, 3, 7, 101, 18]
+n = len(arr)
+print(solve(n, arr))  # Output: 4
+```
+
+## Detailed Trace for [10, 9, 2, 5, 3, 7, 101, 18]
+
+```
+Index:  0   1   2   3   4   5    6     7
+Array: 10   9   2   5   3   7   101   18
+
+After processing:
+dp   = [1,  1,  1,  2,  2,  3,   4,    4]
+ways = [1,  1,  1,  1,  1,  2,   2,    2]
+```
+
+**Explanation:**
+- Max length = 4
+- Indices with length 4: index 6 and index 7
+- ways[6] = 2, ways[7] = 2
+- Total = 2 + 2 = **4 ways**
+
+**The 4 LIS are:**
+1. `[2, 5, 7, 101]`
+2. `[2, 3, 7, 101]`
+3. `[2, 5, 7, 18]`
+4. `[2, 3, 7, 18]`
+
+## Complexity Analysis
+
+### Time Complexity
+- **O(n²)** - nested loops through the array
+
+### Space Complexity
+- **O(n)** - for `dp` and `ways` arrays
+
+## Key Takeaways
+
+✅ Track **both length and count** at each position
+
+✅ When you find a **longer** subsequence → **reset** the count
+
+✅ When you find an **equal length** subsequence → **add** to the count
+
+✅ Final answer = sum of counts where length equals maximum
+
+✅ Think of it as counting different paths to reach the same destination
+
+## Common Mistakes to Avoid
+
+❌ Forgetting to reset `ways[i]` when finding a longer subsequence
+
+❌ Not adding counts when finding equal-length subsequences
+
+❌ Only checking the last index instead of all indices with max length
+
+❌ Initializing `ways` array with 0 instead of 1
+
+## Comparison with Standard LIS
+
+| Aspect | Standard LIS | Count LIS |
+|--------|-------------|-----------|
+| Track | Length only | Length + Count |
+| DP Array | `dp[i]` | `dp[i]` + `ways[i]` |
+| Update | Replace if longer | Replace if longer, add if equal |
+| Output | Max length | Sum of counts at max length |
+
+---
