@@ -634,3 +634,287 @@ Therefore, `len(temp)` always equals LIS length.
 | **Binary Search** | **O(n log n)** | **O(n)** |
 
 ---
+
+# Print Longest Increasing Subsequence
+
+## Problem Statement
+
+Given an array of n integers `arr`, return the Longest Increasing Subsequence (LIS) that is **Index-wise Lexicographically Smallest**.
+
+The Longest Increasing Subsequence (LIS) is the longest subsequence where all elements are in strictly increasing order.
+
+### Index-wise Lexicographically Smallest
+
+A subsequence A1 is Index-wise Lexicographically Smaller than another subsequence A2 if, at the first position where A1 and A2 differ, the element in A1 appears **earlier in the array** than the corresponding element in A2.
+
+### Examples
+
+**Example 1:**
+```
+Input: arr = [10, 22, 9, 33, 21, 50, 41, 60, 80]
+Output: [10, 22, 33, 50, 60, 80]
+Explanation: The LIS is [10, 22, 33, 50, 60, 80] and it is lexicographically smallest.
+```
+
+**Example 2:**
+```
+Input: arr = [1, 3, 2, 4, 6, 5]
+Output: [1, 3, 4, 6]
+Explanation: Possible LIS sequences are [1, 3, 4, 6] and [1, 2, 4, 6]. 
+Since [1, 3, 4, 6] is Index-wise Lexicographically Smaller, it is the result.
+```
+
+---
+
+## Approach: DP with Parent Tracking
+
+### Core Idea
+
+We already know how to find the **length** of LIS using dynamic programming. Now, to **print** the actual subsequence, we need to track the path.
+
+### Key Modifications:
+
+1. **Track the parent**: For each index, store which previous index contributed to its LIS
+2. **Find the ending index**: Find the index with maximum LIS length
+3. **Backtrack**: Follow the parent pointers to reconstruct the sequence
+
+---
+
+## Algorithm Explanation
+
+### Step 1: DP Array and Parent Tracking
+
+```python
+dp[i] = length of LIS ending at index i
+parent[i] = the previous index in the LIS ending at i
+```
+
+Initially:
+- `dp[i] = 1` (each element is a subsequence of length 1)
+- `parent[i] = i` (pointing to itself, meaning no parent)
+
+### Step 2: Fill DP and Parent Arrays
+
+For each index `i`, check all previous indices `j`:
+- If `arr[i] > arr[j]`, we can extend the subsequence ending at `j`
+- If `1 + dp[j] > dp[i]`, update:
+  - `dp[i] = 1 + dp[j]`
+  - `parent[i] = j` (track that we came from index `j`)
+
+### Step 3: Find the Ending Index
+
+Find the index with maximum LIS length:
+```python
+maxIndex = index with maximum dp[i]
+```
+
+### Step 4: Backtrack to Construct LIS
+
+Starting from `maxIndex`, follow parent pointers until we reach a node that points to itself:
+```python
+while parent[index] != index:
+    add arr[index] to result
+    index = parent[index]
+add arr[index] to result  # Add the starting element
+```
+
+Reverse the result to get the correct order.
+
+---
+
+## Visual Example
+
+Let's trace through `arr = [10, 9, 2, 5, 3, 7, 101, 18]`
+
+### Initial State:
+```
+dp     = [1, 1, 1, 1, 1, 1, 1, 1]
+parent = [0, 1, 2, 3, 4, 5, 6, 7]  (each points to itself)
+```
+
+### Step-by-Step Execution:
+
+| Index | Element | Check Previous | Update | dp | parent |
+|-------|---------|----------------|--------|----|----|
+| 0 | 10 | - | - | [1, ...] | [0, ...] |
+| 1 | 9 | 9 < 10 | No update | [1, 1, ...] | [0, 1, ...] |
+| 2 | 2 | 2 < all | No update | [1, 1, 1, ...] | [0, 1, 2, ...] |
+| 3 | 5 | 5 > 2 | dp[3]=2, parent[3]=2 | [1, 1, 1, 2, ...] | [0, 1, 2, 2, ...] |
+| 4 | 3 | 3 > 2 | dp[4]=2, parent[4]=2 | [1, 1, 1, 2, 2, ...] | [0, 1, 2, 2, 2, ...] |
+| 5 | 7 | 7 > 5 | dp[5]=3, parent[5]=3 | [1, 1, 1, 2, 2, 3, ...] | [0, 1, 2, 2, 2, 3, ...] |
+| 6 | 101 | 101 > 7 | dp[6]=4, parent[6]=5 | [1, 1, 1, 2, 2, 3, 4, ...] | [0, 1, 2, 2, 2, 3, 5, ...] |
+| 7 | 18 | 18 > 7 | dp[7]=4, parent[7]=5 | [1, 1, 1, 2, 2, 3, 4, 4] | [0, 1, 2, 2, 2, 3, 5, 5] |
+
+### Final State:
+```
+dp     = [1, 1, 1, 2, 2, 3, 4, 4]
+parent = [0, 1, 2, 2, 2, 3, 5, 5]
+```
+
+**Maximum length = 4** (at index 6 or 7)
+
+**maxIndex = 6** (first occurrence of maximum)
+
+### Backtracking from Index 6:
+
+```
+Start at index 6 (101):
+  - temp = [101]
+  - parent[6] = 5, move to index 5
+
+At index 5 (7):
+  - temp = [101, 7]
+  - parent[5] = 3, move to index 3
+
+At index 3 (5):
+  - temp = [101, 7, 5]
+  - parent[3] = 2, move to index 2
+
+At index 2 (2):
+  - temp = [101, 7, 5, 2]
+  - parent[2] = 2, STOP (points to itself)
+
+Reverse temp: [2, 5, 7, 101]
+```
+
+**Result:** `[2, 5, 7, 101]`
+
+---
+
+## Visual Parent Pointer Chain
+
+```
+Array:   [10,  9,  2,  5,  3,  7, 101, 18]
+Index:    0    1   2   3   4   5   6    7
+
+LIS ending at index 6 (101):
+    6 → 5 → 3 → 2
+  (101)(7) (5) (2)
+  
+Path: 2 → 5 → 7 → 101
+```
+
+---
+
+## Complete Code with Comments
+
+```python
+def solve(n, arr):
+    # dp[i] = length of LIS ending at index i
+    dp = [1] * n
+    
+    # parent[i] = previous index in the LIS ending at i
+    parent = {}
+    
+    # Fill dp and parent arrays
+    for index in range(n):
+        parent[index] = index  # Initially, each element points to itself
+        
+        for last_index in range(index):
+            # Can we extend the subsequence ending at last_index?
+            if arr[index] > arr[last_index]:
+                length = 1 + dp[last_index]
+                
+                # Update if we found a longer subsequence
+                if length > dp[index]:
+                    dp[index] = length
+                    parent[index] = last_index  # Track the parent
+    
+    # Find the index with maximum LIS length
+    maxLength = 0
+    maxIndex = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+            maxIndex = i
+    
+    # Backtrack to construct the LIS
+    temp = []
+    index = maxIndex
+    
+    # Follow parent pointers until we reach the starting element
+    while parent[index] != index:
+        temp.append(arr[index])
+        index = parent[index]
+    
+    # Add the starting element
+    temp.append(arr[index])
+    
+    # Reverse to get correct order
+    ans = temp[::-1]
+    return ans
+
+# Test
+arr = [10, 9, 2, 5, 3, 7, 101, 18]
+n = len(arr)
+print(solve(n, arr))  # Output: [2, 5, 7, 101]
+```
+
+---
+
+## Why This Gives Lexicographically Smallest LIS
+
+### Key Observation:
+
+When we iterate from left to right (index 0 to n-1), and update `dp[i]` only when we find a **strictly better** length (`length > dp[i]`), we automatically ensure that:
+
+1. We pick the **earliest possible** starting element
+2. At each step, we extend from the **earliest possible** previous element
+
+This greedy left-to-right approach naturally produces the index-wise lexicographically smallest LIS.
+
+### Example: `[1, 3, 2, 4, 6, 5]`
+
+```
+When we reach index 3 (element 4):
+- We can extend from index 1 (element 3): gives [1, 3, 4]
+- We can extend from index 2 (element 2): gives [1, 2, 4]
+
+Since we scan left to right, we first check index 1, then index 2.
+Both give length 3, but we update only when length > dp[3].
+After checking index 1, dp[3] = 3, so we DON'T update when checking index 2.
+
+Result: We keep the path through index 1, giving us [1, 3, 4, 6]
+```
+
+---
+
+## Detailed Trace for Example 2
+
+`arr = [1, 3, 2, 4, 6, 5]`
+
+| Index | Element | Process | dp | parent |
+|-------|---------|---------|----|----|
+| 0 | 1 | Base | [1, ...] | [0, ...] |
+| 1 | 3 | 3 > 1, extend from 0 | [1, 2, ...] | [0, 0, ...] |
+| 2 | 2 | 2 > 1, extend from 0 | [1, 2, 2, ...] | [0, 0, 0, ...] |
+| 3 | 4 | 4 > 3, extend from 1 (dp=3)<br>4 > 2, extend from 2 (dp=3, NO update) | [1, 2, 2, 3, ...] | [0, 0, 0, 1, ...] |
+| 4 | 6 | 6 > 4, extend from 3 | [1, 2, 2, 3, 4, ...] | [0, 0, 0, 1, 3, ...] |
+| 5 | 5 | 5 > 4, extend from 3 (dp=4, NO update) | [1, 2, 2, 3, 4, 4] | [0, 0, 0, 1, 3, 3] |
+
+**maxIndex = 4** (first occurrence of max length 4)
+
+**Backtrack from index 4:**
+```
+4 → 3 → 1 → 0
+(6) (4) (3) (1)
+
+Result: [1, 3, 4, 6]
+```
+
+---
+
+## Complexity Analysis
+
+**Time Complexity:** O(n²)
+- Two nested loops: outer loop runs n times, inner loop runs up to n times
+- Finding max index: O(n)
+- Backtracking: O(n) in worst case
+
+**Space Complexity:** O(n)
+- `dp` array: O(n)
+- `parent` dictionary: O(n)
+- `temp` array: O(n)
+
+---
+
