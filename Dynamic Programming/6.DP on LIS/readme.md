@@ -1373,4 +1373,539 @@ print(printLargestSubset(n, arr))       # Output: [5, 10, 20]
 
 ---
 
+# Longest String Chain
 
+## Problem Statement
+
+You are given an array of words where each word consists of lowercase English letters.
+
+**wordA** is a **predecessor** of **wordB** if and only if we can insert exactly one letter anywhere in wordA without changing the order of the other characters to make it equal to wordB.
+
+- For example, `"abc"` is a predecessor of `"abac"`, while `"cba"` is not a predecessor of `"bcad"`.
+
+A **word chain** is a sequence of words `[word1, word2, ..., wordk]` with `k >= 1`, where word1 is a predecessor of word2, word2 is a predecessor of word3, and so on.
+
+Return the length of the longest possible word chain with words chosen from the given list of words.
+
+### Examples
+
+**Example 1:**
+```
+Input: words = ["a", "ab", "abc", "abcd", "abcde"]
+Output: 5
+Explanation: The longest chain is ["a", "ab", "abc", "abcd", "abcde"].
+Each word in the chain is formed by adding exactly one character to the previous word.
+```
+
+**Example 2:**
+```
+Input: words = ["dog", "dogs", "dots", "dot", "d", "do"]
+Output: 4
+Explanation: The longest chain is ["d", "do", "dot", "dots"].
+Each word is formed by inserting one character into the previous word.
+```
+
+---
+
+## Understanding the Problem
+
+### Key Points:
+
+1. A string chain is a **subsequence** of the words array
+2. Every element (except the first) can be formed by **inserting exactly one character** into the previous element
+3. The character can be inserted at **any position**
+4. The first element can be any string from the array
+
+### Predecessor Relationship Examples:
+
+```
+✅ "abc" → "abac"  (insert 'a' at position 2)
+✅ "abc" → "abcd"  (insert 'd' at end)
+✅ "dog" → "dogs"  (insert 's' at end)
+✅ "dot" → "dots"  (insert 's' at end)
+
+❌ "cba" → "bcad"  (not a valid predecessor, order changes)
+❌ "ab" → "cd"     (completely different)
+❌ "abc" → "abc"   (no character added)
+```
+
+---
+
+## The Key Insight
+
+### Similarity to Longest Increasing Subsequence (LIS)
+
+This problem is similar to LIS, but instead of comparing numeric values, we:
+1. **Sort by length** - Shorter words must come before longer words
+2. **Check predecessor relationship** - Instead of `arr[i] > arr[j]`, we check if `arr[i]` can be formed by adding one character to `arr[j]`
+
+### Why Sort by Length?
+
+If word A is a predecessor of word B, then:
+```
+len(B) = len(A) + 1
+```
+
+By sorting by length, we ensure that potential predecessors always come before their successors.
+
+---
+
+## Checking Predecessor Relationship
+
+### The Compare Function
+
+We need to check if `word1` can be formed by inserting exactly one character into `word2`.
+
+**Requirements:**
+1. `len(word1) == len(word2) + 1` (exactly one character more)
+2. We can match all characters of `word2` with characters in `word1` in order
+3. Exactly one character in `word1` is "extra"
+
+### Algorithm:
+
+```python
+def compare(word1, word2):
+    n, m = len(word1), len(word2)
+    
+    # word1 must be exactly 1 character longer
+    if n != m + 1:
+        return False
+    
+    i, j = 0, 0
+    
+    while i < n:
+        if j < m and word1[i] == word2[j]:
+            # Characters match, move both pointers
+            i += 1
+            j += 1
+        else:
+            # Character in word1 is extra, skip it
+            i += 1
+    
+    # Check if we matched all characters of word2
+    if i == n and j == m:
+        return True
+    
+    return False
+```
+
+### Visual Example:
+
+Comparing `"abac"` with `"abc"`:
+
+```
+word1 = "abac"  (length 4)
+word2 = "abc"   (length 3)
+
+Step 1: i=0, j=0
+  word1[0] = 'a', word2[0] = 'a' ✓ Match
+  i=1, j=1
+
+Step 2: i=1, j=1
+  word1[1] = 'b', word2[1] = 'b' ✓ Match
+  i=2, j=2
+
+Step 3: i=2, j=2
+  word1[2] = 'a', word2[2] = 'c' ✗ No match
+  Skip word1[2], i=3, j=2
+
+Step 4: i=3, j=2
+  word1[3] = 'c', word2[2] = 'c' ✓ Match
+  i=4, j=3
+
+Result: i==n (4==4) and j==m (3==3) → True ✓
+```
+
+---
+
+## Approach 1: Find Length of Longest Chain
+
+### Algorithm
+
+1. **Sort by length** - Ensures predecessors come before successors
+2. Use DP where `dp[i]` = length of longest chain ending at word `i`
+3. For each word, check all previous words
+4. If previous word is a predecessor, extend the chain
+
+### Code
+
+```python
+def compare(word1, word2):
+    n, m = len(word1), len(word2)
+    if n != m + 1:
+        return False
+    i, j = 0, 0
+    while i < n:
+        if j < m and word1[i] == word2[j]:
+            i += 1
+            j += 1
+        else:
+            i += 1
+    if i == n and j == m:
+        return True
+    return False
+
+def lengthOfLongestChain(n, arr):
+    # Sort by length to ensure predecessors come first
+    arr.sort(key=len)
+    
+    # dp[i] = length of longest chain ending at index i
+    dp = [1] * n
+    
+    for index in range(n):
+        for last_index in range(index):
+            # Check if arr[last_index] is a predecessor of arr[index]
+            if compare(arr[index], arr[last_index]):
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+    
+    # Find maximum length
+    maxLength = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+    
+    return maxLength
+```
+
+---
+
+## Visual Trace: Length Calculation
+
+### Example: `words = ["a", "ab", "abc", "abcd", "abcde"]`
+
+**After sorting by length:** Already sorted
+
+| Index | Word | Check Previous | Predecessor? | Update | dp |
+|-------|------|----------------|--------------|--------|-----|
+| 0 | "a" | - | - | Base | [1, ...] |
+| 1 | "ab" | compare("ab", "a") | ✅ Yes | dp[1] = 1+1 = 2 | [1, 2, ...] |
+| 2 | "abc" | compare("abc", "a")<br>compare("abc", "ab") | ❌ No (length)<br>✅ Yes | dp[2] = 1+2 = 3 | [1, 2, 3, ...] |
+| 3 | "abcd" | compare("abcd", "abc") | ✅ Yes (best) | dp[3] = 1+3 = 4 | [1, 2, 3, 4, ...] |
+| 4 | "abcde" | compare("abcde", "abcd") | ✅ Yes (best) | dp[4] = 1+4 = 5 | [1, 2, 3, 4, 5] |
+
+**Final:** `dp = [1, 2, 3, 4, 5]`  
+**Maximum Length = 5**
+
+---
+
+## Approach 2: Print the Longest Chain
+
+### Algorithm Enhancement
+
+Add parent tracking to reconstruct the actual chain.
+
+### Code
+
+```python
+def printLongestChain(n, arr):
+    # Sort by length first
+    arr.sort(key=len)
+    
+    # dp[i] = length of longest chain ending at index i
+    dp = [1] * n
+    
+    # parent[i] = previous index in the chain ending at i
+    parent = {}
+    
+    for index in range(n):
+        parent[index] = index  # Initially points to itself
+        
+        for last_index in range(index):
+            # Check if arr[last_index] is a predecessor
+            if compare(arr[index], arr[last_index]):
+                length = 1 + dp[last_index]
+                
+                # Update if we found a longer chain
+                if length > dp[index]:
+                    dp[index] = length
+                    parent[index] = last_index  # Track parent
+    
+    # Find index with maximum length
+    maxLength = 0
+    maxIndex = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+            maxIndex = i
+    
+    # Backtrack to construct the chain
+    temp = []
+    index = maxIndex
+    
+    while parent[index] != index:
+        temp.append(arr[index])
+        index = parent[index]
+    
+    temp.append(arr[index])  # Add starting word
+    
+    # Reverse to get correct order
+    ans = temp[::-1]
+    return ans
+```
+
+---
+
+## Detailed Trace: Print Chain
+
+### Example: `words = ["dog", "dogs", "dots", "dot", "d", "do"]`
+
+**After sorting by length:** `["d", "do", "dog", "dot", "dogs", "dots"]`
+
+### Step-by-Step Execution:
+
+**Index 0 ("d"):**
+```
+dp[0] = 1
+parent[0] = 0
+```
+
+**Index 1 ("do"):**
+```
+Check "d": compare("do", "d") = True ✅
+  length = 1 + 1 = 2
+  dp[1] = 2, parent[1] = 0
+```
+
+**Index 2 ("dog"):**
+```
+Check "d": compare("dog", "d") = False ❌ (length diff = 2)
+Check "do": compare("dog", "do") = True ✅
+  length = 1 + 2 = 3
+  dp[2] = 3, parent[2] = 1
+```
+
+**Index 3 ("dot"):**
+```
+Check "d": compare("dot", "d") = False ❌
+Check "do": compare("dot", "do") = True ✅
+  length = 1 + 2 = 3
+  dp[3] = 3, parent[3] = 1
+```
+
+**Index 4 ("dogs"):**
+```
+Check "d", "do": False (length diff = 3, 2)
+Check "dog": compare("dogs", "dog") = True ✅
+  length = 1 + 3 = 4
+  dp[4] = 4, parent[4] = 2
+Check "dot": compare("dogs", "dot") = False
+```
+
+**Index 5 ("dots"):**
+```
+Check "d", "do": False
+Check "dog": compare("dots", "dog") = False ❌
+Check "dot": compare("dots", "dot") = True ✅
+  length = 1 + 3 = 4
+  dp[5] = 4, parent[5] = 3
+Check "dogs": compare("dots", "dogs") = False
+```
+
+### Final State:
+```
+Words:  ["d", "do", "dog", "dot", "dogs", "dots"]
+Index:    0    1     2     3      4       5
+dp:      [1,   2,    3,    3,     4,      4]
+parent:  [0,   0,    1,    1,     2,      3]
+```
+
+**maxLength = 4 at maxIndex = 4** (first occurrence)
+
+### Backtracking from Index 4:
+
+```
+Start at index 4 ("dogs"):
+  temp = ["dogs"]
+  parent[4] = 2, move to index 2
+
+At index 2 ("dog"):
+  temp = ["dogs", "dog"]
+  parent[2] = 1, move to index 1
+
+At index 1 ("do"):
+  temp = ["dogs", "dog", "do"]
+  parent[1] = 0, move to index 0
+
+At index 0 ("d"):
+  temp = ["dogs", "dog", "do", "d"]
+  parent[0] = 0, STOP
+
+Reverse: ["d", "do", "dog", "dogs"]
+```
+
+**Result:** `["d", "do", "dog", "dogs"]`
+
+---
+
+## Visual Parent Pointer Chain
+
+```
+Words:   ["d", "do", "dog", "dot", "dogs", "dots"]
+Index:     0    1     2     3      4       5
+
+Parent Chain for "dogs" (index 4):
+  4 → 2 → 1 → 0
+(dogs)(dog)(do)(d)
+
+Result: ["d", "do", "dog", "dogs"]
+```
+
+---
+
+## Why Compare Function Works
+
+### Case 1: Valid Predecessor
+```
+word1 = "dogs"
+word2 = "dog"
+
+i=0, j=0: 'd'=='d' → match, i=1, j=1
+i=1, j=1: 'o'=='o' → match, i=2, j=2
+i=2, j=2: 'g'=='g' → match, i=3, j=3
+i=3, j=3: j<m is False, skip 's', i=4
+
+Final: i==4, j==3 → True ✅
+```
+
+### Case 2: Invalid - Different Characters
+```
+word1 = "dots"
+word2 = "dog"
+
+i=0, j=0: 'd'=='d' → match, i=1, j=1
+i=1, j=1: 'o'=='o' → match, i=2, j=2
+i=2, j=2: 't'!='g' → skip 't', i=3, j=2
+i=3, j=2: 's'!='g' → skip 's', i=4, j=2
+
+Final: i==4, j==2 (not 3) → False ❌
+```
+
+### Case 3: Invalid - Length Difference
+```
+word1 = "abcd"
+word2 = "ab"
+
+len(word1) = 4, len(word2) = 2
+Difference = 2 (not 1) → False ❌
+```
+
+---
+
+## Important Notes
+
+### About Sorting
+
+The code shows two sorts:
+```python
+arr.sort(key=len)  # Sort by length
+arr.sort()         # Sort lexicographically
+```
+
+**Note:** The second sort `arr.sort()` is actually **not necessary** for correctness. However, it can help achieve lexicographically smallest chain when there are multiple valid chains of same length.
+
+**Recommendation:** For just finding the longest chain, only `arr.sort(key=len)` is needed.
+
+---
+
+## Complete Code
+
+```python
+def compare(word1, word2):
+    n, m = len(word1), len(word2)
+    if n != m + 1:
+        return False
+    i, j = 0, 0
+    while i < n:
+        if j < m and word1[i] == word2[j]:
+            i += 1
+            j += 1
+        else:
+            i += 1
+    if i == n and j == m:
+        return True
+    return False
+
+def lengthOfLongestChain(n, arr):
+    arr.sort(key=len)
+    dp = [1] * n
+    
+    for index in range(n):
+        for last_index in range(index):
+            if compare(arr[index], arr[last_index]):
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+    
+    maxLength = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+    
+    return maxLength
+
+def printLongestChain(n, arr):
+    arr.sort(key=len)
+    dp = [1] * n
+    parent = {}
+    
+    for index in range(n):
+        parent[index] = index
+        for last_index in range(index):
+            if compare(arr[index], arr[last_index]):
+                length = 1 + dp[last_index]
+                if length > dp[index]:
+                    dp[index] = length
+                    parent[index] = last_index
+    
+    maxLength = 0
+    maxIndex = 0
+    for i in range(n):
+        if dp[i] > maxLength:
+            maxLength = dp[i]
+            maxIndex = i
+    
+    temp = []
+    index = maxIndex
+    while parent[index] != index:
+        temp.append(arr[index])
+        index = parent[index]
+    temp.append(arr[index])
+    
+    ans = temp[::-1]
+    return ans
+
+# Test
+arr = ["a", "ab", "abc", "abcd", "abcde"]
+n = len(arr)
+print(lengthOfLongestChain(n, arr))    # Output: 5
+print(printLongestChain(n, arr))       # Output: ['a', 'ab', 'abc', 'abcd', 'abcde']
+```
+
+---
+
+## Complexity Analysis
+
+**Time Complexity:** O(n² × L)
+- Sorting: O(n log n)
+- Two nested loops: O(n²)
+- Compare function in each iteration: O(L) where L is average word length
+- **Overall: O(n² × L)**
+
+**Space Complexity:** O(n)
+- `dp` array: O(n)
+- `parent` dictionary: O(n)
+- `temp` array: O(n) in worst case
+
+---
+
+## Comparison with Related Problems
+
+| Problem | Sorting | Condition | Key Difference |
+|---------|---------|-----------|----------------|
+| **LIS** | Optional | `arr[i] > arr[j]` | Numeric comparison |
+| **Divisible Subset** | Required | `arr[i] % arr[j] == 0` | Mathematical property |
+| **String Chain** | Required (by length) | One character insertion | String manipulation |
+
+---
