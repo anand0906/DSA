@@ -1102,7 +1102,7 @@ print(solve("eeeme"))
 
 ---
 
-## Minimum Insertions to Make String Palindrome
+# Minimum Insertions to Make String Palindrome
 
 ### Problem Description
 
