@@ -1179,6 +1179,118 @@ LCS = 1 → Minimum insertions = 2 - 1 = **1**
 
 ---
 
+# Minimum Insertions or Deletions to Convert String A to B
+
+### Problem Description
+
+Given two strings `str1` and `str2`, find the **minimum number of insertions and deletions** required to transform `str1` into `str2`.
+
+You can insert or delete characters at any position.
+
+### Examples
+
+**Example 1:**
+Input: `str1 = "kitten"`, `str2 = "sitting"`
+Output: `5`
+Explanation:
+Delete `k`, insert `s`, then insert `i` and `g` at appropriate positions → "sitting".
+
+**Example 2:**
+Input: `str1 = "flaw"`, `str2 = "lawn"`
+Output: `2`
+Explanation: Delete `f` and insert `n` → "lawn".
+
+---
+
+### Intuition Behind Solution
+
+* The **Longest Common Subsequence (LCS)** between `str1` and `str2` represents the part that already matches in both strings.
+* You only need to **delete** the extra characters in `str1` and **insert** the missing characters to make it match `str2`.
+* Hence:
+
+  * Deletions = `len(str1) - LCS`
+  * Insertions = `len(str2) - LCS`
+  * Total operations = Deletions + Insertions
+
+---
+
+### Code (Optimized using Space Optimization)
+
+```python
+def optimized(s1,s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None] * (n2 + 1)
+    dp_prev = [None] * (n2 + 1)
+
+    dp_curr[0] = 0
+    dp_prev[0] = 0
+    for index2 in range(n2 + 1):
+        dp_prev[index2] = 0
+
+    for index1 in range(1, n1 + 1):
+        for index2 in range(1, n2 + 1):
+            if s1[index1 - 1] == s2[index2 - 1]:
+                dp_curr[index2] = 1 + dp_prev[index2 - 1]
+            else:
+                exclude1 = dp_prev[index2]
+                exclude2 = dp_curr[index2 - 1]
+                dp_curr[index2] = max(exclude1, exclude2)
+        dp_prev = dp_curr.copy()
+    return dp_prev[n2]
+
+def solve(s1, s2):
+    lcsLength = optimized(s1, s2)
+    deletions = len(s1) - lcsLength
+    insertions = len(s2) - lcsLength
+    return deletions + insertions
+
+class Solution:
+    def minOperations(self, str1, str2):
+        return solve(str1, str2)
+```
+
+---
+
+### Intuitive Example
+
+Let `str1 = "heap"` and `str2 = "pea"`.
+
+* LCS(`heap`, `pea`) = `ea` (length = 2)
+* Deletions = `4 - 2 = 2` (remove `h`, `p`)
+* Insertions = `3 - 2 = 1` (insert `p` at start)
+* Total = 3 operations.
+
+---
+
+### Recurrence Relation
+
+```
+f(i, j) = 1 + f(i-1, j-1) if s1[i-1] == s2[j-1]
+else f(i, j) = max(f(i-1, j), f(i, j-1))
+```
+
+* Base case: `f(0, j) = 0`, `f(i, 0) = 0`
+
+---
+
+### Recursion Tree Example (s1 = "ab", s2 = "acb")
+
+```
+f(2,3)
+├── s1[1] == s2[2] → 1 + f(1,2)
+│   └── f(1,2) → max(f(0,2), f(1,1))
+│       └── f(1,1)=1
+└── Total LCS length = 2
+```
+
+---
+
+### Time and Space Complexity
+
+* **Time Complexity:** O(n1 × n2)
+* **Space Complexity:** O(n2) after optimization (since only previous and current rows are stored)
+---
+
 ### Complexity
 
 * **Time Complexity:** O(n²)
