@@ -983,3 +983,121 @@ print(optimized(s1, s2))   # Output: 2
 | **Example** | "abc" and "ac" → "ac" (length 2) | "abc" and "ac" → "a" or "c" (length 1) |
 
 ---
+
+# Longest Palindromic Subsequence
+
+## Problem Description
+
+Given a string, find the **length of the longest palindromic subsequence**.
+
+A palindrome reads the same backward as forward. A subsequence can be derived from another sequence by deleting some or no elements without changing the order of the remaining elements.
+
+### Examples
+
+**Input:** s = "eeeme"
+**Output:** 4
+**Explanation:** The longest palindromic subsequence is "eeee".
+
+**Input:** s = "annb"
+**Output:** 2
+**Explanation:** The longest palindromic subsequence is "nn".
+
+---
+
+## Intuition Behind the Solution
+
+The idea is simple. A palindrome reads the same from both directions. So, if we reverse the string and find the **Longest Common Subsequence (LCS)** between the original and reversed strings, we get the length of the longest palindromic subsequence.
+
+Example:
+
+```
+Original: e e e m e
+Reversed: e m e e e
+```
+
+The LCS between these two strings is `e e e e`, which is also the longest palindromic subsequence.
+
+Thus, the problem reduces to finding the LCS between `s` and `reverse(s)`.
+
+---
+
+## Recurrence Relation
+
+Let `f(i, j)` represent the length of the longest palindromic subsequence in substring `s[i...j]`.
+
+* If `s[i] == s[j]`:
+  `f(i, j) = 1 + f(i + 1, j - 1)`
+* Else:
+  `f(i, j) = max(f(i + 1, j), f(i, j - 1))`
+
+**Base Case:**
+If `i > j`, return 0.
+If `i == j`, return 1.
+
+---
+
+## Recursion Tree Example (s = "aba")
+
+```
+f(0,2)
+├── s[0]==s[2] → 1 + f(1,1)
+│   └── f(1,1)=1
+└── Total = 2
+```
+
+---
+
+## Step-by-Step Conversion
+
+### 1. Recursion → Memoization
+
+We store intermediate results in a 2D array `dp[i][j]` to avoid recomputation.
+
+### 2. Memoization → Tabulation
+
+We convert the top-down recursion into a bottom-up iterative table.
+
+### 3. Tabulation → Space Optimization
+
+We observe that only the previous and current rows are required, so we use two 1D arrays instead of a full 2D matrix.
+
+---
+
+## Code
+
+```python
+def optimized(s1,s2):
+    n1,n2=len(s1),len(s2)
+    dp_curr=[None]*(n2+1)
+    dp_prev=[None]*(n2+1)
+    dp_curr[0]=0
+    dp_prev[0]=0
+    for index2 in range(n2+1):
+        dp_prev[index2]=0
+    for index1 in range(1,n1+1):
+        for index2 in range(1,n2+1):
+            if(s1[index1-1]==s2[index2-1]):
+                dp_curr[index2]=1+dp_prev[index2-1]
+            else:
+                exclude1=dp_prev[index2]
+                exclude2=dp_curr[index2-1]
+                dp_curr[index2]=max(exclude1,exclude2)
+        dp_prev=dp_curr.copy()
+    return dp_prev[n2]
+
+def solve(s):
+    ans=optimized(s,s[::-1])
+    return ans
+
+print(solve("eeeme"))
+```
+
+---
+
+## Time and Space Complexity
+
+* **Time Complexity:** O(N²)
+* **Space Complexity:** O(N)
+
+
+---
