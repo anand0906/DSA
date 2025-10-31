@@ -640,3 +640,346 @@ While we can optimize the DP table to O(n2) space for finding the length, recons
 **Note**: If only the length is needed, space optimization is possible. For printing the actual subsequence, the full DP table is necessary.
 
 ---
+
+# Longest Common Substring
+
+## Problem Statement
+
+Given two strings `str1` and `str2`, find the length of their longest common substring.
+
+A **substring** is a contiguous sequence of characters within a string.
+
+### Examples
+
+**Example 1:**
+```
+Input: str1 = "abcde", str2 = "abfce"
+Output: 2
+Explanation: The longest common substring is "ab", which has a length of 2.
+```
+
+**Example 2:**
+```
+Input: str1 = "abcdxyz", str2 = "xyzabcd"
+Output: 4
+Explanation: The longest common substring is "abcd", which has a length of 4.
+```
+
+---
+
+## Problem Understanding
+
+Given two strings `s1` and `s2`:
+- `s1` has a set of substrings
+- `s2` has a set of substrings
+- We need to find **common substrings** in both sets
+- Return the **length of the longest** common substring
+
+**Key Difference from Longest Common Subsequence (LCS):**
+- **Subsequence**: Characters can be non-contiguous (order matters)
+- **Substring**: Characters must be contiguous (adjacent)
+
+**Example:**
+```
+s1 = "abcde"
+s2 = "abfce"
+
+Substrings of s1: [a, b, c, d, e, ab, bc, cd, de, abc, bcd, cde, abcd, bcde, abcde]
+Substrings of s2: [a, b, f, c, e, ab, bf, fc, ce, abf, bfc, fce, abfc, bfce, abfce]
+
+Common substrings: [a, b, c, e, ab]
+Longest common substring: "ab"
+Length: 2
+```
+
+---
+
+## Problem Representation
+
+Both strings can be represented by indices: `0...n1-1` and `0...n2-1`
+
+Let `f(index1, index2)` represent the length of the longest common substring **ending at** `s1[index1]` and `s2[index2]`.
+
+**Important**: Unlike LCS (subsequence), this function represents the length of the common substring that **must end at these specific positions**.
+
+---
+
+## Base Cases
+
+If either string has no characters, there are no substrings.
+
+```
+f(index1 < 0 OR index2 < 0) = 0
+```
+
+---
+
+## Recurrence Relation
+
+Since we need the length of a common **contiguous** substring, we compare characters one by one.
+
+### Case 1: Characters Match
+If both characters match, they extend the current substring:
+```
+if s1[index1] == s2[index2]:
+    f(index1, index2) = 1 + f(index1-1, index2-1)
+```
+
+### Case 2: Characters Don't Match
+If characters don't match, the substring **ends here**, so the length becomes 0:
+```
+if s1[index1] != s2[index2]:
+    f(index1, index2) = 0
+```
+
+**Note**: We don't have the `max(f(index1-1, index2), f(index1, index2-1))` option like in LCS because substrings must be contiguous.
+
+### Complete Recurrence Relation
+```python
+if s1[i] == s2[j]:
+    dp[i][j] = 1 + dp[i-1][j-1]
+else:
+    dp[i][j] = 0
+```
+
+### Tracking the Maximum
+Since `dp[i][j]` only stores the substring length ending at position `(i, j)`, we need to track the maximum value across all cells:
+```python
+ans = max(ans, dp[i][j])
+```
+
+---
+
+## Key Differences from LCS (Subsequence)
+
+| Aspect | LCS (Subsequence) | LCS (Substring) |
+|--------|-------------------|-----------------|
+| **Contiguity** | Non-contiguous (can skip characters) | Contiguous (adjacent characters only) |
+| **DP Meaning** | `dp[i][j]` = LCS length in prefixes `s1[0..i]` and `s2[0..j]` | `dp[i][j]` = substring length **ending at** `s1[i]` and `s2[j]` |
+| **Mismatch Case** | `max(dp[i-1][j], dp[i][j-1])` | `0` (reset) |
+| **Final Answer** | `dp[n1][n2]` (bottom-right corner) | `max(all dp values)` |
+
+---
+
+## Visualization
+
+For `s1 = "abcde"` and `s2 = "abfce"`:
+
+### DP Table:
+|     | ε | a | b | f | c | e |
+|-----|---|---|---|---|---|---|
+| **ε** | 0 | 0 | 0 | 0 | 0 | 0 |
+| **a** | 0 | **1** | 0 | 0 | 0 | 0 |
+| **b** | 0 | 0 | **2** | 0 | 0 | 0 |
+| **c** | 0 | 0 | 0 | 0 | 1 | 0 |
+| **d** | 0 | 0 | 0 | 0 | 0 | 0 |
+| **e** | 0 | 0 | 0 | 0 | 0 | 1 |
+
+**Explanation:**
+- At `(1,1)`: 'a' == 'a' → `1 + dp[0][0] = 1`
+- At `(2,2)`: 'b' == 'b' → `1 + dp[1][1] = 2` ✓ **Maximum!**
+- At `(2,3)`: 'b' != 'f' → `0` (substring breaks)
+- At `(3,4)`: 'c' == 'c' → `1 + dp[2][3] = 1`
+
+**Maximum value**: `2`  
+**Longest common substring**: "ab"
+
+---
+
+## Solution Approaches
+
+### 1. Tabulation (Bottom-Up DP)
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Create DP table with 1-based indexing
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    
+    # Base case: empty s1
+    for index1 in range(n1+1):
+        dp[index1][0] = 0
+    
+    # Base case: empty s2
+    for index2 in range(n2+1):
+        dp[0][index2] = 0
+    
+    ans = 0  # Track maximum substring length
+    
+    # Fill the DP table
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                # Characters match: extend the substring
+                dp[index1][index2] = 1 + dp[index1-1][index2-1]
+                ans = max(ans, dp[index1][index2])
+            else:
+                # Characters don't match: substring breaks
+                dp[index1][index2] = 0
+    
+    return ans
+```
+
+---
+
+### 2. Space Optimized (Bottom-Up DP)
+
+**Optimization Strategy:**
+- We only need the previous row (`dp[index1-1]`) to compute the current row
+- Use two 1D arrays instead of a 2D array
+- `dp_prev` stores the previous row
+- `dp_curr` stores the current row being computed
+
+```python
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Use two arrays instead of 2D table
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    
+    # Initialize base cases
+    dp_curr[0] = 0
+    dp_prev[0] = 0
+    for index2 in range(n2+1):
+        dp_prev[index2] = 0
+    
+    ans = 0  # Track maximum substring length
+    
+    # Fill row by row
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                # Characters match: extend the substring
+                dp_curr[index2] = 1 + dp_prev[index2-1]
+                ans = max(ans, dp_curr[index2])
+            else:
+                # Characters don't match: substring breaks
+                dp_curr[index2] = 0
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return ans
+```
+
+---
+
+## Detailed Example Walkthrough
+
+Let's trace through `s1 = "abcdxyz"` and `s2 = "xyzabcd"`:
+
+### DP Table Construction:
+
+|     | ε | x | y | z | a | b | c | d |
+|-----|---|---|---|---|---|---|---|---|
+| **ε** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **a** | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| **b** | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |
+| **c** | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 |
+| **d** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **4** |
+| **x** | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **y** | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **z** | 0 | 0 | 0 | 3 | 0 | 0 | 0 | 0 |
+
+**Step-by-step filling (key cells):**
+1. `dp[1][4]`: 'a' == 'a' → `1 + dp[0][3] = 1`
+2. `dp[2][5]`: 'b' == 'b' → `1 + dp[1][4] = 2`
+3. `dp[3][6]`: 'c' == 'c' → `1 + dp[2][5] = 3`
+4. `dp[4][7]`: 'd' == 'd' → `1 + dp[3][6] = 4` ✓ **Maximum!**
+5. `dp[5][1]`: 'x' == 'x' → `1 + dp[4][0] = 1`
+6. `dp[6][2]`: 'y' == 'y' → `1 + dp[5][1] = 2`
+7. `dp[7][3]`: 'z' == 'z' → `1 + dp[6][2] = 3`
+
+**Maximum value**: `4`  
+**Longest common substring**: "abcd"
+
+---
+
+## Why Recursion/Memoization Are Not Shown
+
+Unlike the LCS subsequence problem, the substring problem doesn't naturally lend itself to top-down recursion because:
+
+1. **DP state meaning**: `dp[i][j]` represents substring **ending at** position `(i, j)`, not substring **within** prefixes `s1[0..i]` and `s2[0..j]`
+
+2. **No optimal substructure for the main problem**: When characters don't match, we reset to 0 rather than exploring subproblems
+
+3. **Answer location**: The answer isn't at `dp[n1][n2]` but is the maximum across all cells
+
+4. **Natural iteration**: The problem is naturally solved by iterating through all positions and tracking the maximum, making tabulation the most intuitive approach
+
+---
+
+## Complete Code
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    for index1 in range(n1+1):
+        dp[index1][0] = 0
+    for index2 in range(n2+1):
+        dp[0][index2] = 0
+    ans = 0
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                dp[index1][index2] = 1 + dp[index1-1][index2-1]
+                ans = max(ans, dp[index1][index2])
+            else:
+                dp[index1][index2] = 0
+    return ans
+
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    dp_curr[0] = 0
+    dp_prev[0] = 0
+    for index2 in range(n2+1):
+        dp_prev[index2] = 0
+    ans = 0
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                dp_curr[index2] = 1 + dp_prev[index2-1]
+                ans = max(ans, dp_curr[index2])
+            else:
+                dp_curr[index2] = 0
+        dp_prev = dp_curr.copy()
+    return ans
+
+# Test
+s1, s2 = "bdefg", "bfg"
+print(tabulation(s1, s2))  # Output: 2 (substring "fg")
+print(optimized(s1, s2))   # Output: 2
+```
+
+---
+
+## Complexity Analysis
+
+### Time Complexity: **O(n1 × n2)**
+- Two nested loops iterate through all combinations of indices
+- Each cell computation takes O(1) time
+- Tracking maximum also takes O(1) time
+
+### Space Complexity
+
+| Approach | Space Complexity | Explanation |
+|----------|-----------------|-------------|
+| **Tabulation** | O(n1 × n2) | 2D DP table of size (n1+1) × (n2+1) |
+| **Space Optimized** | O(n2) | Two 1D arrays of size (n2+1) |
+
+---
+
+## Comparison: Subsequence vs Substring
+
+| Feature | Longest Common Subsequence | Longest Common Substring |
+|---------|---------------------------|-------------------------|
+| **Definition** | Non-contiguous sequence | Contiguous sequence |
+| **DP State** | LCS in prefixes up to (i, j) | Substring ending at (i, j) |
+| **Match Case** | `1 + dp[i-1][j-1]` | `1 + dp[i-1][j-1]` |
+| **Mismatch Case** | `max(dp[i-1][j], dp[i][j-1])` | `0` |
+| **Answer Location** | `dp[n1][n2]` | `max(all dp values)` |
+| **Example** | "abc" and "ac" → "ac" (length 2) | "abc" and "ac" → "a" or "c" (length 1) |
+
+---
