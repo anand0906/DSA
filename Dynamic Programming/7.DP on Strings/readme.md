@@ -1101,3 +1101,87 @@ print(solve("eeeme"))
 
 
 ---
+
+## Minimum Insertions to Make String Palindrome
+
+### Problem Description
+
+Given a string `s`, find the **minimum number of insertions** needed to make it a palindrome. You can insert characters at any position in the string.
+
+### Examples
+
+**Input:** s = "abcaa"
+**Output:** 2
+**Explanation:** Insert 'c' and 'b' to make "abcacba".
+
+**Input:** s = "ba"
+**Output:** 1
+**Explanation:** Insert 'a' at the beginning to make "aba".
+
+---
+
+### Intuition
+
+* To form a palindrome, the string should read the same forward and backward.
+* The **Longest Palindromic Subsequence (LPS)** tells us the largest part of the string that is already a palindrome.
+* We only need to insert characters for the remaining unmatched parts.
+* Formula:
+  `Minimum Insertions = len(s) - LPS(s)`
+* LPS can be found using **Longest Common Subsequence (LCS)** of `s` and its reverse.
+
+---
+
+### Code
+
+```python
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None] * (n2 + 1)
+    dp_prev = [None] * (n2 + 1)
+
+    dp_curr[0] = 0
+    dp_prev[0] = 0
+    for index2 in range(n2 + 1):
+        dp_prev[index2] = 0
+
+    for index1 in range(1, n1 + 1):
+        for index2 in range(1, n2 + 1):
+            if s1[index1 - 1] == s2[index2 - 1]:
+                dp_curr[index2] = 1 + dp_prev[index2 - 1]
+            else:
+                exclude1 = dp_prev[index2]
+                exclude2 = dp_curr[index2 - 1]
+                dp_curr[index2] = max(exclude1, exclude2)
+        dp_prev = dp_curr.copy()
+    return dp_prev[n2]
+
+def solve(s):
+    lcsLength = optimized(s, s[::-1])
+    ans = len(s) - lcsLength
+    return ans
+```
+
+---
+
+### Example Dry Run
+
+**Input:** s = "ba"
+`s[::-1] = "ab"`
+
+| s1 | s2 | LCS Table Result |
+| -- | -- | ---------------- |
+| b  | a  | 0                |
+| b  | b  | 1                |
+| a  | a  | 1                |
+| a  | b  | 1                |
+
+LCS = 1 → Minimum insertions = 2 - 1 = **1**
+
+---
+
+### Complexity
+
+* **Time Complexity:** O(n²)
+* **Space Complexity:** O(n) using 1D DP array optimization
+
+---
