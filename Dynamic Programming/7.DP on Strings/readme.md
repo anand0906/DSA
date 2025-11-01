@@ -1297,3 +1297,163 @@ f(2,3)
 * **Space Complexity:** O(n) using 1D DP array optimization
 
 ---
+
+# Shortest Common Supersequence
+
+## Problem Statement
+
+Given two strings `str1` and `str2`, find the shortest string that contains both `str1` and `str2` as subsequences.
+
+### Examples
+
+**Example 1:**
+- Input: `str1 = "mno"`, `str2 = "nop"`
+- Output: `"mnop"`
+- Explanation: "mnop" contains "mno" (positions 0,1,2) and "nop" (positions 1,2,3)
+
+**Example 2:**
+- Input: `str1 = "dynamic"`, `str2 = "program"`
+- Output: `"dynprogramic"`
+- Explanation: All characters from both strings are included with minimal overlap
+
+## Intuition
+
+### Core Idea
+
+The shortest common supersequence combines two strings by merging their common parts. Think of it as:
+
+**Total length = len(str1) + len(str2) - len(LCS)**
+
+Where LCS is the Longest Common Subsequence - the characters that appear in both strings in the same order.
+
+### Simple Example
+
+Consider `str1 = "ab"` and `str2 = "ac"`:
+
+1. LCS = "a" (length 1)
+2. Supersequence length = 2 + 2 - 1 = 3
+3. Result: "abc" (merge at common 'a', then add unique 'b' and 'c')
+
+### Step-by-Step Process
+
+The algorithm works in two phases:
+
+**Phase 1: Find LCS using Dynamic Programming**
+- Build a table where `dp[i][j]` = length of LCS between first `i` characters of `str1` and first `j` characters of `str2`
+- When characters match: `dp[i][j] = 1 + dp[i-1][j-1]`
+- When they don't match: `dp[i][j] = max(dp[i-1][j], dp[i][j-1])`
+
+**Phase 2: Backtrack to Build Supersequence**
+- Start from `dp[n1][n2]` and move backwards
+- When characters match: add character once (shared in both strings)
+- When they don't match: add the character from the string that gave the higher LCS value
+- Add remaining characters from either string
+
+## Why It Works
+
+The algorithm ensures correctness through these principles:
+
+1. **Matching characters** appear once in the result (no duplication of common subsequence)
+2. **Non-matching characters** are added based on which string contributed to the optimal LCS
+3. **Remaining characters** from either string are appended at the end
+4. The backtracking ensures both strings remain as subsequences in the final result
+
+## Implementation
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = [[0] * (n2 + 1) for _ in range(n1 + 1)]
+    
+    # Build LCS table
+    for index1 in range(1, n1 + 1):
+        for index2 in range(1, n2 + 1):
+            if s1[index1 - 1] == s2[index2 - 1]:
+                dp[index1][index2] = 1 + dp[index1 - 1][index2 - 1]
+            else:
+                dp[index1][index2] = max(dp[index1 - 1][index2], 
+                                         dp[index1][index2 - 1])
+    return dp
+
+def solve(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = tabulation(s1, s2)
+    
+    index1, index2 = n1, n2
+    ans = []
+    
+    # Backtrack to build supersequence
+    while index1 > 0 and index2 > 0:
+        if s1[index1 - 1] == s2[index2 - 1]:
+            # Characters match - add once
+            ans.append(s1[index1 - 1])
+            index1 -= 1
+            index2 -= 1
+        else:
+            # Add character from string with higher LCS contribution
+            if dp[index1 - 1][index2] > dp[index1][index2 - 1]:
+                ans.append(s1[index1 - 1])
+                index1 -= 1
+            else:
+                ans.append(s2[index2 - 1])
+                index2 -= 1
+    
+    # Add remaining characters
+    while index1 > 0:
+        ans.append(s1[index1 - 1])
+        index1 -= 1
+    
+    while index2 > 0:
+        ans.append(s2[index2 - 1])
+        index2 -= 1
+    
+    return "".join(ans[::-1])
+
+# Test
+print(solve("brute", "groot"))  # Output: "bgruoote"
+```
+
+## Complexity Analysis
+
+### Time Complexity
+$$ O(n_1 \times n_2) $$
+
+- Building the LCS table: $$O(n_1 \times n_2)$$
+- Backtracking: $$O(n_1 + n_2)$$
+- Overall: $$O(n_1 \times n_2)$$
+
+### Space Complexity
+$$ O(n_1 \times n_2) $$
+
+- DP table storage: $$O(n_1 \times n_2)$$
+- Result string: $$O(n_1 + n_2)$$
+- Overall: $$O(n_1 \times n_2)$$
+
+## Dry Run Example
+
+**Input:** `str1 = "brute"`, `str2 = "groot"`
+
+### LCS Table (partial)
+
+|   | ε | g | r | o | o | t |
+|---|---|---|---|---|---|---|
+| ε | 0 | 0 | 0 | 0 | 0 | 0 |
+| b | 0 | 0 | 0 | 0 | 0 | 0 |
+| r | 0 | 0 | 1 | 1 | 1 | 1 |
+| u | 0 | 0 | 1 | 1 | 1 | 1 |
+| t | 0 | 0 | 1 | 1 | 1 | 2 |
+| e | 0 | 0 | 1 | 1 | 1 | 2 |
+
+### Backtracking Path
+
+1. Compare 'e' and 't': different → take 'e' (from str1)
+2. Compare 't' and 't': same → take 't'
+3. Compare 'u' and 'o': different → take 'o' (from str2)
+4. Compare 'u' and 'o': different → take 'o' (from str2)
+5. Compare 'u' and 'r': different → take 'u' (from str1)
+6. Compare 'r' and 'r': same → take 'r'
+7. Add remaining 'b' and 'g'
+
+**Result:** "bgruoote"
+
+---
