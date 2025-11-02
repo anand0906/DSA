@@ -1930,3 +1930,512 @@ print(optimized(s1, s2))
 | **Space Optimized** | O(n2) | Two 1D arrays of size (n2+1) |
 
 ---
+
+# Edit Distance
+
+## Problem Statement
+
+Given two strings `start` and `target`, you need to determine the minimum number of operations required to convert the string `start` into the string `target`. 
+
+The operations you can use are:
+1. **Insert a character**: Add any single character at any position in the string
+2. **Delete a character**: Remove any single character from the string
+3. **Replace a character**: Change any single character in the string to another character
+
+The goal is to transform `start` into `target` using the fewest number of these operations.
+
+### Examples
+
+**Example 1:**
+```
+Input: start = "planet", target = "plan"
+Output: 2
+
+Explanation: 
+To transform "planet" into "plan", the following operations are required:
+1. Delete the character 'e': "planet" -> "plat"
+2. Delete the character 't': "plat" -> "plan"
+Thus, a total of 2 operations are needed.
+```
+
+**Example 2:**
+```
+Input: start = "abcdefg", target = "azced"
+Output: 4
+
+Explanation: 
+To transform "abcdefg" into "azced", the following operations are required:
+1. Replace 'b' with 'z': "abcdefg" -> "azcdefg"
+2. Delete 'd': "azcdefg" -> "azcefg"
+3. Delete 'f': "azcefg" -> "azceg"
+4. Replace 'g' with 'd': "azceg" -> "azced"
+Thus, a total of 4 operations are needed.
+```
+
+---
+
+## Problem Understanding
+
+Given two strings `s1` and `s2` with lengths `n1` and `n2`:
+- We need to convert `s1` to `s2`
+- We can perform **insert**, **delete**, or **replace** operations
+- We need to find the **minimum number** of operations
+- At a time, we can perform only **one action** on **one character**
+
+**Example:**
+```
+s1 = "horse"
+s2 = "ros"
+
+Operation 1: Replace 'h' with 'r': "horse" -> "rorse"
+Operation 2: Delete 'r': "rorse" -> "rose"
+Operation 3: Delete 'e': "rose" -> "ros"
+
+Minimum operations: 3
+```
+
+---
+
+## Problem Representation
+
+Both strings can be represented by indices: `0...n1-1` and `0...n2-1`
+
+Let `f(index1, index2)` represent the minimum number of operations to convert `s1[0...index1]` to `s2[0...index2]`.
+
+---
+
+## Base Cases
+
+### Case 1: `s2` is empty, `s1` has characters
+If `s2` becomes empty and `s1` still has characters, we need to **delete** all remaining characters in `s1`:
+```
+f(index1, index2 < 0) = index1 + 1
+```
+The `+1` accounts for 0-based indexing.
+
+### Case 2: `s1` is empty, `s2` has characters
+If `s1` becomes empty and `s2` still has characters, we need to **insert** all remaining characters from `s2`:
+```
+f(index1 < 0, index2) = index2 + 1
+```
+
+**Example:**
+- `s1 = "abc"`, `s2 = ""` → Need 3 deletions
+- `s1 = ""`, `s2 = "xyz"` → Need 3 insertions
+
+---
+
+## Recurrence Relation
+
+To make `s1 == s2`, we compare each character in `s1` and `s2`.
+
+### Case 1: Characters Match
+If both characters are equal, no operation is needed:
+```
+if s1[index1] == s2[index2]:
+    f(index1, index2) = f(index1-1, index2-1)
+```
+
+### Case 2: Characters Don't Match
+If characters are different, we have **three options**:
+
+1. **Replace**: Replace `s1[index1]` with `s2[index2]`, then move both pointers
+   - Cost: `1 + f(index1-1, index2-1)`
+
+2. **Delete**: Delete `s1[index1]` and try matching the next character in `s1`
+   - Cost: `1 + f(index1-1, index2)`
+
+3. **Insert**: Insert `s2[index2]` into `s1` at the current position
+   - After insertion, `s2[index2]` is matched, so we move `index2` backward
+   - `index1` stays the same as we're still comparing the same character
+   - Cost: `1 + f(index1, index2-1)`
+
+We take the **minimum** of all three options:
+```
+if s1[index1] != s2[index2]:
+    f(index1, index2) = min(
+        1 + f(index1-1, index2-1),  # Replace
+        1 + f(index1-1, index2),    # Delete
+        1 + f(index1, index2-1)     # Insert
+    )
+```
+
+---
+
+## Understanding Insert Operation
+
+The insert operation can be confusing. Here's a detailed explanation:
+
+**Current state**: Comparing `s1[index1]` with `s2[index2]`
+
+**Insert operation**: Insert `s2[index2]` into `s1` at position `index1+1`
+- After insertion, the new character matches `s2[index2]`
+- So we've successfully matched `s2[index2]`
+- Move to `s2[index2-1]` to match the next character
+- `s1[index1]` is still there, so `index1` remains the same
+
+**Example:**
+```
+s1 = "ab", s2 = "abc"
+Comparing: s1[1]='b' with s2[2]='c'
+
+Insert 'c': "ab" -> "abc"
+Now we've matched s2[2]='c'
+Continue comparing: s1[1]='b' with s2[1]='b'
+```
+
+---
+
+## Recursion Tree
+
+For `s1 = "ab"` and `s2 = "ac"`:
+
+```
+                    f(1,1) [b vs c]
+                         |
+                  min of 3 options
+           /              |              \
+    1+f(0,0)         1+f(0,1)        1+f(1,0)
+   [Replace]         [Delete]        [Insert]
+        |                |                |
+    1+f(0,0)         1+f(0,1)        1+f(1,0)
+   [a vs a]         [a vs ac]       [ab vs a]
+        |                |                |
+    1+0=1            1+1=2           1+f(0,0)
+                                         |
+                                     1+f(0,0)
+                                    [a vs a]
+                                         |
+                                     1+0=1
+
+Result: min(1, 2, 1) = 1
+```
+
+**Explanation:**
+- At `f(1,1)`: 'b' != 'c' → Try all 3 operations
+- Replace: `1 + f(0,0)` → Characters match → `1 + 0 = 1`
+- Delete: `1 + f(0,1)` → Need 1 more operation → `1 + 1 = 2`
+- Insert: `1 + f(1,0)` → Eventually resolves to → `1`
+- Minimum: `1`
+
+---
+
+## Solution Approaches
+
+### 1. Recursion (Top-Down)
+
+```python
+def solve(s1, s2, index1, index2):
+    # Base case: s1 is empty, need to insert all of s2
+    if index1 < 0:
+        return index2 + 1
+    
+    # Base case: s2 is empty, need to delete all of s1
+    if index2 < 0:
+        return index1 + 1
+    
+    # If characters match, no operation needed
+    if s1[index1] == s2[index2]:
+        return solve(s1, s2, index1-1, index2-1)
+    else:
+        # Try all three operations and take minimum
+        replace = 1 + solve(s1, s2, index1-1, index2-1)
+        insert = 1 + solve(s1, s2, index1, index2-1)
+        delete = 1 + solve(s1, s2, index1-1, index2)
+        return min(replace, insert, delete)
+```
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion:**
+1. Identify overlapping subproblems (same `index1` and `index2` are computed multiple times)
+2. Create a 2D memoization table `memo[index1][index2]`
+3. Before computing, check if the result is already stored
+4. After computing, store the result in the memo table
+
+```python
+def solve_memo(s1, s2, index1, index2, memo):
+    # Base case: s1 is empty
+    if index1 < 0:
+        return index2 + 1
+    
+    # Base case: s2 is empty
+    if index2 < 0:
+        return index1 + 1
+    
+    # Check if already computed
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    
+    # If characters match
+    if s1[index1] == s2[index2]:
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2-1, memo)
+    else:
+        # Try all three operations
+        replace = 1 + solve_memo(s1, s2, index1-1, index2-1, memo)
+        insert = 1 + solve_memo(s1, s2, index1, index2-1, memo)
+        delete = 1 + solve_memo(s1, s2, index1-1, index2, memo)
+        memo[index1][index2] = min(replace, insert, delete)
+    
+    return memo[index1][index2]
+```
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization:**
+1. Convert recursive calls to iterative loops
+2. Use 1-based indexing to handle base cases
+3. Fill the DP table from smallest subproblems to largest
+4. Initialize base cases:
+   - `dp[i][0] = i` (delete all characters from `s1`)
+   - `dp[0][j] = j` (insert all characters from `s2`)
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Create DP table with 1-based indexing
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    
+    # Base case: s2 is empty, delete all from s1
+    for index1 in range(n1+1):
+        dp[index1][0] = index1
+    
+    # Base case: s1 is empty, insert all from s2
+    for index2 in range(n2+1):
+        dp[0][index2] = index2
+    
+    # Fill the DP table
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                # Characters match, no operation needed
+                dp[index1][index2] = dp[index1-1][index2-1]
+            else:
+                # Try all three operations and take minimum
+                replace = 1 + dp[index1-1][index2-1]
+                insert = 1 + dp[index1][index2-1]
+                delete = 1 + dp[index1-1][index2]
+                dp[index1][index2] = min(replace, insert, delete)
+    
+    return dp[n1][n2]
+```
+
+#### Tabulation Example
+
+For `s1 = "horse"` and `s2 = "ros"`:
+
+|     | ε | r | o | s |
+|-----|---|---|---|---|
+| **ε** | 0 | 1 | 2 | 3 |
+| **h** | 1 | 1 | 2 | 3 |
+| **o** | 2 | 2 | 1 | 2 |
+| **r** | 3 | 2 | 2 | 2 |
+| **s** | 4 | 3 | 3 | 2 |
+| **e** | 5 | 4 | 4 | 3 |
+
+**Step-by-step filling:**
+- Row 0 and Column 0 are initialized with indices
+- `dp[1][1]`: 'h' != 'r' → `min(1+0, 1+1, 1+1) = 1` (replace)
+- `dp[2][2]`: 'o' == 'o' → `dp[1][1] = 1`
+- `dp[3][1]`: 'r' == 'r' → `dp[2][0] = 2`
+- `dp[3][2]`: 'r' != 'o' → `min(1+1, 1+2, 1+2) = 2`
+- `dp[4][3]`: 's' == 's' → `dp[3][2] = 2`
+- `dp[5][3]`: 'e' != 's' → `min(1+2, 1+2, 1+4) = 3`
+
+**Result:** `dp[5][3] = 3`
+
+---
+
+### 4. Space Optimized (Bottom-Up DP)
+
+**Conversion from Tabulation:**
+1. Observe that we only need the previous row (`dp[index1-1]`) to compute the current row
+2. Use two 1D arrays instead of a 2D array
+3. `dp_prev` stores the previous row
+4. `dp_curr` stores the current row being computed
+5. **Important**: Set `dp_curr[0] = index1` at the start of each iteration
+
+```python
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Use two arrays instead of 2D table
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    
+    # Initialize base case for s1 being empty
+    dp_curr[0] = 0
+    for index2 in range(n2+1):
+        dp_prev[index2] = index2
+    
+    # Fill row by row
+    for index1 in range(1, n1+1):
+        # Set the first column value for this row
+        dp_curr[0] = index1
+        
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                # Characters match
+                dp_curr[index2] = dp_prev[index2-1]
+            else:
+                # Try all three operations
+                replace = 1 + dp_prev[index2-1]
+                insert = 1 + dp_curr[index2-1]
+                delete = 1 + dp_prev[index2]
+                dp_curr[index2] = min(replace, insert, delete)
+        
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[n2]
+```
+
+---
+
+## Detailed Example Walkthrough
+
+Let's trace through `s1 = "abc"` and `s2 = "ac"`:
+
+### DP Table Construction:
+
+|     | ε | a | c |
+|-----|---|---|---|
+| **ε** | 0 | 1 | 2 |
+| **a** | 1 | 0 | 1 |
+| **b** | 2 | 1 | 1 |
+| **c** | 3 | 2 | 1 |
+
+**Step-by-step filling:**
+1. Initialize: Row 0 = [0, 1, 2], Column 0 = [0, 1, 2, 3]
+2. `dp[1][1]`: 'a' == 'a' → `dp[0][0] = 0`
+3. `dp[1][2]`: 'a' != 'c' → `min(1+1, 1+0, 1+2) = 1` (insert 'c')
+4. `dp[2][1]`: 'b' != 'a' → `min(1+0, 1+1, 1+1) = 1` (delete 'b')
+5. `dp[2][2]`: 'b' != 'c' → `min(1+0, 1+1, 1+1) = 1` (replace or delete+insert)
+6. `dp[3][1]`: 'c' != 'a' → `min(1+1, 1+1, 1+2) = 2`
+7. `dp[3][2]`: 'c' == 'c' → `dp[2][1] = 1`
+
+**Result:** `dp[3][2] = 1` (delete 'b')
+
+**Operations:**
+- Delete 'b' from "abc" → "ac" ✓
+
+---
+
+## Complete Code
+
+```python
+def solve(s1, s2, index1, index2):
+    if index1 < 0:
+        return index2 + 1
+    if index2 < 0:
+        return index1 + 1
+    if s1[index1] == s2[index2]:
+        return solve(s1, s2, index1-1, index2-1)
+    else:
+        replace = 1 + solve(s1, s2, index1-1, index2-1)
+        insert = 1 + solve(s1, s2, index1, index2-1)
+        delete = 1 + solve(s1, s2, index1-1, index2)
+        return min(replace, insert, delete)
+    
+def solve_memo(s1, s2, index1, index2, memo):
+    if index1 < 0:
+        return index2 + 1
+    if index2 < 0:
+        return index1 + 1
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    if s1[index1] == s2[index2]:
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2-1, memo)
+    else:
+        replace = 1 + solve_memo(s1, s2, index1-1, index2-1, memo)
+        insert = 1 + solve_memo(s1, s2, index1, index2-1, memo)
+        delete = 1 + solve_memo(s1, s2, index1-1, index2, memo)
+        memo[index1][index2] = min(replace, insert, delete)
+    return memo[index1][index2]
+    
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    for index1 in range(n1+1):
+        dp[index1][0] = index1
+    for index2 in range(n2+1):
+        dp[0][index2] = index2
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                dp[index1][index2] = dp[index1-1][index2-1]
+            else:
+                replace = 1 + dp[index1-1][index2-1]
+                insert = 1 + dp[index1][index2-1]
+                delete = 1 + dp[index1-1][index2]
+                dp[index1][index2] = min(replace, insert, delete)
+    return dp[n1][n2]
+
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    dp_curr[0] = 0
+    for index2 in range(n2+1):
+        dp_prev[index2] = index2
+    for index1 in range(1, n1+1):
+        dp_curr[0] = index1
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                dp_curr[index2] = dp_prev[index2-1]
+            else:
+                replace = 1 + dp_prev[index2-1]
+                insert = 1 + dp_curr[index2-1]
+                delete = 1 + dp_prev[index2]
+                dp_curr[index2] = min(replace, insert, delete)
+        dp_prev = dp_curr.copy()
+    return dp_prev[n2]
+
+# Test
+s1, s2 = "babgbag", "bag"
+n1, n2 = len(s1), len(s2)
+print(solve(s1, s2, n1-1, n2-1))
+memo = [[None]*(n2) for _ in range(n1)]
+print(solve_memo(s1, s2, n1-1, n2-1, memo))
+print(tabulation(s1, s2))
+print(optimized(s1, s2))
+```
+
+---
+
+## Complexity Analysis
+
+### Time Complexity
+
+| Approach | Time Complexity | Explanation |
+|----------|----------------|-------------|
+| **Recursion** | O(3^(n1+n2)) | Each call can branch into three recursive calls |
+| **Memoization** | O(n1 × n2) | Each subproblem is computed once |
+| **Tabulation** | O(n1 × n2) | Two nested loops iterate through all combinations |
+| **Space Optimized** | O(n1 × n2) | Time complexity remains the same |
+
+### Space Complexity
+
+| Approach | Space Complexity | Explanation |
+|----------|-----------------|-------------|
+| **Recursion** | O(n1 + n2) | Recursion stack depth |
+| **Memoization** | O(n1 × n2) + O(n1 + n2) | 2D memo table + recursion stack |
+| **Tabulation** | O(n1 × n2) | 2D DP table |
+| **Space Optimized** | O(n2) | Two 1D arrays of size (n2+1) |
+
+---
+
+## Applications
+
+The Edit Distance algorithm (also known as Levenshtein Distance) has many real-world applications:
+
+1. **Spell Checking**: Finding the closest correctly spelled word
+2. **DNA Sequencing**: Comparing genetic sequences
+3. **Plagiarism Detection**: Measuring similarity between texts
+4. **Speech Recognition**: Matching spoken words to dictionary
+5. **Version Control**: Computing diffs between file versions
+
+---
