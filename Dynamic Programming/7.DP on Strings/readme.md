@@ -2439,3 +2439,574 @@ The Edit Distance algorithm (also known as Levenshtein Distance) has many real-w
 5. **Version Control**: Computing diffs between file versions
 
 ---
+
+# Wildcard Matching
+
+## Problem Statement
+
+Given a string `str` and a pattern `pat`, implement a pattern matching function that supports the following special characters:
+
+- **`?`**: Matches any single character
+- **`*`**: Matches any sequence of characters (including the empty sequence)
+
+The pattern must match the **entire string**.
+
+### Examples
+
+**Example 1:**
+```
+Input: str = "xaylmz", pat = "x?y*z"
+Output: true
+
+Explanation: 
+The pattern "x?y*z" matches the string "xaylmz":
+- 'x' matches 'x'
+- '?' matches 'a'
+- 'y' matches 'y'
+- '*' matches "lm"
+- 'z' matches 'z'
+```
+
+**Example 2:**
+```
+Input: str = "xyza", pat = "x*z"
+Output: false
+
+Explanation: 
+The pattern "x*z" does not match the string "xyza" because 
+there is an extra 'a' at the end of the string that is not 
+matched by the pattern.
+```
+
+---
+
+## Problem Understanding
+
+Given a pattern `s1` and a string `s2`:
+- `s1` (pattern) contains regular characters and special wildcards (`?` and `*`)
+- `s2` (string) contains only regular characters
+- We need to determine if the entire string matches the pattern
+
+**Key Points:**
+- `?` matches exactly **one** character
+- `*` matches **zero or more** characters (any sequence)
+- The entire string must be matched
+
+**Example:**
+```
+Pattern: "a*b?c"
+String:  "aXYZbQc"
+
+Match breakdown:
+- 'a' matches 'a'
+- '*' matches "XYZ"
+- 'b' matches 'b'
+- '?' matches 'Q'
+- 'c' matches 'c'
+Result: true
+```
+
+---
+
+## Problem Representation
+
+Both strings can be represented by indices: `0...n1-1` (pattern) and `0...n2-1` (string)
+
+Let `f(index1, index2)` represent whether pattern `s1[0...index1]` matches string `s2[0...index2]`.
+
+---
+
+## Base Cases
+
+### Case 1: Both strings are exhausted
+If both pattern and string are completely processed, it's a match:
+```
+f(index1 < 0, index2 < 0) = true
+```
+
+### Case 2: Pattern exhausted, string has characters
+If pattern ends but string has remaining characters, it's not a match:
+```
+f(index1 < 0, index2 >= 0) = false
+```
+
+### Case 3: String exhausted, pattern has characters
+If string ends but pattern has remaining characters:
+- It's a match **only if** all remaining pattern characters are `*`
+- Because `*` can match empty sequence
+```
+f(index1 >= 0, index2 < 0) = all(s1[i] == '*' for i in range(0, index1+1))
+```
+
+**Example:**
+- Pattern: `"a***"`, String: `"a"` → true (all remaining are `*`)
+- Pattern: `"a*b"`, String: `"a"` → false (`b` cannot match empty)
+
+---
+
+## Recurrence Relation
+
+### Case 1: Characters Match or `?` Wildcard
+If pattern character matches string character, or pattern has `?`:
+```
+if s1[index1] == s2[index2] OR s1[index1] == '?':
+    f(index1, index2) = f(index1-1, index2-1)
+```
+
+### Case 2: `*` Wildcard
+If pattern has `*`, we have **two options**:
+
+1. **Exclude (match empty)**: Treat `*` as matching zero characters
+   - Move pattern pointer backward, string pointer stays
+   - `f(index1-1, index2)`
+
+2. **Include (match one or more)**: Let `*` consume current string character
+   - Pattern pointer stays (as `*` can match more), string pointer moves backward
+   - `f(index1, index2-1)`
+
+If **either** option works, the pattern matches:
+```
+if s1[index1] == '*':
+    f(index1, index2) = f(index1-1, index2) OR f(index1, index2-1)
+```
+
+### Case 3: No Match
+If characters don't match and there's no wildcard:
+```
+else:
+    f(index1, index2) = false
+```
+
+---
+
+## Understanding the `*` Wildcard
+
+The `*` wildcard is the tricky part. Here's how it works:
+
+**Option 1: Match empty sequence**
+```
+Pattern: "a*bc"
+String:  "abc"
+
+At '*':
+- Try matching empty: "a" + "" + "bc" = "abc" ✓
+```
+
+**Option 2: Match one or more characters**
+```
+Pattern: "a*c"
+String:  "aXYc"
+
+At '*':
+- Match 'X': Continue with "*c" vs "Yc"
+- Match 'Y': Continue with "*c" vs "c"
+- Match empty: Continue with "c" vs "c" ✓
+```
+
+The key insight: When we encounter `*`, we keep it in the pattern (`index1` doesn't change) while consuming string characters (`index2` decreases) until we find a valid match or exhaust possibilities.
+
+---
+
+## Recursion Tree
+
+For `s1 = "a*c"` (pattern) and `s2 = "abc"` (string):
+
+```
+                        f(2,2) [c vs c]
+                             |
+                        f(1,1) [* vs b]
+                       /              \
+               f(0,1) [a vs b]    f(1,0) [* vs a]
+                     |                /        \
+                  False        f(0,0) [a vs a] f(1,-1)
+                                     |            |
+                                  True         all('*')?
+                                                  True
+
+Path: f(2,2) → f(1,1) → f(1,0) → f(0,0) = true
+```
+
+**Explanation:**
+- At `f(2,2)`: 'c' == 'c' → `f(1,1)`
+- At `f(1,1)`: '*' → Try both options
+  - Exclude: `f(0,1)` → 'a' vs 'b' → false
+  - Include: `f(1,0)` → Keep '*', match 'b'
+- At `f(1,0)`: '*' → Try both options
+  - Include: `f(1,-1)` → String exhausted, pattern has '*' → true
+  - Exclude: `f(0,0)` → 'a' vs 'a' → true
+- Result: true
+
+---
+
+## Solution Approaches
+
+### 1. Recursion (Top-Down)
+
+```python
+def solve(s1, s2, index1, index2):
+    # Base case: both exhausted
+    if index1 < 0 and index2 < 0:
+        return True
+    
+    # Base case: pattern exhausted, string has characters
+    if index1 < 0 and index2 >= 0:
+        return False
+    
+    # Base case: string exhausted, pattern has characters
+    if index2 < 0 and index1 >= 0:
+        # Check if all remaining pattern characters are '*'
+        return all(s1[i] == '*' for i in range(index1 + 1))
+    
+    # If characters match or pattern has '?'
+    if s1[index1] == s2[index2] or s1[index1] == "?":
+        return solve(s1, s2, index1-1, index2-1)
+    else:
+        # If pattern has '*'
+        if s1[index1] == "*":
+            # Option 1: Match empty (exclude)
+            exclude = solve(s1, s2, index1-1, index2)
+            # Option 2: Match one or more (include)
+            include = solve(s1, s2, index1, index2-1)
+            return exclude or include
+        else:
+            # No match
+            return False
+```
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion:**
+1. Identify overlapping subproblems
+2. Create a 2D memoization table `memo[index1][index2]`
+3. Check if result is already computed before recursing
+4. Store the computed result in the memo table
+
+```python
+def solve_memo(s1, s2, index1, index2, memo):
+    # Base case: both exhausted
+    if index1 < 0 and index2 < 0:
+        return True
+    
+    # Base case: pattern exhausted, string has characters
+    if index1 < 0 and index2 > 0:
+        return False
+    
+    # Base case: string exhausted, pattern has characters
+    if index2 < 0 and index1 >= 0:
+        return all(s1[i] == '*' for i in range(index1 + 1))
+    
+    # Check if already computed
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    
+    # If characters match or pattern has '?'
+    if s1[index1] == s2[index2] or s1[index1] == '?':
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2-1, memo)
+    else:
+        # If pattern has '*'
+        if s1[index1] == "*":
+            exclude = solve_memo(s1, s2, index1-1, index2, memo)
+            include = solve_memo(s1, s2, index1, index2-1, memo)
+            memo[index1][index2] = exclude or include
+        else:
+            memo[index1][index2] = False
+    
+    return memo[index1][index2]
+```
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization:**
+1. Convert recursive calls to iterative loops
+2. Use 1-based indexing to handle base cases
+3. Fill the DP table from smallest subproblems to largest
+4. Initialize base cases carefully
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Create DP table with 1-based indexing
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    
+    # Base case: both empty
+    dp[0][0] = True
+    
+    # Base case: pattern empty, string has characters
+    for index2 in range(1, n2+1):
+        dp[0][index2] = False
+    
+    # Base case: string empty, pattern has characters
+    # Only '*' can match empty string
+    for index1 in range(1, n1+1):
+        if s1[index1-1] == "*":
+            dp[index1][0] = True
+        else:
+            break  # First non-* character, rest cannot match
+    
+    # Fill the DP table
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            # If characters match or pattern has '?'
+            if s1[index1-1] == s2[index2-1] or s1[index1-1] == "?":
+                dp[index1][index2] = dp[index1-1][index2-1]
+            else:
+                # If pattern has '*'
+                if s1[index1-1] == "*":
+                    exclude = dp[index1-1][index2]  # Match empty
+                    include = dp[index1][index2-1]  # Match one or more
+                    dp[index1][index2] = exclude or include
+                else:
+                    # No match
+                    dp[index1][index2] = False
+    
+    return dp[n1][n2]
+```
+
+#### Tabulation Example
+
+For `s1 = "a*c"` (pattern) and `s2 = "abc"` (string):
+
+|     | ε | a | b | c |
+|-----|---|---|---|---|
+| **ε** | T | F | F | F |
+| **a** | F | T | F | F |
+| **\*** | T | T | T | T |
+| **c** | F | F | F | T |
+
+**Step-by-step filling:**
+- `dp[0][0] = True` (both empty)
+- `dp[0][*] = False` (pattern empty, string not)
+- `dp[1][0] = False` ('a' can't match empty)
+- `dp[2][0] = True` ('*' matches empty)
+- `dp[3][0] = False` ('c' can't match empty after '*')
+- `dp[1][1]`: 'a' == 'a' → `dp[0][0] = True`
+- `dp[2][1]`: '*' → `dp[1][1] OR dp[2][0] = True OR True = True`
+- `dp[2][2]`: '*' → `dp[1][2] OR dp[2][1] = False OR True = True`
+- `dp[2][3]`: '*' → `dp[1][3] OR dp[2][2] = False OR True = True`
+- `dp[3][3]`: 'c' == 'c' → `dp[2][2] = True`
+
+**Result:** `dp[3][3] = True`
+
+---
+
+### 4. Space Optimized (Bottom-Up DP)
+
+**Conversion from Tabulation:**
+1. Use two 1D arrays instead of a 2D array
+2. `dp_prev` stores the previous row
+3. `dp_curr` stores the current row being computed
+4. **Important**: Correctly initialize `dp_curr[0]` for each row
+
+```python
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Use two arrays instead of 2D table
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    
+    # Initialize base case for pattern empty
+    for index2 in range(n2+1):
+        dp_prev[index2] = False
+    dp_prev[0] = True  # Both empty
+    
+    # Fill row by row
+    for index1 in range(1, n1+1):
+        # String empty, pattern has characters
+        # Only '*' can match empty, and only if previous was also matching
+        dp_curr[0] = (s1[index1-1] == "*" and dp_prev[0] == True)
+        
+        for index2 in range(1, n2+1):
+            # If characters match or pattern has '?'
+            if s1[index1-1] == s2[index2-1] or s1[index1-1] == "?":
+                dp_curr[index2] = dp_prev[index2-1]
+            else:
+                # If pattern has '*'
+                if s1[index1-1] == "*":
+                    exclude = dp_prev[index2]    # Match empty
+                    include = dp_curr[index2-1]  # Match one or more
+                    dp_curr[index2] = exclude or include
+                else:
+                    # No match
+                    dp_curr[index2] = False
+        
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[n2]
+```
+
+---
+
+## Detailed Example Walkthrough
+
+Let's trace through `s1 = "x?y*z"` (pattern) and `s2 = "xaylmz"` (string):
+
+### DP Table Construction:
+
+|     | ε | x | a | y | l | m | z |
+|-----|---|---|---|---|---|---|---|
+| **ε** | T | F | F | F | F | F | F |
+| **x** | F | T | F | F | F | F | F |
+| **?** | F | F | T | F | F | F | F |
+| **y** | F | F | F | T | F | F | F |
+| **\*** | F | F | F | T | T | T | T |
+| **z** | F | F | F | F | F | F | T |
+
+**Key computations:**
+1. `dp[1][1]`: 'x' == 'x' → `dp[0][0] = True`
+2. `dp[2][2]`: '?' matches 'a' → `dp[1][1] = True`
+3. `dp[3][3]`: 'y' == 'y' → `dp[2][2] = True`
+4. `dp[4][3]`: '*' → `dp[3][3] OR dp[4][2] = True OR False = True`
+5. `dp[4][4]`: '*' → `dp[3][4] OR dp[4][3] = False OR True = True`
+6. `dp[4][5]`: '*' → `dp[3][5] OR dp[4][4] = False OR True = True`
+7. `dp[4][6]`: '*' → `dp[3][6] OR dp[4][5] = False OR True = True`
+8. `dp[5][6]`: 'z' == 'z' → `dp[4][5] = True`
+
+**Result:** `dp[5][6] = True`
+
+**Match breakdown:**
+- 'x' matches 'x'
+- '?' matches 'a'
+- 'y' matches 'y'
+- '*' matches "lm"
+- 'z' matches 'z'
+
+---
+
+## Complete Code
+
+```python
+def solve(s1, s2, index1, index2):
+    if index1 < 0 and index2 < 0:
+        return True
+    if index1 < 0 and index2 >= 0:
+        return False
+    if index2 < 0 and index1 >= 0:
+        return all(s1[i] == '*' for i in range(index1 + 1))
+    
+    if s1[index1] == s2[index2] or s1[index1] == "?":
+        return solve(s1, s2, index1-1, index2-1)
+    else:
+        if s1[index1] == "*":
+            exclude = solve(s1, s2, index1-1, index2)
+            include = solve(s1, s2, index1, index2-1)
+            return exclude or include
+        else:
+            return False
+    
+def solve_memo(s1, s2, index1, index2, memo):
+    if index1 < 0 and index2 < 0:
+        return True
+    if index1 < 0 and index2 > 0:
+        return False
+    if index2 < 0 and index1 >= 0:
+        return all(s1[i] == '*' for i in range(index1 + 1))
+    
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    if s1[index1] == s2[index2] or s1[index1] == '?':
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2-1, memo)
+    else:
+        if s1[index1] == "*":
+            exclude = solve_memo(s1, s2, index1-1, index2, memo)
+            include = solve_memo(s1, s2, index1, index2-1, memo)
+            memo[index1][index2] = exclude or include
+        else:
+            memo[index1][index2] = False
+    return memo[index1][index2]
+    
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    dp[0][0] = True
+    for index2 in range(1, n2+1):
+        dp[0][index2] = False
+    for index1 in range(1, n1+1):
+        if s1[index1-1] == "*":
+            dp[index1][0] = True
+        else:
+            break
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1] or s1[index1-1] == "?":
+                dp[index1][index2] = dp[index1-1][index2-1]
+            else:
+                if s1[index1-1] == "*":
+                    exclude = dp[index1-1][index2]
+                    include = dp[index1][index2-1]
+                    dp[index1][index2] = exclude or include
+                else:
+                    dp[index1][index2] = False
+    return dp[n1][n2]
+
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    for index2 in range(n2+1):
+        dp_prev[index2] = False
+    dp_prev[0] = True
+    for index1 in range(1, n1+1):
+        dp_curr[0] = (s1[index1-1] == "*" and dp_prev[0] == True)
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1] or s1[index1-1] == "?":
+                dp_curr[index2] = dp_prev[index2-1]
+            else:
+                if s1[index1-1] == "*":
+                    exclude = dp_prev[index2]
+                    include = dp_curr[index2-1]
+                    dp_curr[index2] = exclude or include
+                else:
+                    dp_curr[index2] = False
+        dp_prev = dp_curr.copy()
+    return dp_prev[n2]
+
+# Test
+s1, s2 = "x?y*z", "xaylmz"
+n1, n2 = len(s1), len(s2)
+print(solve(s1, s2, n1-1, n2-1))
+memo = [[None]*(n2) for _ in range(n1)]
+print(solve_memo(s1, s2, n1-1, n2-1, memo))
+print(tabulation(s1, s2))
+print(optimized(s1, s2))
+```
+
+---
+
+## Complexity Analysis
+
+### Time Complexity
+
+| Approach | Time Complexity | Explanation |
+|----------|----------------|-------------|
+| **Recursion** | O(2^(n1+n2)) | Each `*` branches into two recursive calls |
+| **Memoization** | O(n1 × n2) | Each subproblem is computed once |
+| **Tabulation** | O(n1 × n2) | Two nested loops iterate through all combinations |
+| **Space Optimized** | O(n1 × n2) | Time complexity remains the same |
+
+### Space Complexity
+
+| Approach | Space Complexity | Explanation |
+|----------|-----------------|-------------|
+| **Recursion** | O(n1 + n2) | Recursion stack depth |
+| **Memoization** | O(n1 × n2) + O(n1 + n2) | 2D memo table + recursion stack |
+| **Tabulation** | O(n1 × n2) | 2D DP table |
+| **Space Optimized** | O(n2) | Two 1D arrays of size (n2+1) |
+
+---
+
+## Applications
+
+Wildcard matching has various real-world applications:
+
+1. **File System Operations**: Matching file patterns (e.g., `*.txt`, `file?.doc`)
+2. **Command-Line Interfaces**: Shell pattern matching for commands
+3. **Search Engines**: Flexible search queries with wildcards
+4. **Database Queries**: SQL LIKE operator with `%` and `_`
+5. **Text Editors**: Find and replace with pattern matching
+
+---
