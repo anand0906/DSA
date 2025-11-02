@@ -1457,3 +1457,476 @@ $$ O(n_1 \times n_2) $$
 **Result:** "bgruoote"
 
 ---
+
+# Distinct Subsequences
+
+## Problem Statement
+
+Given two strings `s` and `t`, return the number of distinct subsequences of `s` that equal `t`.
+
+A **subsequence** of a string is a new string generated from the original string with some characters (can be none) deleted without changing the relative order of the remaining characters.
+
+For example, "ace" is a subsequence of "abcde" while "aec" is not.
+
+The task is to count how many different ways we can form `t` from `s` by deleting some (or no) characters from `s`.
+
+Return the result modulo 10⁹+7.
+
+### Examples
+
+**Example 1:**
+```
+Input: s = "axbxax", t = "axa"
+Output: 2
+Explanation: In the string "axbxax", there are two distinct subsequences "axa":
+(a)(x)bx(a)x  → indices [0,1,4]
+(a)xb(x)(a)x  → indices [0,3,4]
+```
+
+**Example 2:**
+```
+Input: s = "babgbag", t = "bag"
+Output: 5
+Explanation: In the string "babgbag", there are five distinct subsequences "bag":
+(ba)(b)(g)bag  → indices [0,1,2]
+(ba)(b)g(ba)(g) → indices [0,1,6]
+(bab)(g)(ba)g  → indices [0,1,3]
+(ba)b(g)(ba)(g) → indices [0,5,6]
+(babg)(ba)(g)  → indices [2,5,6]
+```
+
+---
+
+## Problem Understanding
+
+Given two strings `s1` and `s2`:
+- We need to find the **number of times** `s2` appears as a subsequence in `s1`
+- Each occurrence uses a different combination of character indices from `s1`
+- Characters must maintain their relative order
+
+**Example:**
+```
+s1 = "axbxax"
+s2 = "axa"
+
+Way 1: s1[0]='a', s1[1]='x', s1[4]='a' → "axa"
+Way 2: s1[0]='a', s1[3]='x', s1[4]='a' → "axa"
+
+Total ways: 2
+```
+
+---
+
+## Problem Representation
+
+Both strings can be represented by indices: `0...n1-1` and `0...n2-1`
+
+Let `f(index1, index2)` represent the count of ways `s2[0...index2]` appears as a subsequence in `s1[0...index1]`.
+
+---
+
+## Base Cases
+
+### Case 1: All characters of `t` are matched
+If we've successfully matched all characters of `s2` (reached the end), we found one valid way:
+```
+f(index1, index2 < 0) = 1
+```
+
+### Case 2: String `s` is exhausted but `t` is not
+If `s1` ends but `s2` still has characters remaining, we cannot form `s2`:
+```
+f(index1 < 0, index2) = 0
+```
+
+---
+
+## Recurrence Relation
+
+To check the existence of `s2` in `s1`, we compare characters of `s2` with characters of `s1` in order.
+
+### Case 1: Characters Match
+When characters match at current positions, we have **two possibilities**:
+
+1. **Use this character match**: Move both pointers back to find remaining characters
+   - `f(index1-1, index2-1)`
+
+2. **Don't use this character match**: Look for `s2` in the remaining part of `s1`
+   - `f(index1-1, index2)`
+   - This accounts for `s2` appearing multiple times
+
+Since we want the **total count**, we **add** both possibilities:
+```
+if s1[index1] == s2[index2]:
+    f(index1, index2) = f(index1-1, index2) + f(index1-1, index2-1)
+```
+
+### Case 2: Characters Don't Match
+If characters don't match, skip the current character in `s1` and continue searching:
+```
+if s1[index1] != s2[index2]:
+    f(index1, index2) = f(index1-1, index2)
+```
+
+### Complete Recurrence Relation
+```python
+if s1[index1] == s2[index2]:
+    return f(index1-1, index2) + f(index1-1, index2-1)
+else:
+    return f(index1-1, index2)
+```
+
+---
+
+## Recursion Tree
+
+For `s1 = "aba"` and `s2 = "ab"`:
+
+```
+                          f(2,1) [a vs b]
+                               |
+                         f(1,1) [b vs b] ✓
+                        /              \
+              f(0,1) [a vs b]      f(0,0) [a vs a] ✓
+                    |                    /        \
+                f(-1,1)            f(-1,0)    f(-1,-1)
+                    |                  |           |
+                    0                  0           1
+                    
+Path 1: f(2,1) → f(1,1) → f(0,0) → f(-1,-1) = 1 [using indices 0,1]
+Path 2: None (f(0,1) fails as 'a' != 'b')
+
+Total: 1
+```
+
+**Explanation:**
+- At `f(2,1)`: `s1[2]='a'` doesn't match `s2[1]='b'` → `f(1,1)`
+- At `f(1,1)`: `s1[1]='b'` matches `s2[1]='b'` → `f(0,1) + f(0,0)`
+- At `f(0,0)`: `s1[0]='a'` matches `s2[0]='a'` → `f(-1,0) + f(-1,-1)`
+- `f(-1,-1) = 1` (all of `s2` matched)
+- Result: `0 + (0 + 1) = 1`
+
+---
+
+## Solution Approaches
+
+### 1. Recursion (Top-Down)
+
+```python
+def solve(s1, s2, index1, index2):
+    # Base case: all characters of s2 are matched
+    if index2 < 0:
+        return 1
+    
+    # Base case: s1 is exhausted but s2 is not
+    if index1 < 0:
+        return 0
+    
+    # If characters match
+    if s1[index1] == s2[index2]:
+        # Way 1: Don't use this match, look for s2 in remaining s1
+        way1 = solve(s1, s2, index1-1, index2)
+        # Way 2: Use this match, find remaining characters
+        way2 = solve(s1, s2, index1-1, index2-1)
+        return way1 + way2
+    else:
+        # Characters don't match, skip current character in s1
+        return solve(s1, s2, index1-1, index2)
+```
+
+---
+
+### 2. Memoization (Top-Down DP)
+
+**Conversion from Recursion:**
+1. Identify overlapping subproblems (same `index1` and `index2` are computed multiple times)
+2. Create a 2D memoization table `memo[index1][index2]`
+3. Before computing, check if the result is already stored
+4. After computing, store the result in the memo table
+
+```python
+def solve_memo(s1, s2, index1, index2, memo):
+    # Base case: all characters of s2 are matched
+    if index2 < 0:
+        return 1
+    
+    # Base case: s1 is exhausted but s2 is not
+    if index1 < 0:
+        return 0
+    
+    # Check if already computed
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    
+    # If characters match
+    if s1[index1] == s2[index2]:
+        way1 = solve_memo(s1, s2, index1-1, index2, memo)
+        way2 = solve_memo(s1, s2, index1-1, index2-1, memo)
+        memo[index1][index2] = way1 + way2
+    else:
+        # Characters don't match
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2, memo)
+    
+    return memo[index1][index2]
+```
+
+---
+
+### 3. Tabulation (Bottom-Up DP)
+
+**Conversion from Memoization:**
+1. Convert recursive calls to iterative loops
+2. Use 1-based indexing to handle base cases
+3. Fill the DP table from smallest subproblems to largest
+4. Initialize base cases:
+   - `dp[i][0] = 1` (empty `s2` can be formed in one way)
+   - `dp[0][j] = 0` for `j > 0` (cannot form non-empty `s2` from empty `s1`)
+
+```python
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Create DP table with 1-based indexing
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    
+    # Base case: empty s2 can be formed in one way (delete all)
+    for index1 in range(n1+1):
+        dp[index1][0] = 1
+    
+    # Base case: cannot form non-empty s2 from empty s1
+    for index2 in range(n2+1):
+        dp[0][index2] = 0
+    
+    # Exception: empty s1 and empty s2
+    dp[0][0] = 1
+    
+    # Fill the DP table
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                # Characters match: add both possibilities
+                way1 = dp[index1-1][index2]      # Don't use this match
+                way2 = dp[index1-1][index2-1]    # Use this match
+                dp[index1][index2] = way1 + way2
+            else:
+                # Characters don't match: skip current character in s1
+                dp[index1][index2] = dp[index1-1][index2]
+    
+    return dp[n1][n2]
+```
+
+#### Tabulation Example
+
+For `s1 = "aba"` and `s2 = "ab"`:
+
+|     | ε | a | b |
+|-----|---|---|---|
+| **ε** | 1 | 0 | 0 |
+| **a** | 1 | 1 | 0 |
+| **b** | 1 | 1 | 1 |
+| **a** | 1 | 2 | 1 |
+
+**Step-by-step filling:**
+- `dp[*][0]` = 1 (empty `s2`)
+- `dp[0][*]` = 0 (empty `s1`, except `dp[0][0] = 1`)
+- `dp[1][1]`: `s1[0]='a'` == `s2[0]='a'` → `dp[0][1] + dp[0][0] = 0 + 1 = 1`
+- `dp[1][2]`: `s1[0]='a'` != `s2[1]='b'` → `dp[0][2] = 0`
+- `dp[2][1]`: `s1[1]='b'` != `s2[0]='a'` → `dp[1][1] = 1`
+- `dp[2][2]`: `s1[1]='b'` == `s2[1]='b'` → `dp[1][2] + dp[1][1] = 0 + 1 = 1`
+- `dp[3][1]`: `s1[2]='a'` == `s2[0]='a'` → `dp[2][1] + dp[2][0] = 1 + 1 = 2`
+- `dp[3][2]`: `s1[2]='a'` != `s2[1]='b'` → `dp[2][2] = 1`
+
+**Result:** `dp[3][2] = 1`
+
+---
+
+### 4. Space Optimized (Bottom-Up DP)
+
+**Conversion from Tabulation:**
+1. Observe that we only need the previous row (`dp[index1-1]`) to compute the current row
+2. Use two 1D arrays instead of a 2D array
+3. `dp_prev` stores the previous row
+4. `dp_curr` stores the current row being computed
+5. After each row, copy `dp_curr` to `dp_prev`
+
+```python
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    # Use two arrays instead of 2D table
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    
+    # Initialize base cases
+    for index2 in range(n2+1):
+        dp_prev[index2] = 0
+    dp_prev[0] = 1  # Empty s2 can be formed in one way
+    dp_curr[0] = 1
+    
+    # Fill row by row
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                way1 = dp_prev[index2]       # Don't use this match
+                way2 = dp_prev[index2-1]     # Use this match
+                dp_curr[index2] = way1 + way2
+            else:
+                dp_curr[index2] = dp_prev[index2]
+        # Move current row to previous for next iteration
+        dp_prev = dp_curr.copy()
+    
+    return dp_prev[n2]
+```
+
+---
+
+## Detailed Example Walkthrough
+
+Let's trace through `s1 = "babgbag"` and `s2 = "bag"`:
+
+### DP Table Construction:
+
+|     | ε | b | a | g |
+|-----|---|---|---|---|
+| **ε** | 1 | 0 | 0 | 0 |
+| **b** | 1 | 1 | 0 | 0 |
+| **a** | 1 | 1 | 1 | 0 |
+| **b** | 1 | 2 | 1 | 0 |
+| **g** | 1 | 2 | 1 | 1 |
+| **b** | 1 | 3 | 1 | 1 |
+| **a** | 1 | 3 | 4 | 1 |
+| **g** | 1 | 3 | 4 | 5 |
+
+**Key computations:**
+1. `dp[1][1]`: 'b'=='b' → `0 + 1 = 1`
+2. `dp[2][2]`: 'a'=='a' → `1 + 0 = 1`
+3. `dp[3][1]`: 'b'=='b' → `1 + 1 = 2`
+4. `dp[4][3]`: 'g'=='g' → `0 + 1 = 1`
+5. `dp[5][1]`: 'b'=='b' → `2 + 1 = 3`
+6. `dp[6][2]`: 'a'=='a' → `1 + 3 = 4`
+7. `dp[7][3]`: 'g'=='g' → `1 + 4 = 5` ✓
+
+**Result:** `5` distinct ways
+
+**The 5 subsequences:**
+1. `b[0]a[1]g[3]` → "bag"
+2. `b[0]a[1]g[6]` → "bag"
+3. `b[2]a[1]g[3]` → "bag"
+4. `b[2]a[5]g[6]` → "bag"
+5. `b[4]a[5]g[6]` → "bag"
+
+---
+
+## Why Add Both Ways?
+
+When characters match, we add both possibilities because:
+
+1. **Way 1** (`f(index1-1, index2)`): We might want to skip this match and use a different occurrence of the same character later in `s1`. This accounts for multiple occurrences.
+
+2. **Way 2** (`f(index1-1, index2-1)`): We use this match and look for the remaining characters.
+
+**Example:** For `s1 = "aba"` and `s2 = "a"`:
+- Both `s1[0]` and `s1[2]` are 'a'
+- If we only took one way, we'd miss one of the valid subsequences
+- By adding both, we count all possible ways
+
+---
+
+## Complete Code
+
+```python
+def solve(s1, s2, index1, index2):
+    if index2 < 0:
+        return 1
+    if index1 < 0:
+        return 0
+    if s1[index1] == s2[index2]:
+        way1 = solve(s1, s2, index1-1, index2)
+        way2 = solve(s1, s2, index1-1, index2-1)
+        return way1 + way2
+    else:
+        return solve(s1, s2, index1-1, index2)
+
+def solve_memo(s1, s2, index1, index2, memo):
+    if index2 < 0:
+        return 1
+    if index1 < 0:
+        return 0
+    if memo[index1][index2] != None:
+        return memo[index1][index2]
+    if s1[index1] == s2[index2]:
+        way1 = solve_memo(s1, s2, index1-1, index2, memo)
+        way2 = solve_memo(s1, s2, index1-1, index2-1, memo)
+        memo[index1][index2] = way1 + way2
+    else:
+        memo[index1][index2] = solve_memo(s1, s2, index1-1, index2, memo)
+    return memo[index1][index2]
+
+def tabulation(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp = [[None]*(n2+1) for _ in range(n1+1)]
+    for index1 in range(n1+1):
+        dp[index1][0] = 1
+    for index2 in range(n2+1):
+        dp[0][index2] = 0
+    dp[0][0] = 1
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                way1 = dp[index1-1][index2]
+                way2 = dp[index1-1][index2-1]
+                dp[index1][index2] = way1 + way2
+            else:
+                dp[index1][index2] = dp[index1-1][index2]
+    return dp[n1][n2]
+
+def optimized(s1, s2):
+    n1, n2 = len(s1), len(s2)
+    dp_curr = [None]*(n2+1)
+    dp_prev = [None]*(n2+1)
+    for index2 in range(n2+1):
+        dp_prev[index2] = 0
+    dp_prev[0] = 1
+    dp_curr[0] = 1
+    for index1 in range(1, n1+1):
+        for index2 in range(1, n2+1):
+            if s1[index1-1] == s2[index2-1]:
+                way1 = dp_prev[index2]
+                way2 = dp_prev[index2-1]
+                dp_curr[index2] = way1 + way2
+            else:
+                dp_curr[index2] = dp_prev[index2]
+        dp_prev = dp_curr.copy()
+    return dp_prev[n2]
+
+# Test
+s1, s2 = "babgbag", "bag"
+n1, n2 = len(s1), len(s2)
+print(solve(s1, s2, n1-1, n2-1))
+memo = [[None]*(n2) for _ in range(n1)]
+print(solve_memo(s1, s2, n1-1, n2-1, memo))
+print(tabulation(s1, s2))
+print(optimized(s1, s2))
+```
+
+---
+
+## Complexity Analysis
+
+### Time Complexity
+
+| Approach | Time Complexity | Explanation |
+|----------|----------------|-------------|
+| **Recursion** | O(2^(n1+n2)) | Each call can branch into two recursive calls |
+| **Memoization** | O(n1 × n2) | Each subproblem is computed once |
+| **Tabulation** | O(n1 × n2) | Two nested loops iterate through all combinations |
+| **Space Optimized** | O(n1 × n2) | Time complexity remains the same |
+
+### Space Complexity
+
+| Approach | Space Complexity | Explanation |
+|----------|-----------------|-------------|
+| **Recursion** | O(n1 + n2) | Recursion stack depth |
+| **Memoization** | O(n1 × n2) + O(n1 + n2) | 2D memo table + recursion stack |
+| **Tabulation** | O(n1 × n2) | 2D DP table |
+| **Space Optimized** | O(n2) | Two 1D arrays of size (n2+1) |
+
+---
