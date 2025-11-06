@@ -1599,3 +1599,217 @@ O(log n) — We halve the search space in each iteration.
 O(1) — We only use a constant amount of extra space for variables.
 
 ---
+
+# Single Element in Sorted Array
+
+## Problem Description
+
+Given an array `nums` sorted in non-decreasing order. Every number in the array except one appears twice. Find the single number in the array.
+
+**Notes on constraints:** The array is sorted and every element appears exactly twice except one. This property allows us to use binary search by checking index parity to achieve O(log n) time complexity.
+
+## Sample Test Cases With Explanation
+
+**Test Case 1:**
+```
+Input: nums = [1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6]
+Output: 4
+```
+**Explanation:** Only the number 4 appears once in the array. All other numbers appear twice.
+
+**Test Case 2:**
+```
+Input: nums = [1, 1, 3, 5, 5]
+Output: 3
+```
+**Explanation:** Only the number 3 appears once in the array.
+
+**Test Case 3:**
+```
+Input: nums = [1, 2, 2, 3, 3]
+Output: 1
+```
+**Explanation:** The single element 1 appears at the beginning of the array.
+
+## Approaches
+
+### Approach 1: Hash Map (Frequency Counting)
+
+**Summary:** Use a hash map to count the frequency of each element and return the element with count 1.
+
+**Intuition**
+
+We can count the occurrences of each element using a hash map. The element that appears only once will have a count of 1 in the hash map.
+
+**Approach Steps**
+
+1. Initialize an empty hash map `count` to store element frequencies
+2. Iterate through the array:
+   - If the element exists in the hash map, increment its count
+   - Otherwise, add it to the hash map with count 1
+3. Iterate through the hash map and find the element with count 1
+4. Return that element
+
+**Example**
+
+Consider `nums = [1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6]`:
+- After counting: {1: 2, 2: 2, 3: 2, 4: 1, 5: 2, 6: 2}
+- Element 4 has count 1
+- Return 4
+
+**Code**
+
+```python
+def solve(n, arr):
+    # Initialize frequency map
+    count = {}
+    # Count frequency of each element
+    for index in range(n):
+        if(arr[index] in count):
+            count[arr[index]] += 1
+        else:
+            count[arr[index]] = 1
+    # Find element with frequency 1
+    for element, cnt in count.items():
+        if(cnt == 1):
+            return element
+    return -1
+```
+
+**Time Complexity**
+
+O(n) — We traverse the array twice: once to build the hash map and once to find the single element.
+
+**Space Complexity**
+
+O(n) — We store up to n/2 + 1 unique elements in the hash map.
+
+### Approach 2: XOR Operation
+
+**Summary:** Use XOR properties to cancel out pairs and find the single element.
+
+**Intuition**
+
+XOR has a useful property: `a ^ a = 0` and `a ^ 0 = a`. When we XOR all elements together, the pairs will cancel out (become 0), and we'll be left with only the single element.
+
+**Approach Steps**
+
+1. Initialize `xor = arr[0]`
+2. Iterate through the array from index 1 to n-1
+3. XOR each element with the running `xor` value
+4. Return the final `xor` value (which will be the single element)
+
+**Example**
+
+Consider `nums = [1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6]`:
+- xor = 1
+- xor = 1 ^ 1 = 0
+- xor = 0 ^ 2 = 2
+- xor = 2 ^ 2 = 0
+- xor = 0 ^ 3 = 3
+- xor = 3 ^ 3 = 0
+- xor = 0 ^ 4 = 4
+- xor = 4 ^ 5 = 1 (in binary)
+- xor = 1 ^ 5 = 4
+- xor = 4 ^ 6 = 2 (in binary)
+- xor = 2 ^ 6 = 4
+- Return 4
+
+**Code**
+
+```python
+def solve_2(n, arr):
+    # Initialize XOR with first element
+    xor = arr[0]
+    # XOR all remaining elements
+    for index in range(1, n):
+        xor ^= arr[index]
+    return xor
+```
+
+**Time Complexity**
+
+O(n) — We traverse the array once and perform XOR operations.
+
+**Space Complexity**
+
+O(1) — We only use a constant amount of extra space.
+
+### Approach 3: Binary Search on Index Parity
+
+**Summary:** Use binary search by checking if pairs are on the correct side based on index parity.
+
+**Intuition**
+
+Before the single element, every first occurrence of a pair is at an even index (0, 2, 4...) and every second occurrence is at an odd index (1, 3, 5...). After the single element, this pattern shifts: first occurrences move to odd indices and second occurrences to even indices. We can use this property with binary search to find the single element.
+
+**Approach Steps**
+
+1. Handle edge cases:
+   - If array has only 1 element, return it
+   - If first element is different from second, return first
+   - If last element is different from second-to-last, return last
+2. Initialize `low = 1` and `high = n-2` (exclude edges already checked)
+3. While `low <= high`:
+   - Calculate `mid = (low + high) // 2`
+   - If `arr[mid]` is different from both neighbors, return `arr[mid]`
+   - Check if we're on the left side of the single element:
+     - If `mid` is even and `arr[mid] == arr[mid+1]`, OR
+     - If `mid` is odd and `arr[mid] == arr[mid-1]`
+     - Then search right (`low = mid + 1`)
+   - Otherwise, we're on the right side, search left (`high = mid - 1`)
+4. Return -1 if not found
+
+**Example**
+
+Consider `nums = [1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6]`:
+- Edge checks: arr[0]=1 == arr[1]=1, arr[10]=6 == arr[9]=6, continue
+- Iteration 1: low=1, high=9, mid=5
+  - arr[5]=3 == arr[4]=3, arr[5] == arr[6]=4? No
+  - mid=5 (odd), arr[5]==arr[4]? Yes → left side
+  - Search right (low=6)
+- Iteration 2: low=6, high=9, mid=7
+  - arr[7]=5 != arr[6]=4, arr[7] != arr[8]=5? No, arr[7]==arr[8]
+  - mid=7 (odd), arr[7]==arr[6]? No → right side
+  - Search left (high=6)
+- Iteration 3: low=6, high=6, mid=6
+  - arr[6]=4 != arr[5]=3, arr[6] != arr[7]=5
+  - Return arr[6] = 4
+
+**Code**
+
+```python
+def optimized(n, arr):
+    # Edge case: single element array
+    if(n == 1):
+        return arr[0]
+    # Check if first element is the single one
+    if(arr[0] != arr[1]):
+        return arr[0]
+    # Check if last element is the single one
+    if(arr[n-1] != arr[n-2]):
+        return arr[n-1]
+    # Binary search in the middle section
+    low, high = 1, n-2
+    while low <= high:
+        mid = (low + high) // 2
+        # Check if mid is the single element
+        if(arr[mid] != arr[mid-1] and arr[mid] != arr[mid+1]):
+            return arr[mid]
+        else:
+            # Check if we're on left side (before single element)
+            if((mid % 2 == 0 and arr[mid] == arr[mid+1]) or (mid % 2 == 1 and arr[mid] == arr[mid-1])):
+                low = mid + 1
+            # We're on right side (after single element)
+            else:
+                high = mid - 1
+    return -1
+```
+
+**Time Complexity**
+
+O(log n) — We use binary search to halve the search space in each iteration.
+
+**Space Complexity**
+
+O(1) — We only use a constant amount of extra space for variables.
