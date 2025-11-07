@@ -851,3 +851,209 @@ O(n × log(max(nums))) — Binary search takes O(log(max(nums))) iterations, and
 O(1) — We only use a constant amount of extra space for variables.
 
 ---
+
+# Kth Missing Positive Number
+
+## Problem Description
+
+You are given a strictly increasing array `vec` and a positive integer `k`. Your task is to find the `kth` positive integer missing from `vec`.
+
+**Notes on constraints:**
+
+* Since the array is strictly increasing and can be large, a brute-force approach may be too slow for large `n`.
+* An optimized solution should aim for **O(log n)** or **O(n)** time complexity.
+
+---
+
+## Sample Test Cases With Explanation
+
+### Test Case 1
+
+**Input:**
+
+```python
+vec = [4, 7, 9, 10]
+k = 1
+```
+
+**Output:**
+
+```python
+1
+```
+
+**Explanation:**
+The missing numbers are `[1, 2, 3, 5, 6, 8, 11, 12, ...]`.
+The 1st missing number is `1`.
+
+---
+
+### Test Case 2
+
+**Input:**
+
+```python
+vec = [4, 7, 9, 10]
+k = 4
+```
+
+**Output:**
+
+```python
+5
+```
+
+**Explanation:**
+The missing numbers are `[1, 2, 3, 5, 6, 8, 11, 12, ...]`.
+The 4th missing number is `5`.
+
+---
+
+## Approaches
+
+### Approach 1: Linear Scan (Brute Force)
+
+**Summary:** Check for missing numbers sequentially until the `kth` missing one is found.
+
+---
+
+**Intuition**
+We start with the assumption that the first missing number is `k`.
+Each time we encounter a number in the array that’s less than or equal to our current guess (`missing`), it means one fewer missing number before that element — so we increase our missing counter.
+
+---
+
+**Approach Steps**
+
+1. Initialize `missing` with `k`.
+2. Traverse each element in the array:
+
+   * If the element `arr[i]` is less than or equal to the current `missing`, increment `missing` by 1.
+3. After the loop ends, `missing` will represent the `kth` missing number.
+4. Return `missing`.
+
+---
+
+**Example**
+Let `arr = [4, 7, 9, 10]`, `k = 4`.
+
+* Initially, `missing = 4`.
+* `arr[0] = 4 <= 4`, so increment `missing = 5`.
+* `arr[1] = 7 > 5`, no change.
+* End of loop → result = `5`.
+
+Hence, the 4th missing number is `5`.
+
+---
+
+**Code**
+
+```python
+def solve(n, arr, k):
+    missing = k  # initial assumption for kth missing number
+    for i in range(n):
+        # if array element is less than or equal to the current missing number
+        if arr[i] <= missing:
+            missing += 1  # increment missing count
+    return missing
+```
+
+---
+
+**Time Complexity**
+`O(n)` — We traverse the array once.
+
+**Space Complexity**
+`O(1)` — Only a few variables are used.
+
+---
+
+### Approach 2: Binary Search (Optimized)
+
+**Summary:** Use binary search to find the point where the number of missing integers becomes greater than or equal to `k`.
+
+---
+
+**Intuition**
+For each element `arr[mid]`, we can calculate how many numbers are missing up to that point using:
+
+```
+missing_count = arr[mid] - (mid + 1)
+```
+
+* If `missing_count` is less than or equal to `k`, move right.
+* Otherwise, move left.
+  At the end, compute the result based on the last valid position.
+
+---
+
+**Approach Steps**
+
+1. Initialize `low = 0`, `high = n - 1`, and `ans = -1`.
+2. While `low <= high`:
+
+   * Compute `mid = (low + high) // 2`.
+   * Calculate `missingCnt = arr[mid] - (mid + 1)`.
+   * If `missingCnt <= k`, the `kth` missing number is beyond `mid`. Update `ans` and move right.
+   * Otherwise, move left.
+3. Return `ans` as the computed `kth` missing number.
+
+---
+
+**Example**
+Let `arr = [4, 7, 9, 10]`, `k = 4`.
+
+1. **mid = 1** → `arr[mid] = 7`, `missingCnt = 7 - (1+1) = 5`.
+   Since `5 > 4`, move left (`high = mid - 1`).
+2. **mid = 0** → `arr[mid] = 4`, `missingCnt = 4 - (0+1) = 3`.
+   Since `3 <= 4`, move right (`low = mid + 1`, `ans = 4 + (4 - 3) = 5`).
+3. Exit loop → return `ans = 5`.
+
+Result = `5`.
+
+---
+
+**Code**
+
+```python
+def optimized(n, arr, k):
+    low, high = 0, n - 1
+    ans = -1
+    while low <= high:
+        mid = (low + high) // 2
+        # calculate number of missing elements up to index mid
+        missingCnt = arr[mid] - (mid + 1)
+        
+        # if missing count so far is less than or equal to k,
+        # kth missing number lies after this index
+        if missingCnt <= k:
+            ans = arr[mid] + (k - missingCnt)
+            low = mid + 1
+        else:
+            high = mid - 1  # move search space to left
+    return ans
+```
+
+---
+
+**Time Complexity**
+`O(log n)` — Binary search over the array.
+
+**Space Complexity**
+`O(1)` — Constant auxiliary space.
+
+---
+
+**Example Run**
+
+```python
+arr = [1, 2, 3, 4]
+n = len(arr)
+k = 2
+print(optimized(n, arr, k))  # Output: 6
+```
+
+**Explanation:**
+No numbers are missing up to 4. The next missing numbers are `[5, 6, 7, ...]`, so the 2nd missing is `6`.
+
+---
