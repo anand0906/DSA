@@ -7,7 +7,8 @@
 3. [Find the Smallest Divisor](#3-find-the-smallest-divisor)
 4. [Koko Eating Bananas](#4-koko-eating-bananas)
 5. [Minimum Days to Make M Bouquets](#5-minimum-days-to-make-m-bouquets)
-6. [Comparison Table](#comparison-table)
+6. [Kth Missing Positive Number](#6-kth-missing-positive-number)
+7. [Comparison Table](#comparison-table)
 
 ---
 
@@ -377,6 +378,72 @@ def optimized(n, arr, m, k):
 
 ---
 
+## 6. Kth Missing Positive Number
+
+### Problem Description
+You are given a strictly increasing array vec and a positive integer k. Find the kth positive integer missing from vec.
+
+### Sample Test Cases
+```
+Input: vec = [4, 7, 9, 10], k = 1
+Output: 1
+Explanation: Missing numbers are 1, 2, 3, 5, 6, 8, 11, 12... The 1st missing is 1.
+
+Input: vec = [4, 7, 9, 10], k = 4
+Output: 5
+Explanation: Missing numbers are 1, 2, 3, 5, 6, 8, 11, 12... The 4th missing is 5.
+```
+
+### Approach 1: Linear Search
+
+**Intuition:** Iterate through the array and adjust the missing count. If current element is less than or equal to our current missing number target, increment the target to account for this existing number.
+
+**Code:**
+```python
+def solve(n, arr, k):
+    missing = k  # Start with kth number
+    # For each element in array
+    for i in range(n):
+        # If array element is <= current missing target
+        # it means this number exists, so increment target
+        if (arr[i] <= missing):
+            missing += 1
+    return missing
+```
+
+**Time Complexity:** O(n)  
+**Space Complexity:** O(1)
+
+### Approach 2: Binary Search (Optimized)
+
+**Intuition:** At any index i, the count of missing numbers before arr[i] is arr[i] - (i+1). Use binary search to find the position where missing count changes from <=k to >k. The answer is arr[mid] + (k - missingCnt).
+
+**Code:**
+```python
+def optimized(n, arr, k):
+    low, high = 0, n - 1
+    ans = -1
+    # Binary search on array indices
+    while low <= high:
+        mid = (low + high) // 2
+        # Count of missing numbers before arr[mid]
+        missingCnt = arr[mid] - (mid + 1)
+        # If missing count <= k, answer is in right half
+        if (missingCnt <= k):
+            # Calculate potential answer
+            ans = arr[mid] + (k - missingCnt)
+            low = mid + 1
+        # Otherwise, search left half
+        else:
+            high = mid - 1
+    return ans
+```
+
+**Time Complexity:** O(log n)  
+**Space Complexity:** O(1)
+
+---
+
 ## Comparison Table
 
 | Problem | Brute Force | Optimized | Search Space | Key Concept |
@@ -386,5 +453,6 @@ def optimized(n, arr, m, k):
 | Smallest Divisor | O(max * n) | O(n * log max) | [1, max(nums)] | Minimize divisor for ceiling sum ≤ limit |
 | Koko Bananas | O(max * n) | O(n * log max) | [1, max(nums)] | Minimize eating speed to finish in h hours |
 | M Bouquets | O(max * n) | O(n * log max) | [1, max(nums)] | Minimize days to make m bouquets |
+| Kth Missing | O(n) | O(log n) | [0, n-1] | Find kth missing using missing count formula |
 
 **Pattern:** All problems use binary search on answer space to minimize/find a value that satisfies a monotonic condition.
