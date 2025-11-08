@@ -1,1 +1,202 @@
+# Aggressive Cows
 
+## Problem Description
+
+Given an array `nums` of size `n`, which denotes the positions of stalls, and an integer `k`, which denotes the number of aggressive cows, assign stalls to `k` cows such that the minimum distance between any two cows is the maximum possible. Find the maximum possible minimum distance.
+
+**Notes on constraints:**
+- The positions are not necessarily sorted initially
+- We need to place exactly `k` cows in `n` stalls
+- Goal: Maximize the minimum distance between any two cows
+
+## Sample Test Cases With Explanation
+
+**Test Case 1:**
+```
+Input: n = 6, k = 4, nums = [0, 3, 4, 7, 10, 9]
+Output: 3
+```
+**Explanation:** The maximum possible minimum distance between any two cows will be 3 when 4 cows are placed at positions [0, 3, 7, 10]. Here the distances between cows are 3, 4, and 3 respectively. We cannot make the minimum distance greater than 3 in any way.
+
+**Test Case 2:**
+```
+Input: n = 5, k = 2, nums = [4, 2, 1, 3, 6]
+Output: 5
+```
+**Explanation:** The maximum possible minimum distance between any two cows will be 5 when 2 cows are placed at positions [1, 6]. This gives us the maximum separation possible between the two cows.
+
+## Approaches
+
+### Approach 1: Linear Search (Brute Force)
+
+**Summary:** Try every possible minimum distance from 0 to maximum range and find the largest distance where we can place all k cows.
+
+**Intuition**
+
+The key insight is that if we can place `k` cows with a minimum distance of `d`, then we can also place them with any smaller distance. This means we need to find the largest distance `d` such that placing `k` cows is still possible. We sort the stalls first, then try each possible distance starting from 0 and check if we can place all cows with that minimum distance.
+
+**Approach Steps**
+
+1. Sort the array of stall positions
+2. Calculate the maximum possible distance (last position - first position)
+3. For each distance from 0 to maximum distance:
+   - Check if we can place `k` cows with at least this distance between them
+   - Use a greedy approach: place the first cow at the first stall, then place each subsequent cow at the first available stall that is at least `dist` away from the previous cow
+   - If we can place all `k` cows, update the answer
+   - If we cannot place `k` cows, break (no larger distance will work)
+4. Return the maximum distance found
+
+**Example**
+
+Consider `nums = [0, 3, 4, 7, 10, 9]` and `k = 4`:
+
+1. After sorting: `[0, 3, 4, 7, 9, 10]`
+2. Maximum range = 10 - 0 = 10
+3. Try distance = 0: Place at [0, 3, 4, 7] → Can place 4 cows ✓
+4. Try distance = 1: Place at [0, 3, 4, 7] → Can place 4 cows ✓
+5. Try distance = 2: Place at [0, 3, 7, 9] → Can place 4 cows ✓
+6. Try distance = 3: Place at [0, 3, 7, 10] → Can place 4 cows ✓
+7. Try distance = 4: Place at [0, 4, 9] → Can only place 3 cows ✗
+8. Answer = 3
+
+**Code**
+
+```python
+def isPossible(n, arr, k, dist):
+    # Place first cow at first stall
+    prev = arr[0]
+    cnt = 1
+    
+    # Try to place remaining cows
+    for i in range(1, n):
+        # If current stall is at least 'dist' away from previous cow
+        if(arr[i] - prev >= dist):
+            cnt += 1
+            prev = arr[i]
+        # If we've placed all k cows successfully
+        if(cnt >= k):
+            return True
+    return False
+
+def solve(n, arr, k):
+    # Sort the stall positions
+    arr.sort()
+    
+    # Calculate maximum possible distance
+    limit = arr[-1] - arr[0]
+    ans = limit
+    
+    # Try each possible distance from 0 to limit
+    for dist in range(limit + 1):
+        if(isPossible(n, arr, k, dist)):
+            # Update answer if this distance is possible
+            ans = dist
+        else:
+            # If this distance doesn't work, larger distances won't work either
+            break
+    return ans
+           
+    
+arr = [0, 3, 4, 7, 10, 9]
+n = len(arr)
+k = 4
+print(solve(n, arr, k))
+```
+
+**Time Complexity**
+
+O(n log n + n × max_distance) — Sorting takes O(n log n), and we iterate through all possible distances (up to max_distance), checking each one in O(n) time. In the worst case, max_distance can be very large.
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+### Approach 2: Binary Search (Optimized)
+
+**Summary:** Use binary search on the answer space (possible minimum distances) to efficiently find the maximum distance.
+
+**Intuition**
+
+Instead of checking every possible distance linearly, we can use binary search on the answer. The key observation is that if we can place `k` cows with minimum distance `d`, then we can also place them with any smaller distance. This creates a search space where all distances ≤ answer are valid, and all distances > answer are invalid. We binary search on this space to find the maximum valid distance.
+
+**Approach Steps**
+
+1. Sort the array of stall positions
+2. Set the search range: `low = 0`, `high = (last position - first position)`
+3. While `low <= high`:
+   - Calculate `mid = (low + high) / 2`
+   - Check if we can place `k` cows with minimum distance `mid`
+   - If yes: update answer to `mid` and search for a larger distance (set `low = mid + 1`)
+   - If no: search for a smaller distance (set `high = mid - 1`)
+4. Return the maximum distance found
+
+**Example**
+
+Consider `nums = [0, 3, 4, 7, 10, 9]` and `k = 4`:
+
+1. After sorting: `[0, 3, 4, 7, 9, 10]`
+2. Initial: `low = 0`, `high = 10`
+3. Iteration 1: `mid = 5` → Can't place 4 cows with distance 5 → `high = 4`
+4. Iteration 2: `mid = 2` → Can place 4 cows → `ans = 2`, `low = 3`
+5. Iteration 3: `mid = 3` → Can place 4 cows → `ans = 3`, `low = 4`
+6. Iteration 4: `mid = 4` → Can't place 4 cows → `high = 3`
+7. Loop ends, answer = 3
+
+**Code**
+
+```python
+def isPossible(n, arr, k, dist):
+    # Place first cow at first stall
+    prev = arr[0]
+    cnt = 1
+    
+    # Try to place remaining cows
+    for i in range(1, n):
+        # If current stall is at least 'dist' away from previous cow
+        if(arr[i] - prev >= dist):
+            cnt += 1
+            prev = arr[i]
+        # If we've placed all k cows successfully
+        if(cnt >= k):
+            return True
+    return False
+
+def optimized(n, arr, k):
+    # Sort the stall positions
+    arr.sort()
+    
+    # Calculate maximum possible distance
+    limit = arr[-1] - arr[0]
+    ans = limit
+    
+    # Binary search on the answer
+    low, high = 0, limit
+    while low <= high:
+        mid = (low + high) // 2
+        
+        # If we can place k cows with distance mid
+        if(isPossible(n, arr, k, mid)):
+            ans = mid
+            # Try for a larger distance
+            low = mid + 1
+        else:
+            # Try for a smaller distance
+            high = mid - 1
+    return ans
+           
+    
+arr = [0, 3, 4, 7, 10, 9]
+n = len(arr)
+k = 4
+print(optimized(n, arr, k))
+```
+
+**Time Complexity**
+
+O(n log n + n × log(max_distance)) — Sorting takes O(n log n), and binary search takes O(log(max_distance)) iterations, each requiring O(n) time to check if placement is possible.
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
