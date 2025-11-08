@@ -523,3 +523,399 @@ O(n × log(sum - max)) — Binary search takes O(log(sum - max)) iterations, and
 O(1) — Only using a constant amount of extra space (excluding the input array).
 
 ---
+
+# Book Allocation Problem
+
+## Problem Description
+
+Given an array `nums` of `n` integers, where `nums[i]` represents the number of pages in the i-th book, and an integer `m` representing the number of students, allocate all the books to the students so that:
+- Each student gets at least one book
+- Each book is allocated to only one student
+- The allocation is contiguous (consecutive books)
+
+Allocate the books to `m` students in such a way that the maximum number of pages assigned to a student is minimized. If the allocation of books is not possible, return `-1`.
+
+**Notes on constraints:**
+- If `m > n` (more students than books), allocation is impossible, return `-1`
+- Books must be allocated in contiguous manner (no skipping books)
+- We need to balance the page distribution to minimize the maximum pages any student receives
+
+---
+
+## Sample Test Cases With Explanation
+
+### Test Case 1
+```
+Input: nums = [12, 34, 67, 90], m = 2
+Output: 113
+```
+**Explanation:** The allocation of books will be [12, 34, 67] | [90]. One student will get the first 3 books (total pages = 113) and the other will get the last one (total pages = 90). The maximum pages assigned to any student is 113, which is the minimum possible.
+
+### Test Case 2
+```
+Input: nums = [25, 46, 28, 49, 24], m = 4
+Output: 71
+```
+**Explanation:** The allocation of books will be [25, 46] | [28] | [49] | [24]. The maximum pages assigned to any student is 71 (first student getting books with 25 and 46 pages), which is minimized.
+
+---
+
+## Approaches
+
+### Approach 1: Linear Search
+
+**Summary:** Try every possible maximum page count from the largest book to the total pages, and find the smallest value that allows allocating books to m or fewer students.
+
+---
+
+**Intuition**
+
+The answer lies between:
+- `max(nums)` — The minimum possible maximum (when each student gets at most one book, with the largest book determining the minimum)
+- `sum(nums)` — The maximum possible maximum (when one student gets all books)
+
+For any given maximum page limit, we can greedily determine how many students are needed by allocating books consecutively until adding the next book would exceed the limit.
+
+We use `cnt <= m` instead of `cnt == m` because:
+- If we can allocate books to fewer students, we can always distribute them among more students without increasing the maximum
+- For example, if we can allocate to 2 students and need 3, we can split one student's allocation further
+
+Since we want to minimize the maximum pages, we need to balance the page distribution by checking every possibility from smallest to largest until we find the first valid answer.
+
+---
+
+**Approach Steps**
+
+1. Check if allocation is possible:
+   - If `m > n`, return `-1` (more students than books)
+
+2. Set the search range:
+   - `low = max(nums)` (minimum possible maximum pages)
+   - `high = sum(nums)` (maximum possible maximum pages)
+
+3. For each possible maximum page count from `low` to `high`:
+   - Count how many students are needed if no student gets more than this maximum
+   - Use a greedy approach: keep allocating books to the current student until adding the next book would exceed the maximum
+   - If the count of students is ≤ m, this is a valid answer
+   - Return the first valid maximum page count found (this will be the minimum)
+
+4. Return the answer
+
+---
+
+**Example**
+
+Consider `nums = [12, 34, 67, 90]` and `m = 2`:
+
+**Step 1:** Check feasibility
+- `m = 2`, `n = 4` → 2 ≤ 4, allocation is possible ✓
+
+**Step 2:** Initialize search range
+- `low = 90` (max element)
+- `high = 203` (sum of all pages)
+
+**Step 3:** Try maxPages = 90
+- Student 1: [12, 34] (sum = 46), cannot add 67 (would make sum = 113 > 90)
+- Student 2: [67] (sum = 67), cannot add 90 (would make sum = 157 > 90)
+- Student 3: [90] (sum = 90)
+- Result: 3 students needed
+- 3 > 2, so this doesn't work ✗
+
+**Step 4:** Try maxPages = 91, 92, ... (skipping for brevity)
+
+**Step 5:** Try maxPages = 113
+- Student 1: [12, 34, 67] (sum = 113), cannot add 90 (would make sum = 203 > 113)
+- Student 2: [90] (sum = 90)
+- Result: 2 students needed
+- 2 ≤ 2, so this works ✓
+
+**Answer = 113**
+
+---
+
+**Code**
+
+```python
+def cntPartions(n, arr, maxSum):
+    # Track current student's page count
+    currentSum = 0
+    # Count of students needed
+    cnt = 0
+    
+    for i in range(n):
+        # If we can allocate current book to current student
+        if(currentSum + arr[i] <= maxSum):
+            currentSum = currentSum + arr[i]
+        else:
+            # Allocate to next student
+            cnt += 1
+            currentSum = arr[i]
+    
+    # Count the last student if they have books
+    if(currentSum <= maxSum):
+        cnt += 1
+    return cnt
+    
+def solve(n, arr, k):
+    # If more students than books, allocation is impossible
+    if(k > n):
+        return -1
+    
+    # Minimum possible max pages is the largest book
+    # Maximum possible max pages is the sum of all pages
+    low, high = max(arr), sum(arr)
+    ans = -1
+    
+    # Try every possible maximum page count
+    for maxSum in range(low, high + 1):
+        # Count students needed with this max page limit
+        cnt = cntPartions(n, arr, maxSum)
+        
+        # We use cnt <= k instead of cnt == k because:
+        # If we can allocate to fewer students, we can always
+        # distribute among more students without increasing the maximum
+        if(cnt <= k):
+            ans = maxSum
+            break
+    return ans
+           
+    
+books = [12, 34, 67, 90]
+n = len(books)
+m = 2
+arr, k = books, m
+print(solve(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(n × (sum - max)) — For each possible maximum page count (which can range from max book to total pages), we count partitions in O(n) time. In the worst case, this range can be large.
+
+---
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
+
+### Approach 2: Binary Search (Optimized)
+
+**Summary:** Use binary search on the answer space (possible maximum page counts) to efficiently find the minimum maximum pages.
+
+---
+
+**Intuition**
+
+Instead of checking every possible maximum page count linearly, we can use binary search on the answer space.
+
+The key observation is that if we can allocate books to `m` or fewer students with maximum pages `p`, then we can also do it with any larger maximum. This creates a monotonic search space:
+- Smaller values might not work (too many students needed)
+- Once we find a working value, all larger values also work
+
+We use `cnt <= m` instead of `cnt == m` because:
+- If we can allocate books to fewer students than `m`, we have "room" to distribute among more students
+- Distributing among more students doesn't increase the maximum pages
+- So it's still a valid solution
+
+Since we want to minimize the maximum pages, we need to balance the page distribution. Binary search helps us systematically find the smallest valid maximum page count.
+
+---
+
+**Approach Steps**
+
+1. Check if allocation is possible:
+   - If `m > n`, return `-1` (more students than books)
+
+2. Set the search range:
+   - `low = max(nums)` (minimum possible maximum pages)
+   - `high = sum(nums)` (maximum possible maximum pages)
+
+3. While `low <= high`:
+   - Calculate `mid = (low + high) / 2`
+   - Count how many students are needed with maximum pages `mid` using greedy allocation
+   - If `count <= m`:
+     - This is a valid solution
+     - Update answer to `mid`
+     - Search for smaller values: set `high = mid - 1`
+   - If `count > m`:
+     - We need a larger maximum page count
+     - Set `low = mid + 1`
+
+4. Return the minimum maximum page count found
+
+---
+
+**Example**
+
+Consider `nums = [12, 34, 67, 90]` and `m = 2`:
+
+**Initial state:**
+- Check: `m = 2`, `n = 4` → Allocation possible ✓
+- `low = 90`, `high = 203`
+
+---
+
+**Iteration 1:**
+- `mid = (90 + 203) / 2 = 146`
+- Count students with maxPages = 146:
+  - Student 1: [12, 34, 67] (sum = 113)
+  - Student 2: [90] (sum = 90)
+  - Total: 2 students
+- 2 ≤ 2 ✓ → Valid solution
+- Update: `ans = 146`, `high = 145`
+
+---
+
+**Iteration 2:**
+- `mid = (90 + 145) / 2 = 117`
+- Count students with maxPages = 117:
+  - Student 1: [12, 34, 67] (sum = 113)
+  - Student 2: [90] (sum = 90)
+  - Total: 2 students
+- 2 ≤ 2 ✓ → Valid solution
+- Update: `ans = 117`, `high = 116`
+
+---
+
+**Iteration 3:**
+- `mid = (90 + 116) / 2 = 103`
+- Count students with maxPages = 103:
+  - Student 1: [12, 34] (sum = 46), cannot add 67 (would exceed 103)
+  - Student 2: [67] (sum = 67), cannot add 90 (would exceed 103)
+  - Student 3: [90] (sum = 90)
+  - Total: 3 students
+- 3 > 2 ✗ → Not valid
+- Update: `low = 104`
+
+---
+
+**Iteration 4:**
+- `mid = (104 + 116) / 2 = 110`
+- Count students with maxPages = 110:
+  - Student 1: [12, 34] (sum = 46), cannot add 67 (would exceed 110)
+  - Student 2: [67] (sum = 67), cannot add 90 (would exceed 110)
+  - Student 3: [90] (sum = 90)
+  - Total: 3 students
+- 3 > 2 ✗ → Not valid
+- Update: `low = 111`
+
+---
+
+**Iteration 5:**
+- `mid = (111 + 116) / 2 = 113`
+- Count students with maxPages = 113:
+  - Student 1: [12, 34, 67] (sum = 113)
+  - Student 2: [90] (sum = 90)
+  - Total: 2 students
+- 2 ≤ 2 ✓ → Valid solution
+- Update: `ans = 113`, `high = 112`
+
+---
+
+**Iteration 6:**
+- `mid = (111 + 112) / 2 = 111`
+- Count students with maxPages = 111:
+  - Student 1: [12, 34] (sum = 46), cannot add 67 (would exceed 111)
+  - Student 2: [67] (sum = 67), cannot add 90 (would exceed 111)
+  - Student 3: [90] (sum = 90)
+  - Total: 3 students
+- 3 > 2 ✗ → Not valid
+- Update: `low = 112`
+
+---
+
+**Iteration 7:**
+- `mid = (112 + 112) / 2 = 112`
+- Count students with maxPages = 112:
+  - Student 1: [12, 34] (sum = 46), cannot add 67 (would exceed 112)
+  - Student 2: [67] (sum = 67), cannot add 90 (would exceed 112)
+  - Student 3: [90] (sum = 90)
+  - Total: 3 students
+- 3 > 2 ✗ → Not valid
+- Update: `low = 113`
+
+---
+
+**Loop terminates** (low > high)
+
+**Answer = 113**
+
+---
+
+**Code**
+
+```python
+def cntPartions(n, arr, maxSum):
+    # Track current student's page count
+    currentSum = 0
+    # Count of students needed
+    cnt = 0
+    
+    for i in range(n):
+        # If we can allocate current book to current student
+        if(currentSum + arr[i] <= maxSum):
+            currentSum = currentSum + arr[i]
+        else:
+            # Allocate to next student
+            cnt += 1
+            currentSum = arr[i]
+    
+    # Count the last student if they have books
+    if(currentSum <= maxSum):
+        cnt += 1
+    return cnt
+
+def optimized(n, arr, k):
+    # If more students than books, allocation is impossible
+    if(k > n):
+        return -1
+    
+    # Minimum possible max pages is the largest book
+    # Maximum possible max pages is the sum of all pages
+    low, high = max(arr), sum(arr)
+    ans = -1
+    
+    # Binary search on the answer
+    while low <= high:
+        mid = (low + high) // 2
+        
+        # Count students needed with this max page limit
+        cnt = cntPartions(n, arr, mid)
+        
+        # We use cnt <= k instead of cnt == k because:
+        # If we can allocate to fewer students, we can always
+        # distribute among more students without increasing the maximum
+        # Since we want minimum max pages, we balance page distribution
+        if(cnt <= k):
+            ans = mid
+            # Try for a smaller maximum page count
+            high = mid - 1
+        else:
+            # Need a larger maximum page count
+            low = mid + 1
+    return ans
+           
+    
+books = [12, 34, 67, 90]
+n = len(books)
+m = 2
+arr, k = books, m
+print(optimized(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(n × log(sum - max)) — Binary search takes O(log(sum - max)) iterations, and each iteration requires O(n) time to count partitions.
+
+---
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
