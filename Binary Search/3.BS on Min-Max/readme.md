@@ -919,3 +919,388 @@ O(n × log(sum - max)) — Binary search takes O(log(sum - max)) iterations, and
 O(1) — Only using a constant amount of extra space (excluding the input array).
 
 ---
+
+# The Painter's Partition Problem-II
+
+## Problem Description
+
+Given an array `arr[]` where each element denotes the length of a board, and an integer `k` representing the number of painters available. Each painter takes 1 unit of time to paint 1 unit length of a board.
+
+Determine the minimum amount of time required to paint all the boards, under the constraint that each painter can paint only a contiguous sequence of boards (no skipping or splitting allowed).
+
+**Notes on constraints:**
+- Each painter must paint a contiguous sequence of boards
+- All painters work simultaneously (in parallel)
+- The total time is determined by the painter who takes the longest time
+- We need to minimize the maximum time taken by any single painter
+
+---
+
+## Sample Test Cases With Explanation
+
+### Test Case 1
+```
+Input: arr[] = [5, 10, 30, 20, 15], k = 3
+Output: 35
+```
+**Explanation:** The optimal allocation of boards among 3 painters is:
+- Painter 1 → [5, 10] → time = 15
+- Painter 2 → [30] → time = 30
+- Painter 3 → [20, 15] → time = 35
+
+Job will be done when all painters finish, i.e., at time = max(15, 30, 35) = 35.
+
+### Test Case 2
+```
+Input: arr[] = [10, 20, 30, 40], k = 2
+Output: 60
+```
+**Explanation:** A valid optimal partition is:
+- Painter 1 → [10, 20, 30] → time = 60
+- Painter 2 → [40] → time = 40
+
+Job will be complete at time = max(60, 40) = 60.
+
+### Test Case 3
+```
+Input: arr[] = [100, 200, 300, 400], k = 1
+Output: 1000
+```
+**Explanation:** There is only one painter, so the painter must paint all boards sequentially. The total time taken will be the sum of all board lengths, i.e., 100 + 200 + 300 + 400 = 1000.
+
+---
+
+## Approaches
+
+### Approach 1: Linear Search
+
+**Summary:** Try every possible maximum time from the longest board to the total length, and find the smallest time that allows completing the job with k or fewer painters.
+
+---
+
+**Intuition**
+
+The answer lies between:
+- `max(arr)` — The minimum possible time (when we have enough painters so that the longest board determines the minimum time)
+- `sum(arr)` — The maximum possible time (when one painter paints all boards)
+
+For any given maximum time limit, we can greedily determine how many painters are needed by assigning boards consecutively until adding the next board would exceed the time limit.
+
+We use `cnt <= k` instead of `cnt == k` because:
+- If we can complete the job with fewer painters, we can always use more painters without increasing the maximum time
+- Additional painters can take smaller portions, keeping the maximum time the same or lower
+
+Since we want to minimize the maximum time, we need to balance the workload distribution by checking every possibility from smallest to largest until we find the first valid answer.
+
+---
+
+**Approach Steps**
+
+1. Set the search range:
+   - `low = max(arr)` (minimum possible maximum time - when each painter gets at most the longest board)
+   - `high = sum(arr)` (maximum possible maximum time - when one painter paints all boards)
+
+2. For each possible maximum time from `low` to `high`:
+   - Count how many painters are needed if no painter takes more than this maximum time
+   - Use a greedy approach: keep assigning boards to the current painter until adding the next board would exceed the maximum time
+   - If the count of painters is ≤ k, this is a valid answer
+   - Return the first valid maximum time found (this will be the minimum)
+
+3. Return the answer
+
+---
+
+**Example**
+
+Consider `arr = [5, 10, 30, 20, 15]` and `k = 3`:
+
+**Step 1:** Initialize search range
+- `low = 30` (max element - longest board)
+- `high = 80` (sum of all lengths)
+
+**Step 2:** Try maxTime = 30
+- Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 30)
+- Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 30)
+- Painter 3: [20] (time = 20), cannot add 15 (would make time = 35 > 30)
+- Painter 4: [15] (time = 15)
+- Result: 4 painters needed
+- 4 > 3, so this doesn't work ✗
+
+**Step 3:** Try maxTime = 31, 32, 33, 34 (similar failures)
+
+**Step 4:** Try maxTime = 35
+- Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 35)
+- Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 35)
+- Painter 3: [20, 15] (time = 35)
+- Result: 3 painters needed
+- 3 ≤ 3, so this works ✓
+
+**Answer = 35**
+
+---
+
+**Code**
+
+```python
+def cntPartions(n, arr, maxSum):
+    # Track current painter's time
+    currentSum = 0
+    # Count of painters needed
+    cnt = 0
+    
+    for i in range(n):
+        # If we can assign current board to current painter
+        if(currentSum + arr[i] <= maxSum):
+            currentSum = currentSum + arr[i]
+        else:
+            # Assign to next painter
+            cnt += 1
+            currentSum = arr[i]
+    
+    # Count the last painter if they have boards
+    if(currentSum <= maxSum):
+        cnt += 1
+    return cnt
+    
+def solve(n, arr, k):
+    # Minimum possible max time is the longest board
+    # Maximum possible max time is the sum of all boards
+    low, high = max(arr), sum(arr)
+    ans = low
+    
+    # Try every possible maximum time
+    for maxSum in range(low, high + 1):
+        # Count painters needed with this max time limit
+        cnt = cntPartions(n, arr, maxSum)
+        
+        # We use cnt <= k instead of cnt == k because:
+        # If we can complete with fewer painters, we can always
+        # use more painters without increasing the maximum time
+        if(cnt <= k):
+            ans = maxSum
+            break
+    return ans
+           
+    
+arr = [12, 34, 67, 90]
+n = len(arr)
+k = 2
+print(solve(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(n × (sum - max)) — For each possible maximum time (which can range from max board to total length), we count partitions in O(n) time. In the worst case, this range can be large.
+
+---
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
+
+### Approach 2: Binary Search (Optimized)
+
+**Summary:** Use binary search on the answer space (possible maximum times) to efficiently find the minimum maximum time.
+
+---
+
+**Intuition**
+
+Instead of checking every possible maximum time linearly, we can use binary search on the answer space.
+
+The key observation is that if we can complete the job with `k` or fewer painters in maximum time `t`, then we can also do it with any larger time. This creates a monotonic search space:
+- Smaller times might not work (too many painters needed)
+- Once we find a working time, all larger times also work
+
+We use `cnt <= k` instead of `cnt == k` because:
+- If we can complete the job with fewer painters than `k`, we have "room" to use more painters
+- Using more painters doesn't increase the maximum time (they can split work further)
+- So it's still a valid solution
+
+Since we want to minimize the maximum time, we need to balance the workload distribution. Binary search helps us systematically find the smallest valid maximum time.
+
+---
+
+**Approach Steps**
+
+1. Set the search range:
+   - `low = max(arr)` (minimum possible maximum time)
+   - `high = sum(arr)` (maximum possible maximum time)
+
+2. While `low <= high`:
+   - Calculate `mid = (low + high) / 2`
+   - Count how many painters are needed with maximum time `mid` using greedy assignment
+   - If `count <= k`:
+     - This is a valid solution
+     - Update answer to `mid`
+     - Search for smaller times: set `high = mid - 1`
+   - If `count > k`:
+     - We need a larger maximum time
+     - Set `low = mid + 1`
+
+3. Return the minimum maximum time found
+
+---
+
+**Example**
+
+Consider `arr = [5, 10, 30, 20, 15]` and `k = 3`:
+
+**Initial state:**
+- `low = 30`, `high = 80`
+
+---
+
+**Iteration 1:**
+- `mid = (30 + 80) / 2 = 55`
+- Count painters with maxTime = 55:
+  - Painter 1: [5, 10, 30] (time = 45)
+  - Painter 2: [20, 15] (time = 35)
+  - Total: 2 painters
+- 2 ≤ 3 ✓ → Valid solution
+- Update: `ans = 55`, `high = 54`
+
+---
+
+**Iteration 2:**
+- `mid = (30 + 54) / 2 = 42`
+- Count painters with maxTime = 42:
+  - Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 42)
+  - Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 42)
+  - Painter 3: [20, 15] (time = 35)
+  - Total: 3 painters
+- 3 ≤ 3 ✓ → Valid solution
+- Update: `ans = 42`, `high = 41`
+
+---
+
+**Iteration 3:**
+- `mid = (30 + 41) / 2 = 35`
+- Count painters with maxTime = 35:
+  - Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 35)
+  - Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 35)
+  - Painter 3: [20, 15] (time = 35)
+  - Total: 3 painters
+- 3 ≤ 3 ✓ → Valid solution
+- Update: `ans = 35`, `high = 34`
+
+---
+
+**Iteration 4:**
+- `mid = (30 + 34) / 2 = 32`
+- Count painters with maxTime = 32:
+  - Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 32)
+  - Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 32)
+  - Painter 3: [20] (time = 20), cannot add 15 (would make time = 35 > 32)
+  - Painter 4: [15] (time = 15)
+  - Total: 4 painters
+- 4 > 3 ✗ → Not valid
+- Update: `low = 33`
+
+---
+
+**Iteration 5:**
+- `mid = (33 + 34) / 2 = 33`
+- Count painters with maxTime = 33:
+  - Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 33)
+  - Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 33)
+  - Painter 3: [20] (time = 20), cannot add 15 (would make time = 35 > 33)
+  - Painter 4: [15] (time = 15)
+  - Total: 4 painters
+- 4 > 3 ✗ → Not valid
+- Update: `low = 34`
+
+---
+
+**Iteration 6:**
+- `mid = (34 + 34) / 2 = 34`
+- Count painters with maxTime = 34:
+  - Painter 1: [5, 10] (time = 15), cannot add 30 (would make time = 45 > 34)
+  - Painter 2: [30] (time = 30), cannot add 20 (would make time = 50 > 34)
+  - Painter 3: [20] (time = 20), cannot add 15 (would make time = 35 > 34)
+  - Painter 4: [15] (time = 15)
+  - Total: 4 painters
+- 4 > 3 ✗ → Not valid
+- Update: `low = 35`
+
+---
+
+**Loop terminates** (low > high)
+
+**Answer = 35**
+
+---
+
+**Code**
+
+```python
+def cntPartions(n, arr, maxSum):
+    # Track current painter's time
+    currentSum = 0
+    # Count of painters needed
+    cnt = 0
+    
+    for i in range(n):
+        # If we can assign current board to current painter
+        if(currentSum + arr[i] <= maxSum):
+            currentSum = currentSum + arr[i]
+        else:
+            # Assign to next painter
+            cnt += 1
+            currentSum = arr[i]
+    
+    # Count the last painter if they have boards
+    if(currentSum <= maxSum):
+        cnt += 1
+    return cnt
+
+def optimized(n, arr, k):
+    # Minimum possible max time is the longest board
+    # Maximum possible max time is the sum of all boards
+    low, high = max(arr), sum(arr)
+    ans = low
+    
+    # Binary search on the answer
+    while low <= high:
+        mid = (low + high) // 2
+        
+        # Count painters needed with this max time limit
+        cnt = cntPartions(n, arr, mid)
+        
+        # We use cnt <= k instead of cnt == k because:
+        # If we can complete with fewer painters, we can always
+        # use more painters without increasing the maximum time
+        # Since we want minimum max time, we balance workload distribution
+        if(cnt <= k):
+            ans = mid
+            # Try for a smaller maximum time
+            high = mid - 1
+        else:
+            # Need a larger maximum time
+            low = mid + 1
+    return ans
+           
+    
+arr = [12, 34, 67, 90]
+n = len(arr)
+k = 2
+print(optimized(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(n × log(sum - max)) — Binary search takes O(log(sum - max)) iterations, and each iteration requires O(n) time to count partitions.
+
+---
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
