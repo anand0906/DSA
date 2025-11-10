@@ -1304,3 +1304,424 @@ O(n × log(sum - max)) — Binary search takes O(log(sum - max)) iterations, and
 O(1) — Only using a constant amount of extra space (excluding the input array).
 
 ---
+
+# Minimize Max Distance to Gas Station
+
+## Problem Description
+
+Given a sorted array `arr` of size `n`, containing integer positions of `n` gas stations on the X-axis, and an integer `k`, place `k` new gas stations on the X-axis.
+
+The new gas stations can be placed anywhere on the non-negative side of the X-axis, including non-integer positions.
+
+Let `dist` be the maximum distance between adjacent gas stations after adding the `k` new gas stations. Find the minimum value of `dist`.
+
+Your answer will be accepted if it is within `1e-6` of the true value.
+
+**Notes on constraints:**
+- New gas stations can be placed at non-integer positions (floating-point coordinates)
+- The goal is to minimize the maximum gap between any two adjacent gas stations
+- We need to optimally distribute `k` new stations to balance the gaps
+- The answer requires precision up to `1e-6`
+
+---
+
+## Sample Test Cases With Explanation
+
+### Test Case 1
+```
+Input: n = 10, arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], k = 9
+Output: 0.50000
+```
+**Explanation:** One of the possible ways to place 9 new gas stations is [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]. Thus the maximum difference between adjacent gas stations is 0.5. Hence, the value of dist is 0.5. It can be shown that there is no possible way to add 9 gas stations in such a way that the value of dist is lower than this.
+
+### Test Case 2
+```
+Input: n = 10, arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], k = 1
+Output: 1.00000
+```
+**Explanation:** One of the possible ways to place 1 gas station is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]. The new gas station is at position 11. Thus the maximum difference between adjacent gas stations is still 1. Hence, the value of dist is 1. It can be shown that there is no possible way to add 1 gas station in such a way that the value of dist is lower than this.
+
+---
+
+## Approaches
+
+### Approach 1: Greedy - Repeatedly Split Largest Gap
+
+**Summary:** For each of the k new stations, find the current largest gap between adjacent stations and place a new station to split it, reducing the maximum gap iteratively.
+
+---
+
+**Intuition**
+
+To minimize the maximum distance, we should always target the largest current gap and split it by adding a new gas station. By repeatedly splitting the largest gap, we progressively reduce the maximum distance.
+
+For each gap between stations at positions `a` and `b`, if we place `m` new stations in this gap, they divide it into `(m+1)` equal sections, each of length `(b-a)/(m+1)`.
+
+We maintain a count of how many new stations have been placed in each original gap, and iteratively add stations to the gap that currently has the largest section length.
+
+---
+
+**Approach Steps**
+
+1. Initialize a `splitCnt` array of size `(n-1)` to track how many new stations are placed in each gap (initially all zeros)
+
+2. For each of the `k` new stations:
+   - Iterate through all gaps to find the one with the maximum section length
+   - Section length for gap `i` = `(arr[i+1] - arr[i]) / (splitCnt[i] + 1)`
+   - Increment `splitCnt` for the gap with maximum section length
+
+3. After placing all `k` stations:
+   - Calculate the maximum section length across all gaps
+   - This is our answer
+
+---
+
+**Example**
+
+Consider `arr = [1, 2, 3, 4, 5]` and `k = 2`:
+
+**Initial state:**
+- Gaps: [1-2], [2-3], [3-4], [4-5]
+- All gaps have length 1
+- `splitCnt = [0, 0, 0, 0]`
+
+**Place 1st new station:**
+- All gaps have section length = 1/1 = 1.0
+- Choose any gap, say gap 0 (between 1 and 2)
+- `splitCnt = [1, 0, 0, 0]`
+- Gap 0 now has section length = 1/2 = 0.5
+
+**Place 2nd new station:**
+- Gap 0: section length = 1/2 = 0.5
+- Gap 1: section length = 1/1 = 1.0 (maximum)
+- Gap 2: section length = 1/1 = 1.0 (maximum)
+- Gap 3: section length = 1/1 = 1.0 (maximum)
+- Choose gap 1, `splitCnt = [1, 1, 0, 0]`
+
+**Final calculation:**
+- Gap 0: 1/2 = 0.5
+- Gap 1: 1/2 = 0.5
+- Gap 2: 1/1 = 1.0
+- Gap 3: 1/1 = 1.0
+- Maximum = 1.0
+
+**Answer = 1.0**
+
+---
+
+**Code**
+
+```python
+def solve(n, arr, k):
+    # Track how many new stations placed in each gap
+    splitCnt = [0] * (n - 1)
+    
+    # Place k new stations one by one
+    for _ in range(k):
+        maxSection, maxIndex = -1, -1
+        
+        # Find the gap with maximum section length
+        for i in range(n - 1):
+            gap = arr[i + 1] - arr[i]
+            # Section length if splitCnt[i] stations already placed
+            sectionLen = gap / (splitCnt[i] + 1)
+            
+            if(sectionLen > maxSection):
+                maxSection = sectionLen
+                maxIndex = i
+        
+        # Place new station in the gap with max section length
+        splitCnt[maxIndex] += 1
+    
+    # Calculate final maximum section length
+    maxLen = 0
+    for i in range(n - 1):
+        gap = arr[i + 1] - arr[i]
+        sectionLen = gap / (splitCnt[i] + 1)
+        maxLen = max(maxLen, sectionLen)
+        
+    return maxLen
+
+arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n = len(arr)
+k = 9
+print(solve(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(k × n) — For each of the `k` stations, we iterate through all `n-1` gaps to find the maximum, taking O(n) time per station.
+
+---
+
+**Space Complexity**
+
+O(n) — We use a `splitCnt` array of size `n-1` to track placements in each gap.
+
+---
+
+### Approach 2: Greedy with Max Heap
+
+**Summary:** Use a max heap (priority queue) to efficiently find and update the largest gap, reducing the time to find the maximum gap from O(n) to O(log n).
+
+---
+
+**Intuition**
+
+The previous approach spends O(n) time finding the maximum gap in each iteration. We can optimize this using a max heap to maintain gaps sorted by their section lengths.
+
+Initially, push all gaps with their lengths into the heap. For each new station:
+1. Extract the gap with the maximum section length from the heap
+2. Place a new station in that gap
+3. Recalculate the section length for that gap
+4. Push the updated section length back into the heap
+
+After placing all `k` stations, the maximum section length will be at the top of the heap.
+
+---
+
+**Approach Steps**
+
+1. Initialize:
+   - `splitCnt` array of size `(n-1)` to track placements
+   - Max heap (priority queue) to store `(-sectionLength, index)` pairs
+
+2. For each gap, calculate initial section length and push into heap:
+   - Section length = `gap / 1` (no splits initially)
+   - Use negative values for max heap behavior in Python
+
+3. For each of the `k` new stations:
+   - Pop the gap with maximum section length from heap
+   - Increment `splitCnt` for that gap
+   - Recalculate section length = `gap / (splitCnt[index] + 1)`
+   - Push updated section length back into heap
+
+4. After placing all stations, the top of heap contains the maximum section length (negate to get positive value)
+
+---
+
+**Example**
+
+Consider `arr = [1, 3, 6]` and `k = 2`:
+
+**Initial state:**
+- Gaps: [1-3] (length 2), [3-6] (length 3)
+- Heap: [(-3, 1), (-2, 0)]
+- `splitCnt = [0, 0]`
+
+**Place 1st new station:**
+- Pop: (-3, 1) → Gap 1 has max section length 3.0
+- `splitCnt = [0, 1]`
+- Gap 1 new section length = 3/2 = 1.5
+- Push: (-1.5, 1)
+- Heap: [(-2, 0), (-1.5, 1)]
+
+**Place 2nd new station:**
+- Pop: (-2, 0) → Gap 0 has max section length 2.0
+- `splitCnt = [1, 1]`
+- Gap 0 new section length = 2/2 = 1.0
+- Push: (-1.0, 0)
+- Heap: [(-1.5, 1), (-1.0, 0)]
+
+**Final result:**
+- Top of heap: -1.5
+- Answer = 1.5
+
+---
+
+**Code**
+
+```python
+import heapq
+
+def solve2(n, arr, k):
+    # Track how many new stations placed in each gap
+    splitCnt = [0] * (n - 1)
+    # Max heap to efficiently find largest gap
+    pq = []
+    
+    # Initialize heap with all gaps
+    for i in range(n - 1):
+        gap = arr[i + 1] - arr[i]
+        # Use negative for max heap (Python has min heap by default)
+        heapq.heappush(pq, (-gap, i))
+    
+    # Place k new stations
+    for _ in range(k):
+        # Get gap with maximum section length
+        _, index = heapq.heappop(pq)
+        # Place new station in this gap
+        splitCnt[index] += 1
+        
+        # Recalculate section length for this gap
+        gap = arr[index + 1] - arr[index]
+        sectionLen = gap / (splitCnt[index] + 1)
+        # Push updated section length back to heap
+        heapq.heappush(pq, (-sectionLen, index))
+    
+    # Maximum section length is at top of heap
+    return -pq[0][0]
+
+arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n = len(arr)
+k = 9
+print(solve2(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(k × log n) — For each of the `k` stations, we perform heap operations (pop and push) which take O(log n) time. Initial heap construction takes O(n log n).
+
+---
+
+**Space Complexity**
+
+O(n) — We use a `splitCnt` array and a heap, both of size proportional to `n`.
+
+---
+
+### Approach 3: Binary Search on Answer (Optimized)
+
+**Summary:** Use binary search on the possible values of the maximum distance to find the minimum distance that requires at most k new stations.
+
+---
+
+**Intuition**
+
+Instead of directly placing stations, we can binary search on the answer (the maximum distance). For a given distance `d`, we can calculate how many new stations are needed to ensure no gap exceeds `d`.
+
+For each gap of length `gap`, the number of new stations needed = `ceil(gap/d) - 1`:
+- If `gap = 6` and `d = 2`, we need `ceil(6/2) - 1 = 3 - 1 = 2` new stations
+- This divides the gap into 3 sections: [0-2], [2-4], [4-6]
+
+The key observation is:
+- If we can achieve maximum distance `d` with ≤ `k` stations, we can also achieve any larger distance with ≤ `k` stations
+- This creates a monotonic search space perfect for binary search
+
+We search for the smallest distance `d` such that the total number of required stations is ≤ `k`.
+
+---
+
+**Approach Steps**
+
+1. Find the search range:
+   - `low = 0` (theoretical minimum)
+   - `high = max gap` (maximum gap in original array)
+
+2. Binary search with precision `1e-6`:
+   - While `(high - low) >= 1e-6`:
+     - Calculate `mid = (low + high) / 2.0`
+     - Count how many new stations needed for max distance `mid`
+     - For each gap: `stations_needed = ceil(gap/mid) - 1`
+     - If total stations ≤ k: this distance is achievable, try smaller (set `high = mid`)
+     - Else: need larger distance (set `low = mid`)
+
+3. Return the answer
+
+---
+
+**Example**
+
+Consider `arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]` and `k = 9`:
+
+**Initial state:**
+- Max gap = 1 (all gaps are of length 1)
+- `low = 0`, `high = 1.0`
+
+**Iteration 1:**
+- `mid = 0.5`
+- Count stations needed:
+  - Each gap of length 1 needs `ceil(1/0.5) - 1 = 2 - 1 = 1` station
+  - Total gaps = 9, so total stations = 9
+- 9 ≤ 9 ✓ → Achievable
+- Update: `ans = 0.5`, `high = 0.5`
+
+**Iteration 2:**
+- `mid = 0.25`
+- Count stations needed:
+  - Each gap needs `ceil(1/0.25) - 1 = 4 - 1 = 3` stations
+  - Total = 9 × 3 = 27 stations
+- 27 > 9 ✗ → Not achievable
+- Update: `low = 0.25`
+
+**Iteration 3:**
+- `mid = 0.375`
+- Count stations needed:
+  - Each gap needs `ceil(1/0.375) - 1 = 3 - 1 = 2` stations
+  - Total = 9 × 2 = 18 stations
+- 18 > 9 ✗ → Not achievable
+- Update: `low = 0.375`
+
+**Continue iterations until convergence...**
+
+**Answer ≈ 0.5**
+
+---
+
+**Code**
+
+```python
+import math
+
+def cntSections(n, arr, dist):
+    # Count total new stations needed for max distance 'dist'
+    cnt = 0
+    for i in range(n - 1):
+        gap = arr[i + 1] - arr[i]
+        # Number of new stations needed in this gap
+        # ceil(gap/dist) gives number of sections
+        # Subtract 1 to get number of new stations
+        cnt += math.ceil(gap / dist) - 1
+    return cnt
+
+def optimized(n, arr, k):
+    # Find maximum gap in original array
+    maxGap = 0
+    for i in range(n - 1):
+        maxGap = max(maxGap, (arr[i + 1] - arr[i]))
+    
+    # Binary search on the answer
+    low, high = 0, maxGap
+    ans = maxGap
+    
+    # Continue until precision of 1e-6 is achieved
+    while (high - low) >= (1e-6):
+        mid = (low + high) / 2.0
+        
+        # Count stations needed for max distance 'mid'
+        cnt = cntSections(n, arr, mid)
+        
+        # If we can achieve this distance with <= k stations
+        if(cnt <= k):
+            ans = mid
+            # Try for smaller distance
+            high = mid
+        else:
+            # Need larger distance
+            low = mid
+    
+    return ans
+
+arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n = len(arr)
+k = 9
+print(optimized(n, arr, k))
+```
+
+---
+
+**Time Complexity**
+
+O(n × log(maxGap / 1e-6)) — Binary search takes O(log(maxGap / 1e-6)) iterations (determined by precision requirement), and each iteration requires O(n) time to count stations needed across all gaps.
+
+---
+
+**Space Complexity**
+
+O(1) — Only using a constant amount of extra space (excluding the input array).
+
+---
