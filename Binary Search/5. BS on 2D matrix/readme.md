@@ -399,3 +399,265 @@ O(log(n * m)) — We perform binary search on a virtual array of size n*m. Each 
 O(1) — We only use a constant amount of extra space for variables (low, high, mid, row, col). No additional data structures are created, and we don't actually flatten the matrix.
 
 ---
+
+# Search in 2D Matrix - II
+
+## Problem Description
+
+Given a 2D array `matrix` where each row is sorted in ascending order from left to right and each column is sorted in ascending order from top to bottom, write an efficient algorithm to search for a specific integer `target` in the matrix.
+
+**Properties of the matrix:**
+- Each row is sorted in ascending order (left to right)
+- Each column is sorted in ascending order (top to bottom)
+- Unlike the previous problem, the first element of a row is NOT necessarily greater than the last element of the previous row
+
+**Notes on constraints:**
+- The matrix has both row-wise and column-wise sorting, but rows are not strictly ordered relative to each other
+- For large matrices (e.g., n*m = 10^6), an O(n*m) linear search is inefficient
+- Optimal solutions should aim for O(n + m) or O(n log m) time complexity
+
+## Sample Test Cases With Explanation
+
+**Test Case 1:**
+```
+Input: matrix = [[1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]], target = 5
+Output: True
+```
+**Explanation:** The target 5 exists in the matrix at position (1, 1) - row index 1, column index 1. Therefore, we return True.
+
+**Test Case 2:**
+```
+Input: matrix = [[1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]], target = 20
+Output: False
+```
+**Explanation:** The target 20 does not exist anywhere in the matrix. If we check all positions, no element equals 20. Therefore, we return False.
+
+**Test Case 3:**
+```
+Input: matrix = [[1, 3, 5], [2, 4, 6], [7, 8, 9]], target = 4
+Output: True
+```
+**Explanation:** The target 4 is found at position (1, 1). We return True.
+
+**Test Case 4:**
+```
+Input: matrix = [[-5]], target = -5
+Output: True
+```
+**Explanation:** The matrix contains a single element which matches the target. We return True.
+
+## Approaches
+
+### Approach 1: Brute Force - Linear Search
+
+**Summary:** Iterate through every element in the matrix and check if it equals the target.
+
+**Intuition**
+
+The most straightforward approach is to check every element in the 2D matrix sequentially. We use two nested loops to traverse all rows and columns, comparing each element with the target. If we find a match, we return True immediately. If we finish checking all elements without finding the target, we return False. This approach doesn't utilize any of the sorted properties of the matrix.
+
+**Approach Steps**
+
+1. Get the dimensions of the matrix: `n` rows and `m` columns
+2. Use a nested loop to traverse each element:
+   - Outer loop iterates through rows (0 to n-1)
+   - Inner loop iterates through columns (0 to m-1)
+3. For each element at position (i, j):
+   - If `matrix[i][j]` equals `target`, return True
+4. If the loops complete without finding the target, return False
+
+**Example**
+
+Let's trace through `mat = [[1, 4], [2, 5], [3, 6]]`, `target = 5`:
+
+**Row 0:** Check [1, 4]
+- Element (0,0): 1 ≠ 5
+- Element (0,1): 4 ≠ 5
+
+**Row 1:** Check [2, 5]
+- Element (1,0): 2 ≠ 5
+- Element (1,1): 5 = 5 ✓ → **Return True**
+
+We found the target at position (1, 1), so we immediately return True without checking the remaining elements in row 2.
+
+**Code**
+
+```python
+def solve(matrix, target):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Iterate through each row
+    for i in range(n):
+        # Iterate through each column
+        for j in range(m):
+            # Check if current element matches target
+            if(matrix[i][j] == target):
+                return True 
+    
+    # Target not found in entire matrix
+    return False
+```
+
+**Time Complexity**
+
+O(n * m) — We potentially traverse all n rows and m columns, checking every element in the matrix exactly once in the worst case (when the target doesn't exist or is at the last position).
+
+**Space Complexity**
+
+O(1) — We only use a constant amount of extra space for loop variables and no additional data structures are created.
+
+---
+
+### Approach 2: Binary Search on Each Row
+
+**Summary:** Apply binary search on each row individually, leveraging the fact that each row is sorted.
+
+**Intuition**
+
+Since each row is sorted independently, we can perform binary search on each row to check if the target exists. Instead of checking all m elements in a row linearly (O(m)), binary search allows us to search each row in O(log m) time. We iterate through all n rows and apply binary search on each one. If any row contains the target, we return True.
+
+**Approach Steps**
+
+1. Create a helper function `search` that performs binary search on a sorted array:
+   - Use standard binary search with `low` and `high` pointers
+   - Return True if target is found, False otherwise
+2. Get matrix dimensions: `n` rows and `m` columns
+3. For each row in the matrix:
+   - Call `search` function on the current row
+   - If search returns True, immediately return True
+4. If no row contains the target, return False
+
+**Example**
+
+Let's trace through `mat = [[1, 3, 5], [2, 4, 6], [7, 9, 11]]`, `target = 4`:
+
+**Row 0:** Binary search in [1, 3, 5]
+- `low=0, high=2, mid=1`: arr[1]=3 < 4 → `low=2`
+- `low=2, high=2, mid=2`: arr[2]=5 > 4 → `high=1`
+- `low>high` → Not found
+
+**Row 1:** Binary search in [2, 4, 6]
+- `low=0, high=2, mid=1`: arr[1]=4 = 4 ✓ → **Return True**
+
+We found the target in row 1 using binary search, which took only 1 comparison instead of potentially 3 linear checks.
+
+**Code**
+
+```python
+def search(n, arr, target):
+    low, high = 0, n - 1
+    
+    # Standard binary search
+    while low <= high:
+        mid = (low + high) // 2
+        if(arr[mid] == target):
+            return True
+        elif(arr[mid] < target):
+            low = mid + 1
+        else:
+            high = mid - 1
+    
+    return False
+
+def solve2(matrix, target):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Apply binary search on each row
+    for i in range(n):
+        if(search(m, matrix[i], target)):
+            return True 
+    
+    # Target not found in any row
+    return False
+```
+
+**Time Complexity**
+
+O(n * log m) — We iterate through n rows, and for each row, we perform binary search which takes O(log m) time. This is better than O(n * m) when m is large.
+
+**Space Complexity**
+
+O(1) — We only use a constant amount of extra space for variables in the binary search and main function. No additional data structures are created.
+
+---
+
+### Approach 3: Staircase Search - Optimal Solution
+
+**Summary:** Start from top-right (or bottom-left) corner and eliminate either a row or column in each step.
+
+**Intuition**
+
+This approach leverages both the row-wise and column-wise sorting properties simultaneously. Starting from the top-right corner, we observe that:
+- All elements to the left are smaller (row is sorted ascending)
+- All elements below are larger (column is sorted ascending)
+
+This gives us a "decision point" where we can eliminate either an entire column (move left if current > target) or an entire row (move down if current < target). We continue until we find the target or run out of bounds. This creates a "staircase" pattern of movement through the matrix.
+
+**Approach Steps**
+
+1. Get matrix dimensions: `n` rows and `m` columns
+2. Initialize position at top-right corner: `row = 0`, `col = m - 1`
+3. While `row < n` and `col >= 0`:
+   - If `matrix[row][col]` equals `target`, return True
+   - If `matrix[row][col]` is greater than `target`:
+     - All elements below in this column are even larger, so eliminate this column
+     - Move left: `col = col - 1`
+   - If `matrix[row][col]` is less than `target`:
+     - All elements to the left in this row are even smaller, so eliminate this row
+     - Move down: `row = row + 1`
+4. If we exit the bounds without finding the target, return False
+
+**Example**
+
+Let's trace through `mat = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]`, `target = 5`:
+
+**Initial position:** `row=0, col=2` → `matrix[0][2] = 7`
+
+**Step 1:**
+- Current element: 7 > 5
+- Eliminate column 2 (all elements below 7 are larger)
+- Move left: `col=1`
+
+**Step 2:** `row=0, col=1` → `matrix[0][1] = 4`
+- Current element: 4 < 5
+- Eliminate row 0 (all elements to the left of 4 are smaller)
+- Move down: `row=1`
+
+**Step 3:** `row=1, col=1` → `matrix[1][1] = 5`
+- Current element: 5 = 5 ✓ → **Return True**
+
+We found the target in just 3 steps, eliminating entire rows/columns at each step!
+
+**Code**
+
+```python
+import math
+
+def optimized(matrix, target):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Start from top-right corner
+    row, col = 0, m - 1
+    
+    # Continue until we go out of bounds
+    while row < n and col >= 0:
+        if(matrix[row][col] == target):
+            return True 
+        elif(matrix[row][col] > target):
+            col -= 1  # Eliminate current column, move left
+        else:
+            row += 1  # Eliminate current row, move down
+    
+    # Target not found
+    return False
+```
+
+**Time Complexity**
+
+O(n + m) — In the worst case, we traverse from the top-right corner to the bottom-left corner, moving either down or left at each step. We can move down at most n times and left at most m times, giving us a maximum of n + m steps.
+
+**Space Complexity**
+
+O(1) — We only use a constant amount of extra space for the `row` and `col` variables. No additional data structures are created, and we don't use recursion.
+
+---
