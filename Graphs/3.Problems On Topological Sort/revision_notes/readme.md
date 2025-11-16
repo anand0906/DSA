@@ -6,7 +6,8 @@
 3. [Find Eventual Safe States](#3-find-eventual-safe-states)
 4. [Course Schedule I](#4-course-schedule-i)
 5. [Course Schedule II](#5-course-schedule-ii)
-6. [Comparison Table](#comparison-table)
+6. [Alien Dictionary](#6-alien-dictionary)
+7. [Comparison Table](#comparison-table)
 
 ---
 
@@ -480,6 +481,130 @@ def solution(nodes, edges):
 
 ---
 
+## 6. Alien Dictionary
+
+### Problem Description
+Given a sorted dictionary of N words in an alien language with K starting alphabets, find the order of characters in the alien language. The words are sorted lexicographically according to the alien language's rules. Return any valid ordering as a string, or empty string "" if the arrangement is inconsistent.
+
+### Sample Test Cases
+```python
+# Example 1
+N = 5, K = 4, dict = ["baa", "abcd", "abca", "cab", "cad"]
+Output: "bdac"
+# Analysis:
+# "baa" vs "abcd" → b comes before a
+# "abcd" vs "abca" → d comes before a
+# "abca" vs "cab" → a comes before c
+# "cab" vs "cad" → b comes before d
+
+# Example 2
+N = 3, K = 3, dict = ["caa", "aaa", "aab"]
+Output: "cab"
+# "caa" vs "aaa" → c comes before a
+# "aaa" vs "aab" → a comes before b
+
+# Example 3
+N = 2, K = 2, dict = ["abc", "ab"]
+Output: ""
+# Inconsistent: longer word cannot come before its prefix
+```
+
+### Approach: Topological Sort (Kahn's Algorithm)
+
+**Intuition**: Like discovering alphabet order from a sorted dictionary. When two words differ at position j, the character in the first word must come before the character in the second word. Build a directed graph where edges represent "comes before" relationships, then use topological sort to find the character order. This is essentially finding dependencies between characters!
+
+**Key Steps**:
+1. Compare consecutive words to extract character ordering edges
+2. Build directed graph from these edges
+3. Apply topological sort to get final character order
+4. If topological sort succeeds for all K characters, return the order
+
+**Code**:
+```python
+from collections import deque
+
+def solution(n, k, dict_words):
+    def getEdges(n, arr):
+        """Extract character ordering from consecutive word pairs"""
+        edges = []
+        for i in range(1, n):
+            word1 = arr[i-1]
+            word2 = arr[i]
+            
+            # Find first differing character
+            min_len = min(len(word1), len(word2))
+            for j in range(min_len):
+                if word1[j] != word2[j]:
+                    # word1[j] comes before word2[j]
+                    edges.append([word1[j], word2[j]])
+                    break
+            else:
+                # All characters match up to min_len
+                # If word1 is longer, dictionary is invalid
+                if len(word1) > len(word2):
+                    return None  # Inconsistent ordering
+        
+        return edges
+    
+    def topologicalSort(nodes, graph):
+        """Kahn's algorithm for topological sort"""
+        # Calculate in-degree for each character
+        inDegree = {i: 0 for i in nodes}
+        for node, adj_nodes in graph.items():
+            for adj in adj_nodes:
+                inDegree[adj] += 1
+        
+        # Start with characters that have no prerequisites
+        queue = deque()
+        for node, degree in inDegree.items():
+            if degree == 0:
+                queue.append(node)
+        
+        ans = []
+        while queue:
+            node = queue.popleft()  # Process character
+            ans.append(node)
+            
+            # Reduce in-degree of dependent characters
+            for adj_node in graph[node]:
+                inDegree[adj_node] -= 1
+                if inDegree[adj_node] == 0:
+                    queue.append(adj_node)
+        
+        return ans
+    
+    # Step 1: Generate nodes (first k letters of alphabet)
+    nodes = [chr(ord('a') + i) for i in range(k)]
+    
+    # Step 2: Extract ordering edges from consecutive words
+    edges = getEdges(n, dict_words)
+    if edges is None:  # Inconsistent dictionary
+        return ""
+    
+    # Step 3: Build adjacency list graph
+    graph = {char: [] for char in nodes}
+    for char1, char2 in edges:
+        graph[char1].append(char2)
+    
+    # Step 4: Apply topological sort
+    ans = topologicalSort(nodes, graph)
+    
+    # Step 5: Verify all characters are included (no cycle)
+    if len(ans) == k:
+        return "".join(ans)
+    return ""  # Cycle detected, inconsistent ordering
+```
+
+**Time Complexity**: O(N × L + K), where L is average word length  
+**Space Complexity**: O(K + E), where E is number of edges
+
+**Edge Cases**:
+- Longer word appearing before its prefix (e.g., "abc" before "ab") → invalid, return ""
+- Cycle in character dependencies → invalid, return ""
+- Multiple valid orderings → return any valid one
+
+---
+
 ## Comparison Table
 
 | # | Problem | Key Technique | Graph Type | Time | Space | Key Insight |
@@ -489,12 +614,14 @@ def solution(nodes, edges):
 | 3 | Eventual Safe States | Reverse + Kahn's / DFS | Directed | O(V+E) | O(V+E) | Reverse graph from terminals; or track safe paths |
 | 4 | Course Schedule I | Kahn's Algorithm | Directed | O(V+E) | O(V+E) | Check if topo sort includes all nodes |
 | 5 | Course Schedule II | Kahn's Algorithm | Directed | O(V+E) | O(V+E) | Return topo sort order or empty array |
+| 6 | Alien Dictionary | Kahn's Algorithm | Directed | O(N×L+K) | O(K+E) | Extract ordering from word pairs, apply topo sort |
 
 ### Problem Categories
 
-**Topological Sort Based**: 1, 2, 3, 4, 5  
-**Cycle Detection**: 2, 4  
+**Topological Sort Based**: 1, 2, 3, 4, 5, 6  
+**Cycle Detection**: 2, 4, 6  
 **Path Property**: 3  
+**String/Character Ordering**: 6
 
 ### Key Concepts
 
@@ -502,4 +629,5 @@ def solution(nodes, edges):
 **Kahn's Algorithm**: BFS approach for topological sort using in-degree  
 **DFS with Stack**: Post-order traversal for topological sort  
 **Path Tracking**: Detect cycles by tracking current recursion path  
-**Graph Reversal**: Solve safe states by reversing edges from terminals
+**Graph Reversal**: Solve safe states by reversing edges from terminals  
+**Character Ordering**: Extract dependencies by comparing consecutive strings
