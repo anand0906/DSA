@@ -535,3 +535,382 @@ Can partition into: A={0,3} and B={1,2}
 - `graph[u]` does not contain `u`
 - All the values of `graph[u]` are unique
 - If `graph[u]` contains `v`, then `graph[v]` contains `u`
+
+---
+
+# Topological Sort & Directed Graph Problems
+
+## Index
+1. [Topological Sort](#1-topological-sort)
+2. [Detect Cycle in Directed Graph](#2-detect-cycle-in-directed-graph)
+3. [Find Eventual Safe States](#3-find-eventual-safe-states)
+4. [Course Schedule I](#4-course-schedule-i)
+5. [Course Schedule II](#5-course-schedule-ii)
+6. [Alien Dictionary](#6-alien-dictionary)
+
+---
+
+## 1. Topological Sort
+
+**Problem Description:**
+
+Given a Directed Acyclic Graph (DAG) with `V` vertices and `E` edges, return any valid topological ordering of the graph's vertices.
+
+A topological sort of a directed graph is a linear ordering of its vertices such that for every directed edge `u → v`, vertex `u` comes before vertex `v` in the ordering.
+
+If the graph contains a cycle, topological sorting is not possible.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: V = 6, edges = [[5,2],[5,0],[4,0],[4,1],[2,3],[3,1]]
+Output: [5,4,2,3,1,0] (or any other valid topological ordering)
+
+Visual Explanation:
+    5 ——→ 0
+    |     ↑
+    ↓     |
+    2 ——→ 3 ——→ 1
+          ↑     ↑
+          |_____|
+              4
+
+One valid topological order: 5 → 4 → 2 → 3 → 1 → 0
+Another valid order: 4 → 5 → 2 → 3 → 1 → 0
+```
+
+**Example 2:**
+```
+Input: V = 4, edges = [[0,1],[1,2],[2,3]]
+Output: [0,1,2,3]
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3
+
+Only one valid topological order: 0 → 1 → 2 → 3
+```
+
+**Constraints:**
+- `1 <= V <= 10^4`
+- `0 <= E <= 10^4`
+- The graph is a DAG (Directed Acyclic Graph)
+
+---
+
+## 2. Detect Cycle in Directed Graph
+
+**Problem Description:**
+
+Given a Directed Graph with `V` vertices (numbered from `0` to `V-1`) and `E` edges, check whether it contains any cycle or not.
+
+The graph is represented as an adjacency list where `adj[i]` contains all vertices `j` such that there is a directed edge from vertex `i` to vertex `j`.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: V = 4, adj = [[1],[2],[3],[3]]
+Output: false
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3
+                      ↺
+
+Wait, 3 points to itself? Let me recorrect:
+    0 ——→ 1 ——→ 2 ——→ 3
+
+No cycle exists in this directed graph.
+```
+
+**Example 2:**
+```
+Input: V = 4, adj = [[1],[2],[3],[1]]
+Output: true
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3
+          ↑___________|
+
+There is a cycle: 1 → 2 → 3 → 1
+```
+
+**Example 3:**
+```
+Input: V = 3, adj = [[1],[2],[0]]
+Output: true
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2
+    ↑___________|
+
+There is a cycle: 0 → 1 → 2 → 0
+```
+
+**Constraints:**
+- `1 <= V, E <= 10^5`
+
+---
+
+## 3. Find Eventual Safe States
+
+**Problem Description:**
+
+There is a directed graph of `n` nodes with each node labeled from `0` to `n - 1`. The graph is represented by a 2D integer array `graph` where `graph[i]` is an integer array of nodes adjacent to node `i`, meaning there is an edge from node `i` to each node in `graph[i]`.
+
+A node is a terminal node if there are no outgoing edges. A node is a safe node if every possible path starting from that node leads to a terminal node (or another safe node).
+
+Return an array containing all the safe nodes of the graph. The answer should be sorted in ascending order.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: graph = [[1,2],[2,3],[5],[0],[5],[],[]]
+Output: [2,4,5,6]
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 5 (terminal)
+    ↑     |     ↓
+    |     ↓     6 (terminal)
+    3 ←—— 3
+    |
+    ↓
+    4 ——→ 5 (terminal)
+
+Safe nodes:
+- Node 2: leads to 5 (terminal) ✓
+- Node 4: leads to 5 (terminal) ✓
+- Node 5: terminal node ✓
+- Node 6: terminal node ✓
+
+Unsafe nodes:
+- Nodes 0, 1, 3 form or lead to a cycle
+```
+
+**Example 2:**
+```
+Input: graph = [[1,2,3,4],[1,2],[3,4],[0,4],[]]
+Output: [4]
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3 ——→ 4 (terminal)
+    ↑_____|     |     ↑     
+          |_____↓_____|
+
+Only node 4 is safe (terminal node).
+All other nodes either form cycles or lead to cycles.
+```
+
+**Constraints:**
+- `n == graph.length`
+- `1 <= n <= 10^4`
+- `0 <= graph[i].length <= n`
+- `0 <= graph[i][j] <= n - 1`
+- `graph[i]` is sorted in a strictly increasing order
+- The graph may contain self-loops
+
+---
+
+## 4. Course Schedule I
+
+**Problem Description:**
+
+There are a total of `numCourses` courses you have to take, labeled from `0` to `numCourses - 1`. You are given an array `prerequisites` where `prerequisites[i] = [ai, bi]` indicates that you must take course `bi` first if you want to take course `ai`.
+
+For example, the pair `[0, 1]`, indicates that to take course `0` you have to first take course `1`.
+
+Return `true` if you can finish all courses. Otherwise, return `false`.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: numCourses = 2, prerequisites = [[1,0]]
+Output: true
+
+Visual Explanation:
+    0 ——→ 1
+
+To take course 1, you need to complete course 0 first.
+This is possible, so return true.
+```
+
+**Example 2:**
+```
+Input: numCourses = 2, prerequisites = [[1,0],[0,1]]
+Output: false
+
+Visual Explanation:
+    0 ←——→ 1
+
+To take course 1, you need course 0.
+To take course 0, you need course 1.
+This creates a cycle, making it impossible to finish. Return false.
+```
+
+**Example 3:**
+```
+Input: numCourses = 4, prerequisites = [[1,0],[2,1],[3,2]]
+Output: true
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3
+
+Valid order: 0 → 1 → 2 → 3
+You can finish all courses.
+```
+
+**Constraints:**
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= 5000`
+- `prerequisites[i].length == 2`
+- `0 <= ai, bi < numCourses`
+- All the pairs `prerequisites[i]` are unique
+
+---
+
+## 5. Course Schedule II
+
+**Problem Description:**
+
+There are a total of `numCourses` courses you have to take, labeled from `0` to `numCourses - 1`. You are given an array `prerequisites` where `prerequisites[i] = [ai, bi]` indicates that you must take course `bi` first if you want to take course `ai`.
+
+For example, the pair `[0, 1]`, indicates that to take course `0` you have to first take course `1`.
+
+Return the ordering of courses you should take to finish all courses. If there are many valid answers, return any of them. If it is impossible to finish all courses, return an empty array.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: numCourses = 2, prerequisites = [[1,0]]
+Output: [0,1]
+
+Visual Explanation:
+    0 ——→ 1
+
+First take course 0, then course 1.
+Order: [0, 1]
+```
+
+**Example 2:**
+```
+Input: numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]
+Output: [0,2,1,3] or [0,1,2,3]
+
+Visual Explanation:
+         0
+        / \
+       ↓   ↓
+       1   2
+        \ /
+         ↓
+         3
+
+Valid orders:
+- [0, 1, 2, 3]
+- [0, 2, 1, 3]
+
+Both complete prerequisites correctly.
+```
+
+**Example 3:**
+```
+Input: numCourses = 1, prerequisites = []
+Output: [0]
+
+Visual Explanation:
+    0 (no prerequisites)
+
+Only one course with no dependencies.
+```
+
+**Constraints:**
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= numCourses * (numCourses - 1)`
+- `prerequisites[i].length == 2`
+- `0 <= ai, bi < numCourses`
+- `ai != bi`
+- All the pairs `[ai, bi]` are distinct
+
+---
+
+## 6. Alien Dictionary
+
+**Problem Description:**
+
+There is a new alien language that uses the English alphabet. However, the order among the letters is unknown to you.
+
+You are given a list of strings `words` from the alien language's dictionary, where the strings in `words` are sorted lexicographically by the rules of this new language.
+
+Return a string of the unique letters in the new alien language sorted in lexicographically increasing order by the new language's rules. If there is no solution, return `""`. If there are multiple solutions, return any of them.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: words = ["wrt","wrf","er","ett","rftt"]
+Output: "wertf"
+
+Visual Explanation:
+Comparing adjacent words:
+"wrt" vs "wrf"  → t comes before f  (t → f)
+"wrf" vs "er"   → w comes before e  (w → e)
+"er" vs "ett"   → r comes before t  (r → t)
+"ett" vs "rftt" → e comes before r  (e → r)
+
+Building the graph:
+    w ——→ e ——→ r ——→ t ——→ f
+
+Topological sort: w → e → r → t → f
+Answer: "wertf"
+```
+
+**Example 2:**
+```
+Input: words = ["z","x"]
+Output: "zx"
+
+Visual Explanation:
+"z" vs "x" → z comes before x (z → x)
+
+Graph:
+    z ——→ x
+
+Answer: "zx"
+```
+
+**Example 3:**
+```
+Input: words = ["abc","ab"]
+Output: ""
+
+Visual Explanation:
+"abc" vs "ab" → Invalid! 
+"abc" cannot come before "ab" in dictionary order.
+This violates lexicographic ordering.
+
+Answer: "" (no valid solution)
+```
+
+**Example 4:**
+```
+Input: words = ["z","x","z"]
+Output: ""
+
+Visual Explanation:
+"z" vs "x" → z comes before x (z → x)
+"x" vs "z" → x comes before z (x → z)
+
+This creates a cycle: z → x → z
+
+Answer: "" (cycle detected, no valid solution)
+```
+
+**Constraints:**
+- `1 <= words.length <= 100`
+- `1 <= words[i].length <= 100`
+- `words[i]` consists of only lowercase English letters
+
+---
