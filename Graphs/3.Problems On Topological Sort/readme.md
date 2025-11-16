@@ -642,4 +642,271 @@ print(solution(nodes,edges))
 - **Time Complexity:** O(V + E) where V is the number of courses and E is the number of prerequisite relationships
 - **Space Complexity:** O(V + E) for the graph representation and auxiliary data structures
 
+---
 
+# Alien Dictionary
+
+## Problem Description
+
+Given a sorted dictionary of an alien language having `N` words and `K` starting alphabets of a standard dictionary, find the order of characters in the alien language.
+
+There may be multiple valid orders for a particular test case, thus you may return any valid order as a string. The output will be `True` if the order returned by the function is correct, else `False` denoting an incorrect order. If the given arrangement of words is inconsistent with any possible letter ordering, return an empty string `""`.
+
+**Notes on constraints:**
+- The dictionary is sorted according to the alien language's alphabetical order
+- We need to deduce the character ordering from the sorted word list
+- Multiple valid orderings may exist for the same input
+- If the input is inconsistent (contains a cycle), return an empty string
+
+---
+
+## Sample Test Cases With Explanation
+
+### Test Case 1
+```
+Input: N = 5, K = 4, dict = ["baa","abcd","abca","cab","cad"]
+Output: b d a c
+```
+**Explanation:** We analyze every consecutive pair to find the order of characters:
+- Pair "baa" and "abcd": First differing character is 'b' vs 'a' → 'b' comes before 'a'
+- Pair "abcd" and "abca": First differing character is 'd' vs 'a' → 'd' comes before 'a'
+- Pair "abca" and "cab": First differing character is 'a' vs 'c' → 'a' comes before 'c'
+- Pair "cab" and "cad": First differing character is 'b' vs 'd' → 'b' comes before 'd'
+
+So, ['b', 'd', 'a', 'c'] is a valid ordering.
+
+### Test Case 2
+```
+Input: N = 3, K = 3, dict = ["caa","aaa","aab"]
+Output: c a b
+```
+**Explanation:** Analyzing consecutive pairs:
+- Pair "caa" and "aaa": First differing character is 'c' vs 'a' → 'c' comes before 'a'
+- Pair "aaa" and "aab": First differing character is 'a' vs 'b' → 'a' comes before 'b'
+
+So, ['c', 'a', 'b'] is a valid ordering.
+
+---
+
+## Approaches
+
+### Approach 1: Topological Sort Using Kahn's Algorithm (BFS)
+
+**Summary:** Build a directed graph from character dependencies extracted from consecutive word pairs, then perform topological sort to find the character ordering.
+
+---
+
+**Intuition**
+
+The key insight is that when two consecutive words in the sorted dictionary differ at position `i`, the character at position `i` in the first word must come before the character at position `i` in the second word in the alien alphabet.
+
+For example:
+- If "baa" comes before "abcd", comparing character by character: 'b' vs 'a' → 'b' comes before 'a'
+- If "abcd" comes before "abca", comparing: 'a'='a', 'b'='b', 'c'='c', 'd' vs 'a' → 'd' comes before 'a'
+
+This creates a directed graph where an edge from 'x' to 'y' means 'x' comes before 'y'. The problem becomes finding a topological ordering of this graph.
+
+We use Kahn's algorithm (BFS-based topological sort):
+1. Build the graph and calculate in-degrees
+2. Start with nodes having in-degree 0 (no dependencies)
+3. Process nodes in order, reducing in-degrees of neighbors
+4. The processing order gives us the character ordering
+
+---
+
+**Approach Steps**
+
+1. **Extract character relationships (edges):**
+   - Compare each consecutive pair of words
+   - Find the first position where characters differ
+   - Add an edge from the character in the first word to the character in the second word
+   - Example: "baa" vs "abcd" → edge from 'b' to 'a'
+
+2. **Build the directed graph:**
+   - Create nodes for all K characters (first K letters of the alphabet)
+   - Create adjacency list from the extracted edges
+   - Calculate in-degree for each node (number of incoming edges)
+
+3. **Perform topological sort using Kahn's algorithm:**
+   - Initialize a queue with all nodes having in-degree 0
+   - While queue is not empty:
+     - Dequeue a node and add it to the result
+     - For each neighbor of this node:
+       - Decrease its in-degree by 1
+       - If in-degree becomes 0, add it to the queue
+
+4. **Return the result:**
+   - Join the characters in the result list to form the ordering string
+   - If the result doesn't contain all K characters, there's a cycle (inconsistent input)
+
+---
+
+**Example**
+
+Consider `dict = ["baa","abcd","abca","cab","cad"]` and `K = 4`:
+
+**Step 1:** Extract edges from consecutive pairs
+
+- **Pair 1:** "baa" vs "abcd"
+  - Position 0: 'b' ≠ 'a' → Edge: b → a
+  
+- **Pair 2:** "abcd" vs "abca"
+  - Position 0: 'a' = 'a', continue
+  - Position 1: 'b' = 'b', continue
+  - Position 2: 'c' = 'c', continue
+  - Position 3: 'd' ≠ 'a' → Edge: d → a
+  
+- **Pair 3:** "abca" vs "cab"
+  - Position 0: 'a' ≠ 'c' → Edge: a → c
+  
+- **Pair 4:** "cab" vs "cad"
+  - Position 0: 'c' = 'c', continue
+  - Position 1: 'a' = 'a', continue
+  - Position 2: 'b' ≠ 'd' → Edge: b → d
+
+**Edges:** [b→a, d→a, a→c, b→d]
+
+**Step 2:** Build graph and calculate in-degrees
+
+- **Graph:**
+  ```
+  a: [c]
+  b: [a, d]
+  c: []
+  d: [a]
+  ```
+
+- **In-degrees:**
+  ```
+  a: 2 (from b and d)
+  b: 0
+  c: 1 (from a)
+  d: 1 (from b)
+  ```
+
+**Step 3:** Topological sort
+
+- **Initial queue:** [b] (only node with in-degree 0)
+
+- **Iteration 1:**
+  - Dequeue: b
+  - Result: [b]
+  - Process neighbors: a, d
+  - Update in-degrees: a=1, d=0
+  - Queue: [d]
+
+- **Iteration 2:**
+  - Dequeue: d
+  - Result: [b, d]
+  - Process neighbors: a
+  - Update in-degrees: a=0
+  - Queue: [a]
+
+- **Iteration 3:**
+  - Dequeue: a
+  - Result: [b, d, a]
+  - Process neighbors: c
+  - Update in-degrees: c=0
+  - Queue: [c]
+
+- **Iteration 4:**
+  - Dequeue: c
+  - Result: [b, d, a, c]
+  - No neighbors
+  - Queue: []
+
+**Answer = "bdac"**
+
+---
+
+**Code**
+
+```python
+def getEdges(n, arr):
+    # Extract character ordering relationships from consecutive word pairs
+    edges = []
+    for i in range(1, n):
+        a = arr[i - 1]
+        b = arr[i]
+        
+        # Compare characters until we find the first difference
+        for j in range(min(len(a), len(b))):
+            if(a[j] != b[j]):
+                # First differing character gives us the ordering
+                edges.append([a[j], b[j]])
+                break
+    return edges
+
+def topoSort(nodes, edges, graph):
+    # Calculate in-degree for each node
+    inDegree = {i: 0 for i in nodes}
+    for i, j in edges:
+        inDegree[j] += 1
+    
+    # Initialize queue with nodes having in-degree 0
+    queue = []
+    for node, degree in inDegree.items():
+        if(degree == 0):
+            queue.append(node)
+    
+    # Perform BFS-based topological sort (Kahn's algorithm)
+    ans = []
+    while queue:
+        # Process node with no remaining dependencies
+        node = queue.pop(0)
+        ans.append(node)
+        
+        # Reduce in-degree of neighbors
+        for adj in graph[node]:
+            inDegree[adj] -= 1
+            # If in-degree becomes 0, add to queue
+            if(inDegree[adj] == 0):
+                queue.append(adj)
+    
+    return ans
+
+def solve(n, k, arr):
+    # Create nodes for first K characters
+    nodes = [chr(ord('a') + i) for i in range(k)]
+    
+    # Extract edges from consecutive word pairs
+    edges = getEdges(n, arr)
+    
+    # Build adjacency list representation of the graph
+    graph = {i: [] for i in nodes}
+    for i, j in edges:
+        graph[i].append(j)
+    
+    # Perform topological sort to get character ordering
+    ans = topoSort(nodes, edges, graph)
+    
+    return "".join(ans)
+    
+n, k = 5, 4
+arr = ["baa", "abcd", "abca", "cab", "cad"]
+print(solve(n, k, arr))
+```
+
+---
+
+**Time Complexity**
+
+O(N × L + K) where:
+- N is the number of words
+- L is the average length of words
+- K is the number of unique characters
+
+**Breakdown:**
+- Extracting edges: O(N × L) — comparing consecutive word pairs
+- Building graph: O(E) where E is the number of edges (at most N-1)
+- Topological sort: O(K + E) — visiting all nodes and edges once
+
+---
+
+**Space Complexity**
+
+O(K + E) where:
+- K is for storing nodes, in-degrees, and result
+- E is for storing edges in the adjacency list
+
+---
