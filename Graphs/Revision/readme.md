@@ -2186,3 +2186,336 @@ Stones removed: 0
 - No two stones are at the same coordinate point
 
 ---
+
+# Advanced Graph Algorithms Problems
+
+## Index
+1. [Kosaraju's Algorithm (Strongly Connected Components)](#1-kosarajus-algorithm-strongly-connected-components)
+2. [Bridges in Graph (Tarjan's Algorithm)](#2-bridges-in-graph-tarjans-algorithm)
+3. [Articulation Points (Cut Vertices)](#3-articulation-points-cut-vertices)
+
+---
+
+## 1. Kosaraju's Algorithm (Strongly Connected Components)
+
+**Problem Description:**
+
+Given a Directed Graph with `V` vertices (numbered from `0` to `V-1`) and `E` edges, find the number of strongly connected components in the graph.
+
+A strongly connected component (SCC) is a maximal group of vertices such that for every pair of vertices `u` and `v` in the group, there exists a path from `u` to `v` and a path from `v` to `u`.
+
+The graph is represented as an adjacency list where `adj[i]` contains all vertices `j` such that there is a directed edge from vertex `i` to vertex `j`.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: V = 5, adj = [[2,3],[0],[1],[4],[]]
+Output: 3
+
+Visual Explanation:
+    0 ——→ 2 ——→ 1
+    ↑           |
+    |___________|
+    
+    3 ——→ 4
+
+Strongly Connected Components:
+1. SCC 1: {0, 1, 2} - All three vertices can reach each other
+   - 0 → 2 → 1 → 0 (forms a cycle)
+2. SCC 2: {3}
+3. SCC 3: {4}
+
+Total SCCs: 3
+```
+
+**Example 2:**
+```
+Input: V = 4, adj = [[1],[2],[3],[]]
+Output: 4
+
+Visual Explanation:
+    0 ——→ 1 ——→ 2 ——→ 3
+
+No cycles, so each vertex is its own SCC.
+
+Strongly Connected Components:
+1. {0}
+2. {1}
+3. {2}
+4. {3}
+
+Total SCCs: 4
+```
+
+**Example 3:**
+```
+Input: V = 7, adj = [[1],[2],[0,3],[4],[5],[6],[4]]
+Output: 3
+
+Visual Explanation:
+    0 ←—→ 1 ←—→ 2
+          |
+          ↓
+          3 ——→ 4 ←—→ 5 ←—→ 6
+                ↑_________|
+
+Strongly Connected Components:
+1. SCC 1: {0, 1, 2} - All can reach each other
+2. SCC 2: {3} - No incoming edges to go back
+3. SCC 3: {4, 5, 6} - All three can reach each other
+
+Total SCCs: 3
+```
+
+**Constraints:**
+- `1 <= V <= 10^4`
+- `0 <= E <= V*(V-1)`
+
+---
+
+## 2. Bridges in Graph (Tarjan's Algorithm)
+
+**Problem Description:**
+
+Given an undirected connected graph with `V` vertices and `E` edges represented as an adjacency list, find all the bridges in the graph.
+
+A bridge (or cut edge) is an edge in a graph whose removal increases the number of connected components. In other words, a bridge is a critical edge whose deletion disconnects the graph.
+
+Return a list of all bridges in the graph. Each bridge should be represented as a pair `[u, v]` where `u < v`.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: V = 5, adj = [[1,2],[0,2],[0,1,3],[2,4],[3]]
+Output: [[2,3],[3,4]]
+
+Visual Explanation:
+    0 ———— 1
+    |\ _  /|
+    | \  / |
+    |  \/  |
+    |  /\  |
+    | /  \ |
+    |/__  \|
+    2 ———— 3 ———— 4
+
+Edges in the graph:
+- Triangle: 0-1-2-0 (cycle, no bridge)
+- Edge 2-3: Bridge (removing it disconnects {0,1,2} from {3,4})
+- Edge 3-4: Bridge (removing it disconnects 4 from rest)
+
+Bridges: [[2,3], [3,4]]
+```
+
+**Example 2:**
+```
+Input: V = 4, adj = [[1,2],[0,2],[0,1,3],[2]]
+Output: [[2,3]]
+
+Visual Explanation:
+    0 ———— 1
+     \    /
+      \  /
+       \/
+       2 ———— 3
+
+Edges in the graph:
+- Triangle: 0-1-2-0 (cycle, no bridge)
+- Edge 2-3: Bridge (removing it disconnects 3 from {0,1,2})
+
+Bridges: [[2,3]]
+```
+
+**Example 3:**
+```
+Input: V = 6, adj = [[1,2],[0,2],[0,1],[4],[3,5],[4]]
+Output: [[2,3],[3,4],[4,5]]
+
+Visual Explanation:
+    0 ———— 1        3 ———— 4 ———— 5
+     \    /         
+      \  /
+       \/
+       2
+
+Component 1: {0, 1, 2} - Triangle (no internal bridges)
+Component 2: {3, 4, 5} - Linear chain
+
+All edges between components and within linear chains are bridges:
+- Edge 2-3: Bridge (connects two parts)
+- Edge 3-4: Bridge (linear connection)
+- Edge 4-5: Bridge (linear connection)
+
+Bridges: [[2,3], [3,4], [4,5]]
+```
+
+**Example 4:**
+```
+Input: V = 4, adj = [[1],[0,2,3],[1,3],[1,2]]
+Output: [[0,1]]
+
+Visual Explanation:
+    0 ———— 1 ———— 2
+           |  \  /
+           |   \/
+           |   /\
+           |  /  \
+           |_/__  \|
+           3 ———— 2
+
+Edge 0-1: Bridge (removing it isolates vertex 0)
+Other edges form cycles, so they're not bridges.
+
+Bridges: [[0,1]]
+```
+
+**Constraints:**
+- `1 <= V <= 10^4`
+- `0 <= E <= 10^5`
+- The graph is connected
+- No self-loops or multiple edges
+
+---
+
+## 3. Articulation Points (Cut Vertices)
+
+**Problem Description:**
+
+Given an undirected connected graph with `V` vertices (numbered from `0` to `V-1`) and `E` edges represented as an adjacency list, find all the articulation points in the graph.
+
+An articulation point (or cut vertex) is a vertex in a graph whose removal (along with its incident edges) increases the number of connected components. In other words, it's a critical vertex whose deletion disconnects the graph.
+
+Return a list of all articulation points in ascending order. If there are no articulation points, return an empty list.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: V = 5, adj = [[1,2],[0,2],[0,1,3],[2,4],[3]]
+Output: [2,3]
+
+Visual Explanation:
+    0 ———— 1
+    |\ _  /|
+    | \  / |
+    |  \/  |
+    |  /\  |
+    | /  \ |
+    |/__  \|
+    2 ———— 3 ———— 4
+
+Articulation Points:
+- Vertex 2: Removing it disconnects {0,1} from {3,4}
+  Result: Components {0,1}, {3,4}
+  
+- Vertex 3: Removing it disconnects {0,1,2} from {4}
+  Result: Components {0,1,2}, {4}
+
+Vertices 0, 1 are not articulation points (part of triangle).
+Vertex 4 is not an articulation point (leaf node).
+
+Articulation Points: [2, 3]
+```
+
+**Example 2:**
+```
+Input: V = 4, adj = [[1,2],[0,2],[0,1,3],[2]]
+Output: [2]
+
+Visual Explanation:
+    0 ———— 1
+     \    /
+      \  /
+       \/
+       2 ———— 3
+
+Articulation Points:
+- Vertex 2: Removing it disconnects {0,1} from {3}
+
+Vertices 0 and 1 are part of a cycle (not articulation points).
+Vertex 3 is a leaf (not an articulation point).
+
+Articulation Points: [2]
+```
+
+**Example 3:**
+```
+Input: V = 7, adj = [[1],[0,2],[1,3],[2,4],[3,5,6],[4],[4]]
+Output: [1,2,3,4]
+
+Visual Explanation:
+    0 ———— 1 ———— 2 ———— 3 ———— 4 ———— 5
+                                  |
+                                  6
+
+This is a linear chain with a branch at vertex 4.
+
+Articulation Points:
+- Vertex 1: Removing it disconnects 0 from rest
+- Vertex 2: Removing it disconnects {0,1} from rest
+- Vertex 3: Removing it disconnects {0,1,2} from rest
+- Vertex 4: Removing it disconnects {5,6} from rest
+
+Articulation Points: [1, 2, 3, 4]
+```
+
+**Example 4:**
+```
+Input: V = 5, adj = [[1,2,3,4],[0,2,3,4],[0,1,3,4],[0,1,2,4],[0,1,2,3]]
+Output: []
+
+Visual Explanation:
+    0 ———— 1
+    |\    /|
+    | \  / |
+    |  \/  |
+    |  /\  |
+    | /  \ |
+    |/____\|
+    2 ———— 3
+     \    /
+      \  /
+       \/
+       4
+
+This is a complete graph (K5).
+Every vertex is connected to every other vertex.
+
+Removing any single vertex still keeps the graph connected.
+No articulation points exist.
+
+Articulation Points: []
+```
+
+**Example 5:**
+```
+Input: V = 6, adj = [[1],[0,2,3],[1],[1,4,5],[3,5],[3,4]]
+Output: [1,3]
+
+Visual Explanation:
+    0 ———— 1 ———— 2
+           |
+           3 ———— 4 ———— 5
+           |     /
+           |    /
+           |___/
+
+Articulation Points:
+- Vertex 1: Removing it disconnects 0 from {2,3,4,5}
+  Result: Components {0}, {2,3,4,5}
+  
+- Vertex 3: Removing it disconnects {0,1,2} from {4,5}
+  Result: Components {0,1,2}, {4,5}
+
+Articulation Points: [1, 3]
+```
+
+**Constraints:**
+- `1 <= V <= 10^4`
+- `0 <= E <= 10^5`
+- The graph is connected
+- No self-loops or multiple edges
+
+---
