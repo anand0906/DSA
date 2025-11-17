@@ -1784,3 +1784,405 @@ City with smallest count: 0 (only 1 reachable city)
 - All pairs `(fromi, toi)` are distinct
 
 ---
+
+# Disjoint Set Union (DSU) Problems
+
+## Index
+1. [Number of Operations to Make Network Connected](#1-number-of-operations-to-make-network-connected)
+2. [Accounts Merge](#2-accounts-merge)
+3. [Number of Islands II](#3-number-of-islands-ii)
+4. [Making a Large Island](#4-making-a-large-island)
+5. [Most Stones Removed with Same Row or Column](#5-most-stones-removed-with-same-row-or-column)
+
+---
+
+## 1. Number of Operations to Make Network Connected
+
+**Problem Description:**
+
+There are `n` computers numbered from `0` to `n - 1` connected by ethernet cables `connections` forming a network where `connections[i] = [ai, bi]` represents a connection between computers `ai` and `bi`. Any computer can reach any other computer directly or indirectly through the network.
+
+You are given an initial computer network `connections`. You can extract certain cables between two directly connected computers, and place them between any pair of disconnected computers to make them directly connected.
+
+Return the minimum number of times you need to do this in order to make all the computers connected. If it is not possible, return `-1`.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: n = 4, connections = [[0,1],[0,2],[1,2]]
+Output: 1
+
+Visual Explanation:
+Initial state:
+    0 ——— 1
+    |   / 
+    | /   
+    2       3 (disconnected)
+
+We have 3 connections for 4 computers.
+The cable between 1 and 2 is redundant.
+Remove it and connect 3 to any computer.
+
+After operation:
+    0 ——— 1       or      0 ——— 1 ——— 3
+    |             |       |           
+    |             |       |           
+    2 ——— 3       2       2       
+
+Minimum operations: 1
+```
+
+**Example 2:**
+```
+Input: n = 6, connections = [[0,1],[0,2],[0,3],[1,2],[1,3]]
+Output: 2
+
+Visual Explanation:
+Initial state:
+    0 ——— 1
+    |\ /| 
+    | X | 
+    |/ \|
+    2   3       4 (disconnected)    5 (disconnected)
+
+Component 1: {0,1,2,3} with 5 cables (2 redundant)
+Component 2: {4} 
+Component 3: {5}
+
+We have 3 components, need 2 operations to connect them all.
+```
+
+**Example 3:**
+```
+Input: n = 6, connections = [[0,1],[0,2],[0,3],[1,2]]
+Output: -1
+
+Visual Explanation:
+    0 ——— 1
+    |\ /
+    | X
+    |/ 
+    2   3       4 (disconnected)    5 (disconnected)
+
+Component 1: {0,1,2,3} with 4 cables (1 redundant)
+Component 2: {4}
+Component 3: {5}
+
+We have 3 components but only 1 extra cable.
+Need 2 cables to connect 3 components.
+Impossible! Return -1
+```
+
+**Constraints:**
+- `1 <= n <= 10^5`
+- `1 <= connections.length <= min(n * (n - 1) / 2, 10^5)`
+- `connections[i].length == 2`
+- `0 <= ai, bi < n`
+- `ai != bi`
+- There are no repeated connections
+
+---
+
+## 2. Accounts Merge
+
+**Problem Description:**
+
+Given a list of `accounts` where each element `accounts[i]` is a list of strings, where the first element `accounts[i][0]` is a name, and the rest of the elements are emails representing emails of the account.
+
+Now, we would like to merge these accounts. Two accounts definitely belong to the same person if there is some common email to both accounts. Note that even if two accounts have the same name, they may belong to different people as people could have the same name. A person can have any number of accounts initially, but all of their accounts definitely have the same name.
+
+After merging the accounts, return the accounts in the following format: the first element of each account is the name, and the rest of the elements are emails in sorted order.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: accounts = [["John","johnsmith@mail.com","john_newyork@mail.com"],["John","johnsmith@mail.com","john00@mail.com"],["Mary","mary@mail.com"],["John","johnnybravo@mail.com"]]
+Output: [["John","john00@mail.com","john_newyork@mail.com","johnsmith@mail.com"],["Mary","mary@mail.com"],["John","johnnybravo@mail.com"]]
+
+Visual Explanation:
+Account 1: John - {johnsmith@mail.com, john_newyork@mail.com}
+Account 2: John - {johnsmith@mail.com, john00@mail.com}
+Account 3: Mary - {mary@mail.com}
+Account 4: John - {johnnybravo@mail.com}
+
+Merging logic:
+- Accounts 1 & 2 share "johnsmith@mail.com" → Merge
+  Result: John - {johnsmith@mail.com, john_newyork@mail.com, john00@mail.com}
+- Account 3: Separate person (Mary)
+- Account 4: No common emails with others → Separate John
+
+Final merged accounts:
+1. John: [john00@mail.com, john_newyork@mail.com, johnsmith@mail.com] (sorted)
+2. Mary: [mary@mail.com]
+3. John: [johnnybravo@mail.com]
+```
+
+**Example 2:**
+```
+Input: accounts = [["Gabe","Gabe0@m.co","Gabe3@m.co","Gabe1@m.co"],["Kevin","Kevin3@m.co","Kevin5@m.co","Kevin0@m.co"],["Ethan","Ethan5@m.co","Ethan4@m.co","Ethan0@m.co"],["Hanah","Hanah3@m.co","Hanah1@m.co","Hanah0@m.co"],["Gabe","Gabe0@m.co","Gabe4@m.co","Gabe2@m.co"]]
+Output: [["Ethan","Ethan0@m.co","Ethan4@m.co","Ethan5@m.co"],["Gabe","Gabe0@m.co","Gabe1@m.co","Gabe2@m.co","Gabe3@m.co","Gabe4@m.co"],["Hanah","Hanah0@m.co","Hanah1@m.co","Hanah3@m.co"],["Kevin","Kevin0@m.co","Kevin3@m.co","Kevin5@m.co"]]
+
+Visual Explanation:
+Gabe Account 1: {Gabe0, Gabe3, Gabe1}
+Gabe Account 2: {Gabe0, Gabe4, Gabe2}
+These share "Gabe0" → Merge into {Gabe0, Gabe1, Gabe2, Gabe3, Gabe4}
+
+All other accounts have no overlapping emails.
+```
+
+**Constraints:**
+- `1 <= accounts.length <= 1000`
+- `2 <= accounts[i].length <= 10`
+- `1 <= accounts[i][j].length <= 30`
+- `accounts[i][0]` consists of English letters
+- `accounts[i][j] (for j > 0)` is a valid email
+
+---
+
+## 3. Number of Islands II
+
+**Problem Description:**
+
+You are given an empty 2D binary grid `grid` of size `m x n`. The grid represents a map where `0`'s represent water and `1`'s represent land. Initially, all the cells of `grid` are water cells (i.e., all the cells are `0`'s).
+
+We can perform an add land operation: turning the water at position into a land. You are given an array `positions` where `positions[i] = [ri, ci]` is the position `(ri, ci)` at which we should operate the `i`th operation.
+
+Return an array of integers `answer` where `answer[i]` is the number of islands after turning the cell `(ri, ci)` into a land.
+
+An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: m = 3, n = 3, positions = [[0,0],[0,1],[1,2],[2,1]]
+Output: [1,1,2,3]
+
+Visual Explanation:
+Initial grid (all water):
+    0  0  0
+    0  0  0
+    0  0  0
+
+Operation 1: Add land at (0,0)
+    1  0  0        Islands: 1
+    0  0  0
+    0  0  0
+
+Operation 2: Add land at (0,1) - connects to (0,0)
+    1  1  0        Islands: 1 (merged)
+    0  0  0
+    0  0  0
+
+Operation 3: Add land at (1,2)
+    1  1  0        Islands: 2
+    0  0  1
+    0  0  0
+
+Operation 4: Add land at (2,1)
+    1  1  0        Islands: 3
+    0  0  1
+    0  1  0
+
+Answer: [1, 1, 2, 3]
+```
+
+**Example 2:**
+```
+Input: m = 1, n = 1, positions = [[0,0]]
+Output: [1]
+
+Visual Explanation:
+Initial: [0]
+After (0,0): [1]
+Islands: 1
+```
+
+**Example 3:**
+```
+Input: m = 3, n = 3, positions = [[0,0],[0,1],[1,2],[1,2]]
+Output: [1,1,2,2]
+
+Visual Explanation:
+Operation 1: (0,0) → Islands: 1
+Operation 2: (0,1) → Islands: 1 (merges)
+Operation 3: (1,2) → Islands: 2 (new island)
+Operation 4: (1,2) → Islands: 2 (already land, no change)
+
+Answer: [1, 1, 2, 2]
+```
+
+**Constraints:**
+- `1 <= m, n, positions.length <= 10^4`
+- `1 <= m * n <= 10^4`
+- `positions[i].length == 2`
+- `0 <= ri < m`
+- `0 <= ci < n`
+
+---
+
+## 4. Making A Large Island
+
+**Problem Description:**
+
+You are given an `n x n` binary matrix `grid`. You are allowed to change at most one `0` to be `1`.
+
+Return the size of the largest island in `grid` after applying this operation.
+
+An island is a 4-directionally connected group of `1`s.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: grid = [[1,0],[0,1]]
+Output: 3
+
+Visual Explanation:
+Original grid:
+    1  0
+    0  1
+
+Option 1: Change (0,1) to 1
+    1  1        Island size: 3
+    0  1
+
+Option 2: Change (1,0) to 1
+    1  0        Island size: 3
+    1  1
+
+Maximum island size: 3
+```
+
+**Example 2:**
+```
+Input: grid = [[1,1],[1,0]]
+Output: 4
+
+Visual Explanation:
+Original grid:
+    1  1        Current islands:
+    1  0        Island 1: size 3
+
+Change (1,1) to 1:
+    1  1        Island size: 4 (all connected)
+    1  1
+
+Maximum island size: 4
+```
+
+**Example 3:**
+```
+Input: grid = [[1,1],[1,1]]
+Output: 4
+
+Visual Explanation:
+Original grid:
+    1  1        Already maximum
+    1  1        Island size: 4
+
+No need to change anything (or change doesn't improve).
+Maximum island size: 4
+```
+
+**Constraints:**
+- `n == grid.length`
+- `n == grid[i].length`
+- `1 <= n <= 500`
+- `grid[i][j]` is either `0` or `1`
+
+---
+
+## 5. Most Stones Removed with Same Row or Column
+
+**Problem Description:**
+
+On a 2D plane, we place `n` stones at some integer coordinate points. Each coordinate point may have at most one stone.
+
+A stone can be removed if it shares either the same row or the same column as another stone that has not been removed.
+
+Given an array `stones` of length `n` where `stones[i] = [xi, yi]` represents the location of the `i`th stone, return the largest possible number of stones that can be removed.
+
+**Sample Test Cases:**
+
+**Example 1:**
+```
+Input: stones = [[0,0],[0,1],[1,0],[1,2],[2,1],[2,2]]
+Output: 5
+
+Visual Explanation:
+Grid visualization:
+    Col 0  Col 1  Col 2
+Row 0:  X      X      
+Row 1:  X             X
+Row 2:         X      X
+
+Connected components (stones sharing row or column):
+- (0,0), (0,1), (1,0), (1,2), (2,1), (2,2) → All connected
+
+Removal sequence (one possible way):
+1. Remove (0,1) - shares col 1 with (2,1)
+2. Remove (1,2) - shares row 1 with (1,0) 
+3. Remove (2,2) - shares col 2 with (1,2)
+4. Remove (2,1) - shares row 2 with (2,2)
+5. Remove (1,0) - shares row 1 with others
+6. (0,0) remains (must keep 1 stone per component)
+
+Stones removed: 5
+```
+
+**Example 2:**
+```
+Input: stones = [[0,0],[0,2],[1,1],[2,0],[2,2]]
+Output: 3
+
+Visual Explanation:
+Grid visualization:
+    Col 0  Col 1  Col 2
+Row 0:  X             X
+Row 1:         X      
+Row 2:  X             X
+
+Connected components:
+- Component 1: (0,0), (2,0) - share column 0
+- Component 2: (0,2), (2,2) - share column 2
+- Component 3: (1,1) - isolated
+
+From each component, we must keep 1 stone:
+- Component 1: Remove 1 stone (keep 1)
+- Component 2: Remove 1 stone (keep 1)
+- Component 3: Remove 0 stones (only 1 stone)
+
+Total removed: 1 + 1 + 0 = 2
+
+Wait, let me reconsider:
+(0,0) - row 0, col 0
+(0,2) - row 0, col 2 → shares row 0 with (0,0)
+(2,0) - row 2, col 0 → shares col 0 with (0,0)
+(2,2) - row 2, col 2 → shares row 2 with (2,0) and col 2 with (0,2)
+(1,1) - row 1, col 1 → isolated
+
+Actually all except (1,1) are connected!
+Components: 2 (one with 4 stones, one with 1 stone)
+Stones that can be removed: 5 - 2 = 3
+```
+
+**Example 3:**
+```
+Input: stones = [[0,0]]
+Output: 0
+
+Visual Explanation:
+Only one stone.
+Cannot remove it.
+Stones removed: 0
+```
+
+**Constraints:**
+- `1 <= stones.length <= 1000`
+- `0 <= xi, yi <= 10^4`
+- No two stones are at the same coordinate point
+
+---
