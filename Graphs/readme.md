@@ -1,263 +1,110 @@
-# Complete Guide to Graph Data Structures
-
-## Table of Contents
-1. [Data Structure Classification](#data-structure-classification)
-2. [What is a Graph?](#what-is-a-graph)
-3. [Applications of Graphs](#applications-of-graphs)
-4. [Types of Graphs](#types-of-graphs)
-5. [Graph Terminology](#graph-terminology)
-6. [Graph Representation](#graph-representation)
+## 📋 Table of Contents
+- [Graph Traversal & Basic Concepts](#graph-traversal--basic-concepts)
+- [Topological Sort & Directed Graphs](#topological-sort--directed-graphs)
+- [Shortest Path Algorithms](#shortest-path-algorithms)
+- [Disjoint Set Union (Union-Find)](#disjoint-set-union-union-find)
+- [Advanced Graph Algorithms](#advanced-graph-algorithms)
 
 ---
 
-## Data Structure Classification
+## Graph Traversal & Basic Concepts
 
-Data structures can be broadly classified into two main categories:
+### Connected Components & Connectivity
+1. Connected Components
+2. Number of Provinces
+3. Number of Islands
+4. Number of Enclaves
+5. Surrounded Regions
 
-### Linear Data Structures
-Data elements are arranged in a sequential (linear) manner.
-- **Examples**: Arrays, Linked Lists, Stacks, Queues
+### BFS Applications
+6. Flood Fill Algorithm
+7. Rotten Oranges
+8. Distance of Nearest Cell Having One
 
-### Non-Linear Data Structures
-Data elements are not arranged in a sequential manner. They form a hierarchical or interconnected structure.
-- **Examples**: Trees, Graphs
-
----
-
-## What is a Graph?
-
-A **Graph** is a non-linear data structure consisting of:
-- **Nodes/Vertices/Points**: Individual data elements
-- **Edges/Lines/Arcs**: Connections between pairs of nodes
-
-### Key Definitions:
-- A graph is a finite set of nodes and edges used to connect pairs of nodes
-- A pictorial representation of a set of objects where some pairs are connected by links
-- Can be considered as a cyclic tree
-
-### Example Graph Structure:
-```
-Vertices: V = {A, B, C, D, E}
-Edges: E = {(A,B), (B,C), (C,E), (E,D), (D,B), (D,A)}
-```
+### Cycle Detection & Graph Properties
+9. Cycle Detection in Undirected Graphs
+10. Bipartite Graph Detection
 
 ---
 
-## Applications of Graphs
+## Topological Sort & Directed Graphs
 
-Graphs have numerous real-world applications:
+### Topological Ordering
+11. Topological Sort
+12. Course Schedule I
+13. Course Schedule II
+14. Alien Dictionary
 
-### Social Media & E-commerce
-- **Recommendation Systems**: Used in social media platforms and e-commerce applications to suggest friends, products, or content
-
-### Computer Science
-- **Flow of Computation**: Represent computational processes and data flow
-
-### Navigation Systems
-- **Google Maps**: Uses graphs where road intersections are vertices and roads are edges
-- **Shortest Path Algorithms**: Calculate optimal routes between locations
-
-### World Wide Web
-- **Web Page Linking**: Pages connect to others through hyperlinks, forming a graph structure
+### Cycle Detection & Safe States
+15. Detect Cycle in Directed Graph
+16. Find Eventual Safe States
 
 ---
 
-## Types of Graphs
+## Shortest Path Algorithms
 
-### 1. Null Graph
-- **Definition**: Contains vertices but no edges between them
-- **Characteristics**: n nodes, zero edges
+### DAG & Unweighted Graphs
+17. Shortest Path in DAG
+18. Shortest Path in Unweighted Graph
 
-### 2. Finite Graph
-- **Definition**: Contains a finite number of vertices and edges
-- **Characteristics**: Limited, countable elements
+### Single Source Shortest Path
+19. Dijkstra's Algorithm
+20. Print Shortest Path
+21. Bellman-Ford Algorithm
 
-### 3. Infinite Graph
-- **Definition**: Contains infinite number of vertices and edges
-- **Characteristics**: Unbounded structure
+### Advanced Shortest Path Problems
+22. Cheapest Flights Within K Stops
+23. Number of Ways to Arrive at Destination
+24. Minimum Multiplications to Reach End
+25. Shortest Distance in Binary Maze
+26. Path with Minimum Effort
 
-### 4. Cyclic Graph
-- **Definition**: Contains at least one cycle
-- **Characteristics**: Closed paths exist within the graph
+### Word Transformation
+27. Word Ladder I
+28. Word Ladder II
 
-### 5. Acyclic Graph
-- **Definition**: Contains no cycles
-- **Characteristics**: No closed paths, tree-like structure
-
-### 6. Simple Graph
-- **Definition**: Only one edge between any pair of vertices
-- **Characteristics**: No multiple edges or self-loops
-
-### 7. Multi Graph
-- **Definition**: Multiple edges between pairs of vertices
-- **Characteristics**: No self-loops but allows parallel edges
-
-### 8. Complete Graph
-- **Definition**: Edge exists between every pair of vertices
-- **Characteristics**: Every complete graph is also a simple graph
-- **Degree**: Each node has degree = (number of vertices - 1)
-
-### 9. Pseudo Graph
-- **Definition**: Contains at least one self-loop
-- **Characteristics**: Vertices can connect to themselves
-
-### 10. Regular Graph
-- **Definition**: All vertices have equal degree
-- **Note**: Complete graphs are regular, but not all regular graphs are complete
-
-### 11. Connected Graph
-- **Definition**: At least one path exists between every pair of vertices
-- **Characteristics**: No isolated components
-
-### 12. Disconnected Graph
-- **Definition**: No path exists between at least one pair of vertices
-- **Characteristics**: Contains isolated components
-
-### 13. Directed Graph (Digraph)
-- **Definition**: All edges have direction indicating traversal order
-- **Representation**: G = (V, E) where edges map to ordered pairs (Vi, Vj)
-- **Example**: Like following someone on social media (one-way relationship)
-
-### 14. Undirected Graph
-- **Definition**: No orientation/direction on edges
-- **Characteristics**: All edges are bidirectional
-- **Example**: Facebook friendship (mutual relationship)
-
-### 15. Weighted Graph
-- **Definition**: Edges have associated values/weights
-- **Use Cases**: Represent cost, distance, or capacity
-
-### 16. Unweighted Graph
-- **Definition**: No values associated with edges
-- **Default**: All graphs are unweighted unless specified
-
-### 17. Dense & Sparse Graphs
-- **Dense Graph**: Number of edges close to maximum possible
-- **Sparse Graph**: Contains only a few edges
-
-### 18. Bipartite Graph
-- **Definition**: Vertex set can be split into two disjoint sets (V1, V2)
-- **Characteristics**: Edges only connect vertices between different sets
-
-### 19. Complete Bipartite Graph
-- **Definition**: Every vertex in first set connects to every vertex in second set
-- **Notation**: Kx,y (x vertices in first set, y in second set)
+### All-Pairs Shortest Path
+29. Floyd-Warshall Algorithm
+30. Find City with Smallest Number of Neighbors
 
 ---
 
-## Graph Terminology
+## Disjoint Set Union (Union-Find)
 
-### Basic Elements
-- **Vertex (Node)**: Individual data element
-- **Edge**: Path/connection between two vertices (endpoints)
+### Network & Connectivity
+31. Number of Operations to Make Network Connected
+32. Accounts Merge
 
-### Vertex Relationships
-- **Adjacent Vertices**: Two vertices connected by an edge
-- **Incident Edge**: Edge connected to a vertex as an endpoint
-
-### Edge Direction (for Directed Graphs)
-- **Outgoing Edge**: Edge directed away from a vertex
-- **Incoming Edge**: Edge directed toward a vertex
-
-### Degree Concepts
-- **Degree**: Number of edges incident to a vertex
-- **In-degree**: Number of incoming edges to a vertex
-- **Out-degree**: Number of outgoing edges from a vertex
-
-### Special Elements
-- **Parallel Edges**: Multiple edges between same pair of vertices
-- **Self-loop**: Edge connecting a vertex to itself
-- **Forest**: Graph with no cycles
-- **Path**: Sequence of successive edges between nodes
-- **Path Length**: Number of edges in a path
-- **Simple Path**: Path with distinct vertices
-
-### Special Vertices
-- **Source Vertex**: In-degree = 0
-- **Sink Vertex**: Out-degree = 0
-
-### Connectivity
-- **Strongly Connected**: Directed path exists between every pair of vertices (both directions)
-- **Weakly Connected**: Becomes connected when all directed edges are replaced with undirected edges
-- **Bridge**: Edge whose removal disconnects the graph
+### Dynamic Connectivity
+33. Number of Islands II
+34. Making a Large Island
+35. Most Stones Removed with Same Row or Column
 
 ---
 
-## Graph Representation
+## Advanced Graph Algorithms
 
-### 1. Adjacency Matrix
+### Strongly Connected Components
+36. Kosaraju's Algorithm (Strongly Connected Components)
 
-**Description**: 2D matrix representation where matrix[i][j] indicates connection between vertex i and vertex j.
+### Critical Elements (Tarjan's Algorithm)
+37. Bridges in Graph (Tarjan's Algorithm)
+38. Articulation Points (Cut Vertices)
 
-**Matrix Size**: V × V (where V = number of vertices)
+---
 
-**Values**:
-- **Unweighted**: 1 (edge exists) or 0 (no edge)
-- **Weighted**: Actual weight value or 0 (no edge)
+## 📊 Summary Statistics
 
-**For Directed Graphs**: matrix[i][j] = 1 means edge from vertex i to vertex j
+**Total Problems:** 38
 
-**For Undirected Graphs**: matrix[i][j] = matrix[j][i] = 1 (symmetric matrix)
+**By Category:**
+- Graph Traversal & Basic Concepts: 10 problems
+- Topological Sort & Directed Graphs: 6 problems
+- Shortest Path Algorithms: 14 problems
+- Disjoint Set Union (Union-Find): 5 problems
+- Advanced Graph Algorithms: 3 problems
 
-#### Advantages:
-- Easy to understand and implement
-- O(1) time complexity for:
-  - Checking edge existence
-  - Adding an edge
-  - Removing an edge
-
-#### Disadvantages:
-- O(V²) space complexity (inefficient for sparse graphs)
-- O(V²) time complexity for adding/removing vertices
-
-### 2. Adjacency List
-
-**Description**: Array of linked lists where each vertex maintains a list of its neighbors.
-
-**Structure**: 
-- Array indexed by vertex number
-- Each array element points to a linked list of adjacent vertices
-
-**Implementation Options**:
-- Linked list representation
-- Array-based representation
-
-#### Advantages:
-- Space efficient: O(V + E) where E = number of edges
-- O(1) time for adding/deleting edges and vertices
-- Clear visualization of adjacent nodes
-
-#### Disadvantages:
-- Slower for checking if two vertices are adjacent
-- O(V) time complexity for adjacency testing
-
-### 3. Incidence Matrix
-
-**Description**: Matrix representation where rows represent vertices and columns represent edges.
-
-**Matrix Size**: V × E (where V = vertices, E = edges)
-
-**Values**:
-- **0**: Vertex not connected to edge
-- **1**: Vertex connected as outgoing endpoint
-- **-1**: Vertex connected as incoming endpoint
-
-**Use Case**: Particularly useful for directed graphs where edge direction matters
-
-#### Advantages:
-- Clear representation of vertex-edge relationships
-- Useful for certain graph algorithms
-
-#### Disadvantages:
-- Space inefficient: O(V × E)
-- More complex than other representations
-
-### 4. Incidence List
-
-**Description**: Each vertex maintains a list of edges incident to it.
-
-**Structure**: Similar to adjacency list but stores edge information instead of just neighboring vertices.
-
-
-
-
+**Difficulty Distribution:**
+- Fundamental Concepts: Problems 1-10
+- Intermediate Topics: Problems 11-30
+- Advanced Algorithms: Problems 31-38
