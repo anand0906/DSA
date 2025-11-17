@@ -821,7 +821,7 @@ V = 4
 edges = [[0,1], [1,2], [2,0], [1,3]]
 ```
 
-<img src="https://static.takeuforward.org/content/ProblemSetter-kfpw3bZG" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-R_WVxKam" />
 
 ### Output
 ```
@@ -836,7 +836,7 @@ The edge [1,3] is a bridge because removing it splits the graph into two compone
 V = 3
 edges = [[0,1], [1,2], [2,0]]
 ```
-<img src="https://static.takeuforward.org/content/ProblemSetter-xysZGNeR" />
+<img src="https://static.takeuforward.org/content/ProblemSetter-6UM08WAP" />
 ### Output
 ```
 []
