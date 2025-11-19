@@ -1214,4 +1214,1863 @@ The 1st missing number is 2
 
 ---
 
+# Binary Search Optimization Problems
 
+## Table of Contents
+1. [Aggressive Cows](#1-aggressive-cows)
+2. [Split Array - Largest Sum](#2-split-array---largest-sum)
+3. [Book Allocation Problem](#3-book-allocation-problem)
+4. [The Painter's Partition Problem](#4-the-painters-partition-problem)
+5. [Minimize Max Distance to Gas Station](#5-minimize-max-distance-to-gas-station)
+
+---
+
+## 1. Aggressive Cows
+
+### 📝 Problem Description
+You are given an array `stalls[]` of size `n`, representing the positions of `n` stalls along a straight line. You are also given an integer `k`, representing the number of aggressive cows.
+
+The task is to assign stalls to `k` cows such that the **minimum distance** between any two cows is **maximized**. Return the largest minimum distance possible.
+
+**Note:** Cows are aggressive and will fight if placed too close.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: stalls = [1, 2, 4, 8, 9], k = 3
+Output: 3
+
+Visual Representation:
+Stalls: [1, 2, 4, 8, 9]
+        ↓     ↓     ↓
+Position: 1  2  3  4  5  6  7  8  9
+         [C]    [C]          [C]
+         
+Cow placement:
+- Cow 1 at position 1
+- Cow 2 at position 4 (distance = 3)
+- Cow 3 at position 8 (distance = 4)
+
+Minimum distance between any two cows = min(3, 4) = 3
+
+Why not distance = 4?
+Position: 1  2  3  4  5  6  7  8  9
+         [C]                [C]
+We can only place 2 cows with distance ≥ 4
+
+Maximum of minimum distance = 3 ✓
+```
+
+**Example 2:**
+```
+Input: stalls = [0, 3, 4, 7, 10, 9], k = 4
+Output: 3
+
+Visual Representation:
+Sorted stalls: [0, 3, 4, 7, 9, 10]
+
+Position: 0  1  2  3  4  5  6  7  8  9  10
+         [C]       [C]       [C]       [C]
+
+Cow placement with minimum distance = 3:
+- Cow 1 at position 0
+- Cow 2 at position 3 (distance = 3)
+- Cow 3 at position 7 (distance = 4)
+- Cow 4 at position 10 (distance = 3)
+
+Minimum distance = min(3, 4, 3) = 3 ✓
+```
+
+**Example 3:**
+```
+Input: stalls = [1, 2, 8, 4, 9], k = 3
+Output: 3
+
+Visual Representation:
+Sorted stalls: [1, 2, 4, 8, 9]
+
+Position: 1  2  3  4  5  6  7  8  9
+         [C]       [C]          [C]
+
+Optimal placement:
+- Cow 1 at position 1
+- Cow 2 at position 4 (distance = 3)
+- Cow 3 at position 8 (distance = 4)
+
+Minimum distance = 3
+```
+
+**Example 4:**
+```
+Input: stalls = [10, 1, 2, 7, 5], k = 3
+Output: 4
+
+Visual Representation:
+Sorted stalls: [1, 2, 5, 7, 10]
+
+Position: 1  2  3  4  5  6  7  8  9  10
+         [C]             [C]       [C]
+
+Optimal placement:
+- Cow 1 at position 1
+- Cow 2 at position 5 (distance = 4)
+- Cow 3 at position 10 (distance = 5)
+
+Minimum distance = 4 ✓
+```
+
+### ⚙️ Constraints
+- `2 <= n <= 10^5`
+- `0 <= stalls[i] <= 10^9`
+- `2 <= k <= n`
+
+---
+
+## 2. Split Array - Largest Sum
+
+### 📝 Problem Description
+Given an integer array `nums` and an integer `k`, split `nums` into `k` non-empty subarrays such that the largest sum of any subarray is **minimized**.
+
+Return the minimized largest sum of the split.
+
+A **subarray** is a contiguous part of the array.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: nums = [7, 2, 5, 10, 8], k = 2
+Output: 18
+
+Visual Representation:
+Array: [7, 2, 5, 10, 8]
+
+Split into 2 subarrays:
+Option 1: [7] | [2, 5, 10, 8]
+          sum=7  sum=25
+          Largest sum = 25
+
+Option 2: [7, 2] | [5, 10, 8]
+          sum=9    sum=23
+          Largest sum = 23
+
+Option 3: [7, 2, 5] | [10, 8]
+          sum=14      sum=18
+          Largest sum = 18 ✓ (Minimum)
+
+Option 4: [7, 2, 5, 10] | [8]
+          sum=24          sum=8
+          Largest sum = 24
+
+Best split: [7, 2, 5] | [10, 8]
+Minimized largest sum = 18
+```
+
+**Example 2:**
+```
+Input: nums = [1, 2, 3, 4, 5], k = 2
+Output: 9
+
+Visual Representation:
+Array: [1, 2, 3, 4, 5]
+
+Possible splits:
+[1] | [2, 3, 4, 5]        → max(1, 14) = 14
+[1, 2] | [3, 4, 5]        → max(3, 12) = 12
+[1, 2, 3] | [4, 5]        → max(6, 9) = 9 ✓
+[1, 2, 3, 4] | [5]        → max(10, 5) = 10
+
+Best split: [1, 2, 3] | [4, 5]
+Minimized largest sum = 9
+```
+
+**Example 3:**
+```
+Input: nums = [1, 4, 4], k = 3
+Output: 4
+
+Visual Representation:
+Array: [1, 4, 4]
+
+Split into 3 subarrays (each element separately):
+[1] | [4] | [4]
+sum=1 sum=4 sum=4
+
+Largest sum = 4 ✓
+```
+
+**Example 4:**
+```
+Input: nums = [10, 5, 13, 4, 8, 4, 5, 11, 14, 9, 16, 10, 20, 8], k = 8
+Output: 25
+
+Visual Representation:
+One optimal split:
+[10, 5] | [13, 4] | [8, 4] | [5, 11] | [14, 9] | [16] | [10, 20] | [8]
+  15       17        12       16        23       16      30        8
+
+Largest sum = 30... but we can do better
+
+Better split:
+[10, 5] | [13] | [4, 8, 4] | [5, 11] | [14] | [9, 16] | [10, 20] | [8]
+  15      13      16          16        14      25        30        8
+
+After trying all possibilities:
+Minimized largest sum = 25
+```
+
+### ⚙️ Constraints
+- `1 <= nums.length <= 1000`
+- `0 <= nums[i] <= 10^6`
+- `1 <= k <= min(50, nums.length)`
+
+---
+
+## 3. Book Allocation Problem
+
+### 📝 Problem Description
+Given an array `arr[]` of size `n` where `arr[i]` represents the number of pages in the `i-th` book. There are `m` students, and the task is to allocate all the books to the students.
+
+**Allocate books in such a way that:**
+1. Each student gets at least one book
+2. Each book should be allocated to exactly one student
+3. Book allocation should be in a contiguous manner
+4. The objective is to minimize the maximum number of pages assigned to a student
+
+Return the minimum possible maximum pages a student can get. If it's not possible to allocate all books to `m` students, return `-1`.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: arr = [12, 34, 67, 90], m = 2
+Output: 113
+
+Visual Representation:
+Books: [12, 34, 67, 90]
+       ↓   ↓   ↓   ↓
+Pages: 12  34  67  90
+
+Allocate to 2 students:
+
+Option 1: [12] | [34, 67, 90]
+          12     191
+          Max = 191
+
+Option 2: [12, 34] | [67, 90]
+          46         157
+          Max = 157
+
+Option 3: [12, 34, 67] | [90]
+          113            90
+          Max = 113 ✓ (Minimum)
+
+Option 4: [12, 34, 67, 90] | []
+          Not valid (student 2 gets no book)
+
+Best allocation:
+Student 1: Books [12, 34, 67] → 113 pages
+Student 2: Book [90] → 90 pages
+Minimum of maximum pages = 113
+```
+
+**Example 2:**
+```
+Input: arr = [10, 20, 30, 40], m = 2
+Output: 60
+
+Visual Representation:
+Books: [10, 20, 30, 40]
+
+Testing different allocations:
+[10] | [20, 30, 40]        → max(10, 90) = 90
+[10, 20] | [30, 40]        → max(30, 70) = 70
+[10, 20, 30] | [40]        → max(60, 40) = 60 ✓
+
+Best allocation:
+Student 1: [10, 20, 30] → 60 pages
+Student 2: [40] → 40 pages
+Answer: 60
+```
+
+**Example 3:**
+```
+Input: arr = [10, 20, 30], m = 1
+Output: 60
+
+Visual Representation:
+Books: [10, 20, 30]
+
+Only 1 student gets all books:
+Student 1: [10, 20, 30] → 60 pages
+
+Answer: 60
+```
+
+**Example 4:**
+```
+Input: arr = [5, 17, 100, 11], m = 4
+Output: 100
+
+Visual Representation:
+Books: [5, 17, 100, 11]
+
+4 students, 4 books → Each student gets 1 book:
+Student 1: [5] → 5 pages
+Student 2: [17] → 17 pages
+Student 3: [100] → 100 pages
+Student 4: [11] → 11 pages
+
+Maximum pages = 100
+```
+
+**Example 5:**
+```
+Input: arr = [10, 20, 30], m = 5
+Output: -1
+
+Explanation: 
+We have 3 books but 5 students
+Cannot allocate at least 1 book to each student
+Answer: -1
+```
+
+### ⚙️ Constraints
+- `1 <= n <= 10^5`
+- `1 <= arr[i] <= 10^6`
+- `1 <= m <= 10^5`
+
+---
+
+## 4. The Painter's Partition Problem
+
+### 📝 Problem Description
+Given an array `arr[]` of size `n` representing the length of `n` different boards and `k` painters available. Each painter takes 1 unit of time to paint 1 unit of the board.
+
+The task is to find the **minimum time** to paint all boards under the constraints that:
+1. Each painter can paint only contiguous sections of boards
+2. A painter will only start painting another board after completing the current board
+3. Multiple painters can work simultaneously
+
+Return the minimum time required to paint all boards.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: arr = [10, 20, 30, 40], k = 2
+Output: 60
+
+Visual Representation:
+Boards: [10, 20, 30, 40]
+        ↓   ↓   ↓   ↓
+Length: 10  20  30  40 units
+
+Allocate to 2 painters:
+
+Option 1: [10] | [20, 30, 40]
+          10     90 time units
+          Max = 90
+
+Option 2: [10, 20] | [30, 40]
+          30         70 time units
+          Max = 70
+
+Option 3: [10, 20, 30] | [40]
+          60             40 time units
+          Max = 60 ✓ (Minimum)
+
+Best allocation:
+Painter 1: Boards [10, 20, 30] → 60 time units
+Painter 2: Board [40] → 40 time units
+
+Both work simultaneously:
+Timeline:
+0────────────────────60  (Painter 1 finishes)
+0──────────40            (Painter 2 finishes)
+
+Total time = 60 units
+```
+
+**Example 2:**
+```
+Input: arr = [5, 10, 30, 20, 15], k = 3
+Output: 35
+
+Visual Representation:
+Boards: [5, 10, 30, 20, 15]
+
+Optimal allocation to 3 painters:
+[5, 10] | [30] | [20, 15]
+  15      30      35
+
+Timeline:
+Painter 1: 0────15
+Painter 2: 0──────────30
+Painter 3: 0──────────────35 (finishes last)
+
+Minimum time = 35 units
+```
+
+**Example 3:**
+```
+Input: arr = [10, 10, 10, 10], k = 2
+Output: 20
+
+Visual Representation:
+Boards: [10, 10, 10, 10]
+
+Optimal allocation:
+[10, 10] | [10, 10]
+   20        20
+
+Painter 1: 0────────20
+Painter 2: 0────────20
+
+Both finish at same time
+Minimum time = 20 units
+```
+
+**Example 4:**
+```
+Input: arr = [1, 2, 3, 4, 5, 6, 7, 8, 9], k = 3
+Output: 17
+
+Visual Representation:
+Boards: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+Sum = 45
+
+Optimal allocation to 3 painters:
+[1, 2, 3, 4, 5] | [6, 7] | [8, 9]
+      15           13        17
+
+Timeline:
+Painter 1: 0────────────15
+Painter 2: 0──────────13
+Painter 3: 0────────────────17
+
+Minimum time = 17 units
+```
+
+**Example 5:**
+```
+Input: arr = [100, 200, 300, 400], k = 4
+Output: 400
+
+Visual Representation:
+4 painters, 4 boards → Each painter paints 1 board
+
+[100] | [200] | [300] | [400]
+
+Painter 1: 0──────────100
+Painter 2: 0────────────────200
+Painter 3: 0──────────────────────300
+Painter 4: 0────────────────────────────400
+
+Maximum time taken = 400 units
+```
+
+### ⚙️ Constraints
+- `1 <= n <= 10^5`
+- `1 <= k <= 10^5`
+- `1 <= arr[i] <= 10^5`
+
+---
+
+## 5. Minimize Max Distance to Gas Station
+
+### 📝 Problem Description
+You are given a sorted array `stations[]` representing the positions of `n` gas stations on a highway. You need to add `k` new gas stations on the highway.
+
+The goal is to minimize the **maximum distance** between any two consecutive gas stations after adding `k` new stations.
+
+Return the minimum possible value of the maximum distance between consecutive gas stations after adding `k` new stations. The answer will be accepted if it's within `10^-6` of the actual answer.
+
+**Note:** You can add gas stations anywhere between existing stations.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: stations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], k = 9
+Output: 0.50
+
+Visual Representation:
+Original stations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Distance between consecutive: all = 1
+
+Adding 9 new stations optimally:
+Between each pair, add 1 station at midpoint:
+
+1 ─── 1.5 ─── 2 ─── 2.5 ─── 3 ─── 3.5 ─── 4 ...
+    0.5     0.5     0.5     0.5     0.5
+
+New stations at: 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5
+
+Maximum distance between consecutive stations = 0.5
+```
+
+**Example 2:**
+```
+Input: stations = [23, 24, 36, 39, 46, 56, 57, 65, 84, 98], k = 1
+Output: 14.00
+
+Visual Representation:
+Original stations: [23, 24, 36, 39, 46, 56, 57, 65, 84, 98]
+
+Distances between consecutive stations:
+23→24: 1
+24→36: 12
+36→39: 3
+39→46: 7
+46→56: 10
+56→57: 1
+57→65: 8
+65→84: 19 ← Largest gap
+84→98: 14
+
+Add 1 station at position 74.5 (middle of 65 and 84):
+65 ────── 74.5 ────── 84
+    9.5         9.5
+
+Wait, but 84→98 = 14 is still larger!
+
+Better: Add station in the gap 84→98 at position 91:
+84 ────── 91 ────── 98
+    7         7
+
+But gap 65→84 = 19 remains largest
+
+Optimal: Add in largest gap (65→84) at 74.5:
+New gaps: 65→74.5 = 9.5 and 74.5→84 = 9.5
+But 84→98 = 14 becomes the maximum
+
+Maximum distance = 14.00
+```
+
+**Example 3:**
+```
+Input: stations = [1, 13, 17, 23], k = 5
+Output: 4.00
+
+Visual Representation:
+Original: [1, 13, 17, 23]
+
+Distances:
+1→13: 12 (largest)
+13→17: 4
+17→23: 6
+
+Adding 5 new stations optimally:
+Divide the largest gap (1→13) into smaller segments
+
+Add 3 stations in gap 1→13:
+1 ─── 4 ─── 7 ─── 10 ─── 13
+   3     3      3       3
+
+Add 1 station in gap 17→23:
+17 ─── 20 ─── 23
+    3       3
+
+Add 1 station in gap 13→17:
+13 ─── 15 ─── 17
+    2       2
+
+Final gaps: 3, 3, 3, 3, 2, 2, 3, 3
+But we need to minimize maximum...
+
+Better distribution:
+Add 3 in gap 1→13: [1, 4, 7, 10, 13] → max gap = 3
+Add 1 in gap 17→23: [17, 20, 23] → max gap = 3
+Add 1 in gap 13→17: [13, 15, 17] → max gap = 2
+
+After optimization: Maximum distance ≈ 4.00
+```
+
+**Example 4:**
+```
+Input: stations = [3, 6, 12, 19, 33, 44, 67, 72, 89, 95], k = 2
+Output: 14.00
+
+Visual Representation:
+Distances between stations:
+3→6: 3
+6→12: 6
+12→19: 7
+19→33: 14
+33→44: 11
+44→67: 23 ← Largest
+67→72: 5
+72→89: 17
+89→95: 6
+
+Add 2 stations in largest gap (44→67):
+44 ──── 51.67 ──── 59.33 ──── 67
+     7.67        7.67        7.67
+
+But 72→89 = 17 is now the maximum
+
+Better: Add 1 in 44→67 and 1 in 72→89:
+44 ──── 55.5 ──── 67
+    11.5       11.5
+
+72 ──── 80.5 ──── 89
+    8.5        8.5
+
+Maximum after additions ≈ 14.00
+```
+
+### ⚙️ Constraints
+- `10 <= stations.length <= 2000`
+- `0 <= stations[i] <= 10^8`
+- `stations` is sorted in strictly increasing order
+- `0 <= k <= 10^6`
+- Answers within `10^-6` of the actual answer will be accepted
+
+---
+
+# Binary Search - Peak & Median Problems
+
+## Table of Contents
+1. [Find Peak Element](#1-find-peak-element)
+2. [Median of 2 Sorted Arrays](#2-median-of-2-sorted-arrays)
+3. [Kth Element of 2 Sorted Arrays](#3-kth-element-of-2-sorted-arrays)
+
+---
+
+## 1. Find Peak Element
+
+### 📝 Problem Description
+A peak element is an element that is strictly greater than its neighbors.
+
+Given a **0-indexed** integer array `nums`, find a peak element, and return its index. If the array contains multiple peaks, return the index to **any of the peaks**.
+
+You may imagine that `nums[-1] = nums[n] = -∞`. In other words, an element is always considered to be strictly greater than a neighbor that is outside the array.
+
+You must write an algorithm that runs in `O(log n)` time.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: nums = [1, 2, 3, 1]
+Output: 2
+
+Visual Representation:
+Index:  0  1  2  3
+Array: [1, 2, 3, 1]
+              ↑
+           Peak at index 2
+
+Explanation:
+- nums[2] = 3 is a peak element
+- 3 > 2 (left neighbor)
+- 3 > 1 (right neighbor)
+```
+
+**Example 2:**
+```
+Input: nums = [1, 2, 1, 3, 5, 6, 4]
+Output: 5 (or 1)
+
+Visual Representation:
+Index:  0  1  2  3  4  5  6
+Array: [1, 2, 1, 3, 5, 6, 4]
+           ↑           ↑
+        Peak 1      Peak 2
+
+Two valid peaks:
+- Index 1: nums[1] = 2 (2 > 1 and 2 > 1)
+- Index 5: nums[5] = 6 (6 > 5 and 6 > 4)
+
+Either answer is acceptable
+```
+
+**Example 3:**
+```
+Input: nums = [1]
+Output: 0
+
+Visual Representation:
+Index:  0
+Array: [1]
+        ↑
+      Peak
+
+Single element is always a peak
+```
+
+**Example 4:**
+```
+Input: nums = [1, 2, 3, 4, 5]
+Output: 4
+
+Visual Representation:
+Index:  0  1  2  3  4
+Array: [1, 2, 3, 4, 5]
+                    ↑
+                  Peak
+
+Strictly increasing array
+Peak at the last element
+nums[4] = 5 > 4 and 5 > -∞ (right boundary)
+```
+
+**Example 5:**
+```
+Input: nums = [5, 4, 3, 2, 1]
+Output: 0
+
+Visual Representation:
+Index:  0  1  2  3  4
+Array: [5, 4, 3, 2, 1]
+        ↑
+      Peak
+
+Strictly decreasing array
+Peak at the first element
+nums[0] = 5 > -∞ (left boundary) and 5 > 4
+```
+
+**Example 6:**
+```
+Input: nums = [1, 3, 2, 4, 1]
+Output: 1 (or 3)
+
+Visual Representation:
+Index:  0  1  2  3  4
+Array: [1, 3, 2, 4, 1]
+           ↑     ↑
+        Peak   Peak
+
+Binary Search Process:
+Step 1: mid = 2, nums[2] = 2
+        nums[1] = 3 > nums[2] → go left
+        
+Step 2: mid = 1, nums[1] = 3
+        nums[0] = 1 < nums[1] and nums[2] = 2 < nums[1]
+        Found peak at index 1!
+```
+
+### ⚙️ Constraints
+- `1 <= nums.length <= 1000`
+- `-2³¹ <= nums[i] <= 2³¹ - 1`
+- `nums[i] != nums[i + 1]` for all valid `i`
+
+---
+
+## 2. Median of 2 Sorted Arrays
+
+### 📝 Problem Description
+Given two sorted arrays `nums1` and `nums2` of size `m` and `n` respectively, return **the median** of the two sorted arrays.
+
+The overall run time complexity should be `O(log (m+n))`.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: nums1 = [1, 3], nums2 = [2]
+Output: 2.00000
+
+Visual Representation:
+nums1: [1, 3]
+nums2: [2]
+
+Merged array: [1, 2, 3]
+                  ↑
+              Median = 2
+
+Explanation:
+Total elements = 3 (odd)
+Median = middle element = 2
+```
+
+**Example 2:**
+```
+Input: nums1 = [1, 2], nums2 = [3, 4]
+Output: 2.50000
+
+Visual Representation:
+nums1: [1, 2]
+nums2: [3, 4]
+
+Merged array: [1, 2, 3, 4]
+                  ↑  ↑
+              Median = (2 + 3) / 2 = 2.5
+
+Explanation:
+Total elements = 4 (even)
+Median = average of two middle elements = (2 + 3) / 2 = 2.5
+```
+
+**Example 3:**
+```
+Input: nums1 = [0, 0], nums2 = [0, 0]
+Output: 0.00000
+
+Visual Representation:
+nums1: [0, 0]
+nums2: [0, 0]
+
+Merged array: [0, 0, 0, 0]
+                  ↑  ↑
+              Median = (0 + 0) / 2 = 0
+```
+
+**Example 4:**
+```
+Input: nums1 = [], nums2 = [1]
+Output: 1.00000
+
+Visual Representation:
+nums1: []
+nums2: [1]
+
+Merged array: [1]
+               ↑
+           Median = 1
+```
+
+**Example 5:**
+```
+Input: nums1 = [2], nums2 = []
+Output: 2.00000
+
+Visual Representation:
+nums1: [2]
+nums2: []
+
+Merged array: [2]
+               ↑
+           Median = 2
+```
+
+**Example 6:**
+```
+Input: nums1 = [1, 3, 8, 9, 15], nums2 = [7, 11, 18, 19, 21, 25]
+Output: 11.00000
+
+Visual Representation:
+nums1: [1, 3, 8, 9, 15]
+nums2: [7, 11, 18, 19, 21, 25]
+
+Merged: [1, 3, 7, 8, 9, 11, 15, 18, 19, 21, 25]
+                          ↑
+                      Median = 11
+
+Total elements = 11 (odd)
+Median position = (11 + 1) / 2 = 6th element = 11
+```
+
+**Example 7:**
+```
+Input: nums1 = [1, 2, 3, 4], nums2 = [5, 6, 7, 8]
+Output: 4.50000
+
+Visual Representation:
+nums1: [1, 2, 3, 4]
+nums2: [5, 6, 7, 8]
+
+Merged: [1, 2, 3, 4, 5, 6, 7, 8]
+                    ↑  ↑
+            Median = (4 + 5) / 2 = 4.5
+
+Partition concept for O(log(m+n)) solution:
+nums1: [1, 2, | 3, 4]
+nums2: [5, 6, | 7, 8]
+
+Left half: [1, 2, 5, 6]  (4 elements)
+Right half: [3, 4, 7, 8] (4 elements)
+
+Max of left = 6, Min of right = 3
+But 6 > 3, so this partition is wrong
+
+Correct partition:
+nums1: [1, 2, 3, 4 |]
+nums2: [| 5, 6, 7, 8]
+
+Left half: [1, 2, 3, 4] (max = 4)
+Right half: [5, 6, 7, 8] (min = 5)
+4 < 5 ✓
+
+Median = (4 + 5) / 2 = 4.5
+```
+
+### ⚙️ Constraints
+- `nums1.length == m`
+- `nums2.length == n`
+- `0 <= m <= 1000`
+- `0 <= n <= 1000`
+- `1 <= m + n <= 2000`
+- `-10⁶ <= nums1[i], nums2[i] <= 10⁶`
+
+---
+
+## 3. Kth Element of 2 Sorted Arrays
+
+### 📝 Problem Description
+Given two sorted arrays `arr1[]` and `arr2[]` of sizes `n` and `m` respectively, and an integer `k`, find the element that would be at the `k-th` position in the final sorted array formed by merging the two arrays.
+
+**Note:** The arrays are 0-indexed, but `k` is 1-indexed (i.e., the 1st element is at index 0).
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: arr1 = [2, 3, 6, 7, 9], arr2 = [1, 4, 8, 10], k = 5
+Output: 6
+
+Visual Representation:
+arr1: [2, 3, 6, 7, 9]
+arr2: [1, 4, 8, 10]
+
+Merged array: [1, 2, 3, 4, 6, 7, 8, 9, 10]
+Position:      1  2  3  4  5  6  7  8   9
+                          ↑
+                    5th element = 6
+
+Step-by-step merge visualization:
+Position 1: min(2, 1) = 1 from arr2
+Position 2: min(2, 4) = 2 from arr1
+Position 3: min(3, 4) = 3 from arr1
+Position 4: min(6, 4) = 4 from arr2
+Position 5: min(6, 8) = 6 from arr1 ✓
+```
+
+**Example 2:**
+```
+Input: arr1 = [100, 112, 256, 349, 770], arr2 = [72, 86, 113, 119, 265, 445, 892], k = 7
+Output: 256
+
+Visual Representation:
+arr1: [100, 112, 256, 349, 770]
+arr2: [72, 86, 113, 119, 265, 445, 892]
+
+Merged: [72, 86, 100, 112, 113, 119, 256, 265, 349, 445, 770, 892]
+Pos:     1   2    3    4    5    6    7    8    9    10   11   12
+                                       ↑
+                                 7th element = 256
+```
+
+**Example 3:**
+```
+Input: arr1 = [1, 3, 5], arr2 = [2, 4, 6], k = 4
+Output: 4
+
+Visual Representation:
+arr1: [1, 3, 5]
+arr2: [2, 4, 6]
+
+Merged array: [1, 2, 3, 4, 5, 6]
+Position:      1  2  3  4  5  6
+                        ↑
+                  4th element = 4
+
+Merge process:
+[1] < 2  → take 1 (pos 1)
+1 taken, [3] vs [2] → take 2 (pos 2)
+[3] > 2, now [3] vs [4] → take 3 (pos 3)
+3 taken, [5] vs [4] → take 4 (pos 4) ✓
+```
+
+**Example 4:**
+```
+Input: arr1 = [1], arr2 = [2, 3, 4], k = 2
+Output: 2
+
+Visual Representation:
+arr1: [1]
+arr2: [2, 3, 4]
+
+Merged array: [1, 2, 3, 4]
+Position:      1  2  3  4
+                  ↑
+            2nd element = 2
+```
+
+**Example 5:**
+```
+Input: arr1 = [2, 3, 45], arr2 = [4, 6, 7, 8], k = 4
+Output: 6
+
+Visual Representation:
+arr1: [2, 3, 45]
+arr2: [4, 6, 7, 8]
+
+Merged: [2, 3, 4, 6, 7, 8, 45]
+Pos:     1  2  3  4  5  6   7
+                  ↑
+            4th element = 6
+```
+
+**Example 6:**
+```
+Input: arr1 = [1, 2, 3, 5, 6], arr2 = [4, 7, 8, 9, 10], k = 6
+Output: 7
+
+Visual Representation:
+arr1: [1, 2, 3, 5, 6]
+arr2: [4, 7, 8, 9, 10]
+
+Merged: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Pos:     1  2  3  4  5  6  7  8  9  10
+                        ↑
+                  6th element = 7
+
+Binary Search Approach:
+We need 6 elements on the left side of partition.
+
+Try: Take 3 from arr1, 3 from arr2
+arr1: [1, 2, 3 | 5, 6]
+arr2: [4, 7, 8 | 9, 10]
+
+Left side: {1, 2, 3, 4, 7, 8} - Wrong! 7,8 > 5
+
+Try: Take 4 from arr1, 2 from arr2
+arr1: [1, 2, 3, 5 | 6]
+arr2: [4, 7 | 8, 9, 10]
+
+Left side: {1, 2, 3, 5, 4, 7}
+Max from arr1 left = 5
+Max from arr2 left = 7
+Min from arr1 right = 6
+Min from arr2 right = 8
+
+Check: 5 < 8 ✓ and 7 < 6 ✗
+
+Try: Take 5 from arr1, 1 from arr2
+arr1: [1, 2, 3, 5, 6 |]
+arr2: [4 | 7, 8, 9, 10]
+
+Left side: {1, 2, 3, 5, 6, 4} (6 elements)
+Max from arr1 left = 6
+Max from arr2 left = 4
+Min from arr2 right = 7
+
+6th element = max(6, 4) = 6
+But we need to check next element = 7
+
+Answer: 7 (first element in right partition)
+```
+
+**Example 7:**
+```
+Input: arr1 = [], arr2 = [1, 2, 3], k = 2
+Output: 2
+
+Visual Representation:
+arr1: []
+arr2: [1, 2, 3]
+
+When one array is empty:
+Simply return arr2[k-1] = arr2[1] = 2
+```
+
+### ⚙️ Constraints
+- `0 <= n, m <= 10⁶`
+- `1 <= arr1[i], arr2[i] <= 10⁸`
+- `1 <= k <= n + m`
+- Both arrays are sorted in non-decreasing order
+
+---
+
+# Binary Search - 2D Matrix Problems
+
+## Table of Contents
+1. [Find Row with Maximum 1's](#1-find-row-with-maximum-1s)
+2. [Search in a 2D Matrix](#2-search-in-a-2d-matrix)
+3. [Search in 2D Matrix - II](#3-search-in-2d-matrix---ii)
+4. [Find Peak Element - II](#4-find-peak-element---ii)
+5. [Matrix Median](#5-matrix-median)
+
+---
+
+## 1. Find Row with Maximum 1's
+
+### 📝 Problem Description
+Given a boolean 2D array where each row is sorted. Find the row with the maximum number of 1's.
+
+**Note:** The matrix contains only 0's and 1's. Also, if two or more rows have the same number of 1's, return the row with the smaller index.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: matrix = [[0, 1, 1, 1],
+                 [0, 0, 1, 1],
+                 [1, 1, 1, 1],
+                 [0, 0, 0, 0]]
+Output: 2
+
+Visual Representation:
+Row 0: [0, 1, 1, 1]  → 3 ones
+Row 1: [0, 0, 1, 1]  → 2 ones
+Row 2: [1, 1, 1, 1]  → 4 ones ✓ (Maximum)
+Row 3: [0, 0, 0, 0]  → 0 ones
+
+Count visualization:
+┌─────┬───────────────┬───────┐
+│ Row │    Array      │ Count │
+├─────┼───────────────┼───────┤
+│  0  │ [0, 1, 1, 1]  │   3   │
+│  1  │ [0, 0, 1, 1]  │   2   │
+│  2  │ [1, 1, 1, 1]  │   4   │ ← Max
+│  3  │ [0, 0, 0, 0]  │   0   │
+└─────┴───────────────┴───────┘
+
+Row 2 has maximum 1's = 4
+```
+
+**Example 2:**
+```
+Input: matrix = [[0, 0],
+                 [1, 1]]
+Output: 1
+
+Visual Representation:
+Row 0: [0, 0]  → 0 ones
+Row 1: [1, 1]  → 2 ones ✓ (Maximum)
+
+┌─────┬────────┬───────┐
+│ Row │ Array  │ Count │
+├─────┼────────┼───────┤
+│  0  │ [0, 0] │   0   │
+│  1  │ [1, 1] │   2   │ ← Max
+└─────┴────────┴───────┘
+```
+
+**Example 3:**
+```
+Input: matrix = [[0, 0, 0, 1],
+                 [0, 1, 1, 1],
+                 [0, 0, 1, 1]]
+Output: 1
+
+Visual Representation:
+Row 0: [0, 0, 0, 1]  → 1 one
+Row 1: [0, 1, 1, 1]  → 3 ones ✓ (Maximum)
+Row 2: [0, 0, 1, 1]  → 2 ones
+
+Binary Search Approach:
+Each row is sorted, so find first occurrence of 1
+
+Row 0: [0, 0, 0, 1]
+              ↑ first 1 at index 3 → count = 4-3 = 1
+
+Row 1: [0, 1, 1, 1]
+          ↑ first 1 at index 1 → count = 4-1 = 3
+
+Row 2: [0, 0, 1, 1]
+             ↑ first 1 at index 2 → count = 4-2 = 2
+```
+
+**Example 4:**
+```
+Input: matrix = [[1, 1, 1],
+                 [1, 1, 1],
+                 [1, 1, 1]]
+Output: 0
+
+Visual Representation:
+Row 0: [1, 1, 1]  → 3 ones ✓ (First row with max)
+Row 1: [1, 1, 1]  → 3 ones
+Row 2: [1, 1, 1]  → 3 ones
+
+All rows have same number of 1's
+Return smallest index = 0
+```
+
+**Example 5:**
+```
+Input: matrix = [[0, 0, 0],
+                 [0, 0, 0],
+                 [0, 0, 0]]
+Output: 0
+
+Visual Representation:
+All rows have 0 ones
+Return first row index = 0
+```
+
+### ⚙️ Constraints
+- `1 <= matrix.length, matrix[i].length <= 1000`
+- `matrix[i][j]` is either `0` or `1`
+- Each row is sorted in non-decreasing order
+
+---
+
+## 2. Search in a 2D Matrix
+
+### 📝 Problem Description
+You are given an `m x n` integer matrix `matrix` with the following two properties:
+- Each row is sorted in non-decreasing order
+- The first integer of each row is greater than the last integer of the previous row
+
+Given an integer `target`, return `true` if `target` is in `matrix` or `false` otherwise.
+
+You must write a solution in `O(log(m * n))` time complexity.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: matrix = [[1, 3, 5, 7],
+                 [10, 11, 16, 20],
+                 [23, 30, 34, 60]], 
+       target = 3
+Output: true
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┬────┐
+│  1 │  3 │  5 │  7 │
+├────┼────┼────┼────┤
+│ 10 │ 11 │ 16 │ 20 │
+├────┼────┼────┼────┤
+│ 23 │ 30 │ 34 │ 60 │
+└────┴────┴────┴────┘
+        ↑
+    target = 3 found at position [0, 1]
+
+Treated as 1D array:
+[1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+    ↑
+Index 1 in 1D = Row 0, Col 1 in 2D
+```
+
+**Example 2:**
+```
+Input: matrix = [[1, 3, 5, 7],
+                 [10, 11, 16, 20],
+                 [23, 30, 34, 60]], 
+       target = 13
+Output: false
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┬────┐
+│  1 │  3 │  5 │  7 │
+├────┼────┼────┼────┤
+│ 10 │ 11 │ 16 │ 20 │
+├────┼────┼────┼────┤
+│ 23 │ 30 │ 34 │ 60 │
+└────┴────┴────┴────┘
+
+13 is not present in the matrix
+
+Binary Search:
+1D view: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+                           ↑         ↑
+                          11 < 13 < 16
+13 would be between indices 5 and 6, but it doesn't exist
+```
+
+**Example 3:**
+```
+Input: matrix = [[1]], target = 1
+Output: true
+
+Visual Representation:
+Matrix:
+┌───┐
+│ 1 │
+└───┘
+  ↑
+Single element matrix, target found
+```
+
+**Example 4:**
+```
+Input: matrix = [[1, 3, 5, 7],
+                 [10, 11, 16, 20],
+                 [23, 30, 34, 60]], 
+       target = 11
+Output: true
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┬────┐
+│  1 │  3 │  5 │  7 │
+├────┼────┼────┼────┤
+│ 10 │ 11 │ 16 │ 20 │
+├────┼────┼────┼────┤
+│ 23 │ 30 │ 34 │ 60 │
+└────┴────┴────┴────┘
+       ↑
+target = 11 at position [1, 1]
+
+Binary Search Process:
+Step 1: mid = 5 (in 1D) → matrix[1][1] = 11
+        11 == 11 → Found! ✓
+
+Converting 1D index to 2D:
+1D index = 5, columns = 4
+Row = 5 / 4 = 1
+Col = 5 % 4 = 1
+Position = [1, 1]
+```
+
+**Example 5:**
+```
+Input: matrix = [[1, 1]], target = 2
+Output: false
+
+Visual Representation:
+Matrix:
+┌───┬───┐
+│ 1 │ 1 │
+└───┴───┘
+
+Target 2 is greater than all elements
+Binary search will not find it
+```
+
+### ⚙️ Constraints
+- `m == matrix.length`
+- `n == matrix[i].length`
+- `1 <= m, n <= 100`
+- `-10⁴ <= matrix[i][j], target <= 10⁴`
+
+---
+
+## 3. Search in 2D Matrix - II
+
+### 📝 Problem Description
+Write an efficient algorithm that searches for a value `target` in an `m x n` integer matrix `matrix`. This matrix has the following properties:
+- Integers in each row are sorted in ascending from left to right
+- Integers in each column are sorted in ascending from top to bottom
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: matrix = [[1, 4, 7, 11, 15],
+                 [2, 5, 8, 12, 19],
+                 [3, 6, 9, 16, 22],
+                 [10, 13, 14, 17, 24],
+                 [18, 21, 23, 26, 30]], 
+       target = 5
+Output: true
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┬────┬────┐
+│  1 │  4 │  7 │ 11 │ 15 │
+├────┼────┼────┼────┼────┤
+│  2 │  5 │  8 │ 12 │ 19 │ ← Row sorted
+├────┼────┼────┼────┼────┤
+│  3 │  6 │  9 │ 16 │ 22 │
+├────┼────┼────┼────┼────┤
+│ 10 │ 13 │ 14 │ 17 │ 24 │
+├────┼────┼────┼────┼────┤
+│ 18 │ 21 │ 23 │ 26 │ 30 │
+└────┴────┴────┴────┴────┘
+       ↑
+   Column sorted
+
+Target 5 found at position [1, 1]
+
+Staircase Search (starting from top-right):
+Start at [0, 4] = 15
+15 > 5 → move left
+[0, 3] = 11 > 5 → move left
+[0, 2] = 7 > 5 → move left
+[0, 1] = 4 < 5 → move down
+[1, 1] = 5 == 5 → Found! ✓
+```
+
+**Example 2:**
+```
+Input: matrix = [[1, 4, 7, 11, 15],
+                 [2, 5, 8, 12, 19],
+                 [3, 6, 9, 16, 22],
+                 [10, 13, 14, 17, 24],
+                 [18, 21, 23, 26, 30]], 
+       target = 20
+Output: false
+
+Visual Representation:
+Staircase Search Path:
+Start: [0, 4] = 15
+       ↓
+[0, 4] = 15 < 20 → move down
+[1, 4] = 19 < 20 → move down
+[2, 4] = 22 > 20 → move left
+[2, 3] = 16 < 20 → move down
+[3, 3] = 17 < 20 → move down
+[4, 3] = 26 > 20 → move left
+[4, 2] = 23 > 20 → move left
+[4, 1] = 21 > 20 → move left
+[4, 0] = 18 < 20 → move down (out of bounds)
+
+Not found!
+```
+
+**Example 3:**
+```
+Input: matrix = [[1, 4],
+                 [2, 5]], 
+       target = 2
+Output: true
+
+Visual Representation:
+Matrix:
+┌───┬───┐
+│ 1 │ 4 │
+├───┼───┤
+│ 2 │ 5 │
+└───┴───┘
+  ↑
+Target 2 at position [1, 0]
+
+Search Path from top-right:
+[0, 1] = 4 > 2 → move left
+[0, 0] = 1 < 2 → move down
+[1, 0] = 2 == 2 → Found! ✓
+```
+
+**Example 4:**
+```
+Input: matrix = [[5]], target = 5
+Output: true
+
+Visual Representation:
+Matrix:
+┌───┐
+│ 5 │
+└───┘
+  ↑
+Single element equals target
+```
+
+**Example 5:**
+```
+Input: matrix = [[-5]], target = -10
+Output: false
+
+Visual Representation:
+Single element -5 ≠ -10
+Target not found
+```
+
+**Example 6:**
+```
+Input: matrix = [[1, 2, 3, 4, 5],
+                 [6, 7, 8, 9, 10],
+                 [11, 12, 13, 14, 15],
+                 [16, 17, 18, 19, 20],
+                 [21, 22, 23, 24, 25]], 
+       target = 19
+Output: true
+
+Visual Representation:
+Target 19 at position [3, 3]
+
+Efficient Search Path (from top-right):
+┌────┬────┬────┬────┬────┐
+│  1 │  2 │  3 │  4 │  5 │ ← Start
+├────┼────┼────┼────┼────┤
+│  6 │  7 │  8 │  9 │ 10 │
+├────┼────┼────┼────┼────┤
+│ 11 │ 12 │ 13 │ 14 │ 15 │
+├────┼────┼────┼────┼────┤
+│ 16 │ 17 │ 18 │ 19 │ 20 │
+├────┼────┼────┼────┼────┤
+│ 21 │ 22 │ 23 │ 24 │ 25 │
+└────┴────┴────┴────┴────┘
+                    ↑
+                 Found!
+
+Path: [0,4]→[1,4]→[2,4]→[3,4]→[3,3] (5 steps)
+```
+
+### ⚙️ Constraints
+- `m == matrix.length`
+- `n == matrix[i].length`
+- `1 <= n, m <= 300`
+- `-10⁹ <= matrix[i][j] <= 10⁹`
+- All the integers in each row are sorted in ascending order
+- All the integers in each column are sorted in ascending order
+- `-10⁹ <= target <= 10⁹`
+
+---
+
+## 4. Find Peak Element - II
+
+### 📝 Problem Description
+A peak element in a 2D grid is an element that is **strictly greater** than all of its **adjacent neighbors** to the left, right, top, and bottom.
+
+Given a **0-indexed** `m x n` matrix `mat` where **no two adjacent cells are equal**, find **any** peak element `mat[i][j]` and return the length 2 array `[i, j]`.
+
+You may assume that the entire matrix is surrounded by an **outer perimeter** with the value `-1` in each cell.
+
+You must write an algorithm that runs in `O(m log(n))` or `O(n log(m))` time.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: mat = [[1, 4],
+              [3, 2]]
+Output: [0, 1]
+
+Visual Representation:
+Matrix:
+┌───┬───┐
+│ 1 │ 4 │ ← Peak at [0, 1]
+├───┼───┤
+│ 3 │ 2 │
+└───┴───┘
+      ↑
+
+Element at [0, 1] = 4
+- 4 > 1 (left neighbor)
+- 4 > -1 (right boundary)
+- 4 > -1 (top boundary)
+- 4 > 2 (bottom neighbor)
+
+4 is strictly greater than all neighbors → Peak!
+
+Note: [1, 0] with value 3 is also a valid peak
+```
+
+**Example 2:**
+```
+Input: mat = [[10, 20, 15],
+              [21, 30, 14],
+              [7, 16, 32]]
+Output: [1, 1]
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┐
+│ 10 │ 20 │ 15 │
+├────┼────┼────┤
+│ 21 │ 30 │ 14 │ ← Peak at [1, 1]
+├────┼────┼────┤
+│  7 │ 16 │ 32 │
+└────┴────┴────┘
+       ↑
+
+Element at [1, 1] = 30
+- 30 > 21 (left)
+- 30 > 14 (right)
+- 30 > 20 (top)
+- 30 > 16 (bottom)
+
+30 is the maximum element and a peak
+
+Note: [2, 2] with value 32 is also a valid peak
+```
+
+**Example 3:**
+```
+Input: mat = [[1, 2, 3],
+              [4, 5, 6],
+              [7, 8, 9]]
+Output: [2, 2]
+
+Visual Representation:
+Matrix:
+┌───┬───┬───┐
+│ 1 │ 2 │ 3 │
+├───┼───┼───┤
+│ 4 │ 5 │ 6 │
+├───┼───┼───┤
+│ 7 │ 8 │ 9 │ ← Peak at [2, 2]
+└───┴───┴───┘
+          ↑
+
+Element at [2, 2] = 9
+- 9 > 8 (left)
+- 9 > -1 (right boundary)
+- 9 > 6 (top)
+- 9 > -1 (bottom boundary)
+
+Corner element 9 is the peak
+```
+
+**Example 4:**
+```
+Input: mat = [[10, 50, 40, 30, 20],
+              [15, 45, 35, 25, 10],
+              [12, 40, 22, 24, 8]]
+Output: [0, 1]
+
+Visual Representation:
+Matrix:
+┌────┬────┬────┬────┬────┐
+│ 10 │ 50 │ 40 │ 30 │ 20 │
+├────┼────┼────┼────┼────┤
+│ 15 │ 45 │ 35 │ 25 │ 10 │
+├────┼────┼────┼────┼────┤
+│ 12 │ 40 │ 22 │ 24 │  8 │
+└────┴────┴────┴────┴────┘
+       ↑
+
+Element at [0, 1] = 50
+Checking neighbors:
+- 50 > 10 (left)
+- 50 > 40 (right)
+- 50 > -1 (top boundary)
+- 50 > 45 (bottom)
+
+Binary Search Approach (O(m log n)):
+1. Find middle column (col = 2)
+2. Find max in that column → 40 at [0, 2]
+3. Check neighbors of 40:
+   - 40 < 50 (left is greater)
+4. Move to left half and repeat
+5. Eventually find peak at [0, 1] = 50
+```
+
+**Example 5:**
+```
+Input: mat = [[1, 3],
+              [2, 4]]
+Output: [1, 1]
+
+Visual Representation:
+Matrix:
+┌───┬───┐
+│ 1 │ 3 │
+├───┼───┤
+│ 2 │ 4 │ ← Peak
+└───┴───┘
+      ↑
+
+Element at [1, 1] = 4
+- 4 > 2 (left)
+- 4 > -1 (right boundary)
+- 4 > 3 (top)
+- 4 > -1 (bottom boundary)
+
+4 is greater than all neighbors
+```
+
+### ⚙️ Constraints
+- `m == mat.length`
+- `n == mat[i].length`
+- `1 <= m, n <= 500`
+- `1 <= mat[i][j] <= 10⁵`
+- No two adjacent cells are equal
+
+---
+
+## 5. Matrix Median
+
+### 📝 Problem Description
+Given a matrix of integers `A` of size `N x M` in which each row is sorted.
+
+Find and return the overall median of matrix `A`.
+
+**Note:** 
+- No extra memory is allowed
+- `N*M` is always odd
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: A = [[1, 3, 5],
+            [2, 6, 9],
+            [3, 6, 9]]
+Output: 5
+
+Visual Representation:
+Matrix:
+┌───┬───┬───┐
+│ 1 │ 3 │ 5 │
+├───┼───┼───┤
+│ 2 │ 6 │ 9 │
+├───┼───┼───┤
+│ 3 │ 6 │ 9 │
+└───┴───┴───┘
+
+If we merge all elements:
+[1, 2, 3, 3, 5, 6, 6, 9, 9]
+            ↑
+        Median = 5 (middle element)
+
+Total elements = 9 (odd)
+Median position = (9 + 1) / 2 = 5th element
+
+Counting elements ≤ 5:
+Row 0: [1, 3, 5] → 3 elements ≤ 5
+Row 1: [2, 6, 9] → 1 element ≤ 5
+Row 2: [3, 6, 9] → 1 element ≤ 5
+Total: 5 elements ≤ 5
+
+Since exactly 5 elements ≤ 5, median = 5
+```
+
+**Example 2:**
+```
+Input: A = [[1, 3, 4],
+            [2, 5, 6],
+            [7, 8, 9]]
+Output: 5
+
+Visual Representation:
+Matrix:
+┌───┬───┬───┐
+│ 1 │ 3 │ 4 │
+├───┼───┼───┤
+│ 2 │ 5 │ 6 │
+├───┼───┼───┤
+│ 7 │ 8 │ 9 │
+└───┴───┴───┘
+
+Merged: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                    ↑
+                Median = 5
+
+Total = 9, median at position 5
+
+Binary Search Approach:
+Range: min=1, max=9
+
+Test mid = 5:
+Count elements ≤ 5:
+Row 0: [1, 3, 4] → 3 elements
+Row 1: [2, 5, 6] → 2 elements
+Row 2: [7, 8, 9] → 0 elements
+Total: 5 elements ≤ 5
+
+Required position = (9+1)/2 = 5
+Count = 5 → median = 5 ✓
+```
+
+**Example 3:**
+```
+Input: A = [[1, 1, 3, 3, 3, 3, 5, 5]]
+Output: 3
+
+Visual Representation:
+Matrix (single row):
+[1, 1, 3, 3, 3, 3, 5, 5]
+            ↑
+        Median
+
+Total = 8... wait, problem says N*M is always odd!
+
+Corrected Input: A = [[1, 1, 3, 3, 3, 3, 5]]
+Output: 3
+
+Matrix:
+[1, 1, 3, 3, 3, 3, 5]
+            ↑
+        Median = 3
+
+Total = 7 (odd)
+Median position = 4th element = 3
+```
+
+**Example 4:**
+```
+Input: A = [[5],
+            [4],
+            [3],
+            [2],
+            [1]]
+Output: 3
+
+Visual Representation:
+Matrix:
+┌───┐
+│ 5 │
+├───┤
+│ 4 │
+├───┤
+│ 3 │ ← Median
+├───┤
+│ 2 │
+├───┤
+│ 1 │
+└───┘
+
+Sorted sequence: [1, 2, 3, 4, 5]
+                        ↑
+                    Median = 3
+
+Total = 5, median at position 3
+```
+
+**Example 5:**
+```
+Input: A = [[1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]]
+Output: 5
+
+Visual Representation:
+Matrix:
+┌───┬───┬───┐
+│ 1 │ 2 │ 3 │
+├───┼───┼───┤
+│ 4 │ 5 │ 6 │
+├───┼───┼───┤
+│ 7 │ 8 │ 9 │
+└───┴───┴───┘
+
+All elements: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                          ↑
+                      Median = 5
+
+Binary Search Process:
+min = 1, max = 9
+
+Test mid = 5:
+Elements ≤ 5 in each row:
+Row 0: [1, 2, 3] → all 3 ≤ 5
+Row 1: [4, 5, 6] → 2 ≤ 5 (4, 5)
+Row 2: [7, 8, 9] → 0 ≤ 5
+Total: 5 elements ≤ 5
+
+Median position = (9+1)/2 = 5
+Since count = 5, median = 5 ✓
+```
+
+**Example 6:**
+```
+Input: A = [[1, 10, 20],
+            [15, 25, 35],
+            [5, 30, 40]]
+Output: 20
+
+Visual Representation:
+Matrix (rows are sorted, not the whole matrix):
+┌────┬────┬────┐
+│  1 │ 10 │ 20 │
+├────┼────┼────┤
+│ 15 │ 25 │ 35 │
+├────┼────┼────┤
+│  5 │ 30 │ 40 │
+└────┴────┴────┘
+
+Merged and sorted: [1, 5, 10, 15, 20, 25, 30, 35, 40]
+                                   ↑
+                               Median = 20
+
+Binary Search:
+min = 1, max = 40
+
+Test mid = 20:
+Count elements ≤ 20:
+Row 0: [1, 10, 20] → 3 elements
+Row 1: [15, 25, 35] → 1 element (15)
+Row 2: [5, 30, 40] → 1 element (5)
+Total: 5 elements ≤ 20
+
+Median position = 5, count = 5 → median = 20 ✓
+```
+
+### ⚙️ Constraints
+- `1 <= N, M <= 400`
+- `1 <= A[i][j] <= 10⁹`
+- `N * M` is always odd
+- Each row is sorted in non-decreasing order
+
+---
