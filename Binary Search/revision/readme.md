@@ -678,3 +678,540 @@ This pattern helps identify which half contains the single element
 - Every element appears exactly twice except for one element which appears once
 
 ---
+
+# Binary Search on Answer - Advanced Problems
+
+## Table of Contents
+1. [Find Square Root of a Number](#1-find-square-root-of-a-number)
+2. [Find Nth Root of a Number](#2-find-nth-root-of-a-number)
+3. [Find the Smallest Divisor](#3-find-the-smallest-divisor)
+4. [Koko Eating Bananas](#4-koko-eating-bananas)
+5. [Minimum Days to Make M Bouquets](#5-minimum-days-to-make-m-bouquets)
+6. [Kth Missing Positive Number](#6-kth-missing-positive-number)
+
+---
+
+## 1. Find Square Root of a Number
+
+### 📝 Problem Description
+Given a non-negative integer `x`, return the square root of `x` rounded down to the nearest integer. The returned integer should be non-negative as well.
+
+You must not use any built-in exponent function or operator.
+
+For example, do not use `pow(x, 0.5)` in C++ or `x ** 0.5` in Python.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: x = 4
+Output: 2
+
+Visual Representation:
+√4 = 2.000... → Round down = 2
+
+Explanation: The square root of 4 is 2, so we return 2
+```
+
+**Example 2:**
+```
+Input: x = 8
+Output: 2
+
+Visual Representation:
+√8 = 2.828... → Round down = 2
+
+Binary Search Process:
+Range: 1 to 8
+Try 4: 4² = 16 > 8 → search left
+Try 2: 2² = 4 < 8 → possible answer, search right
+Try 3: 3² = 9 > 8 → search left
+Answer: 2
+```
+
+**Example 3:**
+```
+Input: x = 1
+Output: 1
+
+Explanation: √1 = 1
+```
+
+**Example 4:**
+```
+Input: x = 0
+Output: 0
+
+Explanation: √0 = 0
+```
+
+**Example 5:**
+```
+Input: x = 15
+Output: 3
+
+Visual Representation:
+√15 = 3.872... → Round down = 3
+
+Testing:
+3² = 9 ≤ 15 ✓
+4² = 16 > 15 ✗
+Answer: 3
+```
+
+### ⚙️ Constraints
+- `0 <= x <= 2³¹ - 1`
+
+---
+
+## 2. Find Nth Root of a Number
+
+### 📝 Problem Description
+You are given two positive integers `n` and `m`. You have to return the `nth` root of `m`, i.e., `m^(1/n)`. If the `nth` root is not an integer, return `-1`.
+
+**Note:** The `nth` root of a number `m` is defined as a number `x` such that `x^n = m`. If no such `x` exists that is an integer, return `-1`.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: n = 3, m = 27
+Output: 3
+
+Visual Representation:
+∛27 = 3 because 3³ = 27
+
+Verification:
+3 × 3 × 3 = 27 ✓
+```
+
+**Example 2:**
+```
+Input: n = 4, m = 69
+Output: -1
+
+Visual Representation:
+⁴√69 = 2.898... (not an integer)
+
+Testing:
+2⁴ = 16 < 69
+3⁴ = 81 > 69
+No integer x where x⁴ = 69
+Answer: -1
+```
+
+**Example 3:**
+```
+Input: n = 2, m = 16
+Output: 4
+
+Visual Representation:
+√16 = 4 because 4² = 16
+
+Verification:
+4 × 4 = 16 ✓
+```
+
+**Example 4:**
+```
+Input: n = 3, m = 64
+Output: 4
+
+Visual Representation:
+∛64 = 4 because 4³ = 64
+
+Binary Search Process:
+Range: 1 to 64
+Try 32: 32³ = 32768 > 64 → search left
+Try 16: 16³ = 4096 > 64 → search left
+Try 8: 8³ = 512 > 64 → search left
+Try 4: 4³ = 64 = 64 → Found! ✓
+```
+
+**Example 5:**
+```
+Input: n = 2, m = 9
+Output: 3
+
+Explanation: 3² = 9
+```
+
+### ⚙️ Constraints
+- `1 <= n <= 30`
+- `1 <= m <= 10^9`
+
+---
+
+## 3. Find the Smallest Divisor
+
+### 📝 Problem Description
+Given an array of integers `nums` and an integer `threshold`, we will choose a positive integer `divisor`, divide all the array by it, and sum the division's result. Find the smallest divisor such that the result mentioned above is less than or equal to `threshold`.
+
+Each result of the division is rounded to the nearest integer greater than or equal to that element. (For example: `7/3 = 3` and `10/2 = 5`).
+
+The test cases are generated so that there will be an answer.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: nums = [1, 2, 5, 9], threshold = 6
+Output: 5
+
+Visual Representation:
+Testing divisor = 5:
+┌─────────────────────────────────┐
+│ Element │ Division │ Ceil Value │
+├─────────┼──────────┼────────────┤
+│    1    │   1/5    │     1      │
+│    2    │   2/5    │     1      │
+│    5    │   5/5    │     1      │
+│    9    │   9/5    │     2      │
+└─────────┴──────────┴────────────┘
+Sum = 1 + 1 + 1 + 2 = 5 ≤ 6 ✓
+
+Testing divisor = 4:
+Sum = ⌈1/4⌉ + ⌈2/4⌉ + ⌈5/4⌉ + ⌈9/4⌉
+    = 1 + 1 + 2 + 3 = 7 > 6 ✗
+
+Smallest divisor = 5
+```
+
+**Example 2:**
+```
+Input: nums = [44, 22, 33, 11, 1], threshold = 5
+Output: 44
+
+Visual Representation:
+Testing divisor = 44:
+┌─────────────────────────────────┐
+│ Element │ Division │ Ceil Value │
+├─────────┼──────────┼────────────┤
+│   44    │  44/44   │     1      │
+│   22    │  22/44   │     1      │
+│   33    │  33/44   │     1      │
+│   11    │  11/44   │     1      │
+│    1    │   1/44   │     1      │
+└─────────┴──────────┴────────────┘
+Sum = 1 + 1 + 1 + 1 + 1 = 5 ≤ 5 ✓
+
+Smallest divisor = 44
+```
+
+**Example 3:**
+```
+Input: nums = [2, 3, 5, 7, 11], threshold = 11
+Output: 3
+
+Visual Representation:
+Testing divisor = 3:
+⌈2/3⌉ + ⌈3/3⌉ + ⌈5/3⌉ + ⌈7/3⌉ + ⌈11/3⌉
+= 1 + 1 + 2 + 3 + 4 = 11 ≤ 11 ✓
+
+Testing divisor = 2:
+⌈2/2⌉ + ⌈3/2⌉ + ⌈5/2⌉ + ⌈7/2⌉ + ⌈11/2⌉
+= 1 + 2 + 3 + 4 + 6 = 16 > 11 ✗
+
+Smallest divisor = 3
+```
+
+### ⚙️ Constraints
+- `1 <= nums.length <= 5 * 10^4`
+- `1 <= nums[i] <= 10^6`
+- `nums.length <= threshold <= 10^6`
+
+---
+
+## 4. Koko Eating Bananas
+
+### 📝 Problem Description
+Koko loves to eat bananas. There are `n` piles of bananas, the `i-th` pile has `piles[i]` bananas. The guards have gone and will come back in `h` hours.
+
+Koko can decide her bananas-per-hour eating speed of `k`. Each hour, she chooses some pile of bananas and eats `k` bananas from that pile. If the pile has less than `k` bananas, she eats all of them instead and will not eat any more bananas during this hour.
+
+Koko likes to eat slowly but still wants to finish eating all the bananas before the guards return.
+
+Return the minimum integer `k` such that she can eat all the bananas within `h` hours.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: piles = [3, 6, 7, 11], h = 8
+Output: 4
+
+Visual Representation:
+Piles:  [3, 6, 7, 11]
+Speed k = 4 bananas/hour
+
+Hour-by-hour breakdown:
+┌──────┬─────────┬──────────────┬───────────┐
+│ Hour │  Pile   │ Bananas Eaten│ Remaining │
+├──────┼─────────┼──────────────┼───────────┤
+│  1   │ Pile 1  │      3       │     0     │
+│  2   │ Pile 2  │      4       │     2     │
+│  3   │ Pile 2  │      2       │     0     │
+│  4   │ Pile 3  │      4       │     3     │
+│  5   │ Pile 3  │      3       │     0     │
+│  6   │ Pile 4  │      4       │     7     │
+│  7   │ Pile 4  │      4       │     3     │
+│  8   │ Pile 4  │      3       │     0     │
+└──────┴─────────┴──────────────┴───────────┘
+
+Total hours needed = ⌈3/4⌉ + ⌈6/4⌉ + ⌈7/4⌉ + ⌈11/4⌉
+                   = 1 + 2 + 2 + 3 = 8 hours ✓
+```
+
+**Example 2:**
+```
+Input: piles = [30, 11, 23, 4, 20], h = 5
+Output: 30
+
+Visual Representation:
+Piles:  [30, 11, 23, 4, 20]
+Speed k = 30 bananas/hour
+
+Hours needed per pile:
+Pile 1: ⌈30/30⌉ = 1 hour
+Pile 2: ⌈11/30⌉ = 1 hour
+Pile 3: ⌈23/30⌉ = 1 hour
+Pile 4: ⌈4/30⌉ = 1 hour
+Pile 5: ⌈20/30⌉ = 1 hour
+Total: 1 + 1 + 1 + 1 + 1 = 5 hours ✓
+
+Minimum speed = 30 (eat fastest pile in 1 hour)
+```
+
+**Example 3:**
+```
+Input: piles = [30, 11, 23, 4, 20], h = 6
+Output: 23
+
+Visual Representation:
+Speed k = 23 bananas/hour
+
+Hours needed:
+⌈30/23⌉ + ⌈11/23⌉ + ⌈23/23⌉ + ⌈4/23⌉ + ⌈20/23⌉
+= 2 + 1 + 1 + 1 + 1 = 6 hours ✓
+
+If k = 22:
+⌈30/22⌉ + ⌈11/22⌉ + ⌈23/22⌉ + ⌈4/22⌉ + ⌈20/22⌉
+= 2 + 1 + 2 + 1 + 1 = 7 hours ✗
+
+Minimum speed = 23
+```
+
+### ⚙️ Constraints
+- `1 <= piles.length <= 10^4`
+- `piles.length <= h <= 10^9`
+- `1 <= piles[i] <= 10^9`
+
+---
+
+## 5. Minimum Days to Make M Bouquets
+
+### 📝 Problem Description
+You are given an integer array `bloomDay`, an integer `m` and an integer `k`.
+
+You want to make `m` bouquets. To make a bouquet, you need to use `k` adjacent flowers from the garden.
+
+The garden consists of `n` flowers, the `i-th` flower will bloom in the `bloomDay[i]` and then can be used in exactly one bouquet.
+
+Return the minimum number of days you need to wait to be able to make `m` bouquets from the garden. If it is impossible to make `m` bouquets return `-1`.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: bloomDay = [1, 10, 3, 10, 2], m = 3, k = 1
+Output: 3
+
+Visual Representation:
+Need: 3 bouquets, each with 1 flower (k=1)
+
+Day 1: [B, _, _, _, _]  → 1 bouquet
+Day 2: [B, _, _, _, B]  → 2 bouquets
+Day 3: [B, _, B, _, B]  → 3 bouquets ✓
+
+Timeline:
+Day 0: [_, _, _, _, _]      (0 bloomed)
+Day 1: [B, _, _, _, _]      (1 bloomed)
+Day 2: [B, _, _, _, B]      (2 bloomed)
+Day 3: [B, _, B, _, B]      (3 bloomed) → 3 bouquets!
+Day 10: [B, B, B, B, B]     (5 bloomed)
+
+Minimum days = 3
+```
+
+**Example 2:**
+```
+Input: bloomDay = [1, 10, 3, 10, 2], m = 3, k = 2
+Output: -1
+
+Visual Representation:
+Need: 3 bouquets, each with 2 ADJACENT flowers (k=2)
+Total flowers needed: 3 × 2 = 6
+Available flowers: 5
+
+Explanation: Cannot make 3 bouquets with 2 adjacent flowers
+because we only have 5 flowers total
+Answer: -1
+```
+
+**Example 3:**
+```
+Input: bloomDay = [7, 7, 7, 7, 12, 7, 7], m = 2, k = 3
+Output: 12
+
+Visual Representation:
+Need: 2 bouquets, each with 3 ADJACENT flowers
+
+Position:  0  1  2  3   4  5  6
+bloomDay: [7, 7, 7, 7, 12, 7, 7]
+
+Day 7:  [B, B, B, B, _, B, B]
+        └──────┘         
+         Bouquet 1 (positions 0-2) ✓
+        
+Can't make 2nd bouquet because position 4 not bloomed yet
+
+Day 12: [B, B, B, B, B, B, B]
+        └──────┘ └──────┘
+        Bouquet 1  Bouquet 2 ✓
+        (pos 0-2)  (pos 4-6)
+
+Minimum days = 12
+```
+
+**Example 4:**
+```
+Input: bloomDay = [1, 10, 2, 9, 3, 8, 4, 7, 5, 6], m = 4, k = 2
+Output: 9
+
+Visual Representation:
+Need: 4 bouquets, each with 2 adjacent flowers
+
+Day 9:
+Position:  0   1  2  3  4  5  6  7  8  9
+bloomDay: [1, 10, 2, 9, 3, 8, 4, 7, 5, 6]
+Status:   [B,  _, B, B, B, B, B, B, B, B]
+          └──┘ └──┘ └──┘ └──┘
+          B1   B2   B3   B4
+
+4 bouquets can be made on day 9 ✓
+```
+
+### ⚙️ Constraints
+- `bloomDay.length == n`
+- `1 <= n <= 10^5`
+- `1 <= bloomDay[i] <= 10^9`
+- `1 <= m <= 10^6`
+- `1 <= k <= n`
+
+---
+
+## 6. Kth Missing Positive Number
+
+### 📝 Problem Description
+Given an array `arr` of positive integers sorted in a strictly increasing order, and an integer `k`.
+
+Return the `k-th` positive integer that is missing from this array.
+
+### 🧪 Sample Test Cases
+
+**Example 1:**
+```
+Input: arr = [2, 3, 4, 7, 11], k = 5
+Output: 9
+
+Visual Representation:
+Array:   [2, 3, 4, 7, 11]
+Missing: 1, 5, 6, 8, 9, 10, 12, 13...
+         ↑  ↑  ↑  ↑  ↑
+         1st 2nd 3rd 4th 5th
+
+Complete sequence analysis:
+Position │ Expected │ Actual │ Missing Numbers
+─────────┼──────────┼────────┼─────────────────
+    0    │    1     │   2    │      1
+    1    │    2     │   3    │      -
+    2    │    3     │   4    │      -
+    3    │    4     │   7    │    5, 6
+    4    │    7     │   11   │  8, 9, 10
+
+The 5th missing number is 9
+```
+
+**Example 2:**
+```
+Input: arr = [1, 2, 3, 4], k = 2
+Output: 6
+
+Visual Representation:
+Array:   [1, 2, 3, 4]
+Missing: 5, 6, 7, 8, 9...
+         ↑  ↑
+         1st 2nd
+
+Explanation: 
+All numbers 1-4 are present
+5 is the 1st missing number
+6 is the 2nd missing number ✓
+```
+
+**Example 3:**
+```
+Input: arr = [2], k = 1
+Output: 1
+
+Visual Representation:
+Array:   [2]
+Missing: 1, 3, 4, 5, 6...
+         ↑
+         1st
+
+The 1st missing number is 1
+```
+
+**Example 4:**
+```
+Input: arr = [5, 6, 7, 8, 9], k = 9
+Output: 14
+
+Visual Representation:
+Array starts at 5, so missing: 1, 2, 3, 4 (first 4 missing)
+After 9: 10, 11, 12, 13, 14...
+
+Missing numbers:
+1, 2, 3, 4, 10, 11, 12, 13, 14...
+↑  ↑  ↑  ↑   ↑   ↑   ↑   ↑   ↑
+1  2  3  4   5   6   7   8   9
+
+The 9th missing number is 14
+```
+
+**Example 5:**
+```
+Input: arr = [1, 3], k = 1
+Output: 2
+
+Visual Representation:
+Array:   [1, 3]
+Missing: 2, 4, 5, 6...
+         ↑
+         1st
+
+The 1st missing number is 2
+```
+
+### ⚙️ Constraints
+- `1 <= arr.length <= 1000`
+- `1 <= arr[i] <= 1000`
+- `1 <= k <= 1000`
+- `arr[i] < arr[j]` for `1 <= i < j <= arr.length`
+
+**Follow up:** Could you solve this problem in less than O(n) complexity?
+
+---
+
+
