@@ -12,11 +12,15 @@
 7. [Most Competitive Subsequence](#7-most-competitive-subsequence)
 8. [132 Pattern](#8-132-pattern)
 9. [Sum of Subarray Minimums](#9-sum-of-subarray-minimums)
-10. [Largest Rectangle in Histogram](#10-largest-rectangle-in-histogram)
-11. [Maximal Rectangle](#11-maximal-rectangle)
-12. [Next Greater Node in Linked List](#12-next-greater-node-in-linked-list)
-13. [Remove Nodes from Linked List](#13-remove-nodes-from-linked-list)
-14. [Steps to Make Array Non-decreasing](#14-steps-to-make-array-non-decreasing)
+10. [Sum of Subarray Ranges](#1-sum-of-subarray-ranges)
+11. [Largest Rectangle in Histogram](#10-largest-rectangle-in-histogram)
+12. [Maximal Rectangle](#11-maximal-rectangle)
+13. [Next Greater Node in Linked List](#12-next-greater-node-in-linked-list)
+14. [Remove Nodes from Linked List](#13-remove-nodes-from-linked-list)
+15. [Steps to Make Array Non-decreasing](#14-steps-to-make-array-non-decreasing)
+16. [Asteroid Collision](#2-asteroid-collision)
+17. [Celebrity Problem](#3-celebrity-problem)
+
 
 ---
 
@@ -696,7 +700,155 @@ print(optimized(n, arr))
 
 ---
 
-## 10. Largest Rectangle in Histogram
+## 10. Sum of Subarray Ranges
+
+### Problem Description
+Given an integer array `nums`, determine the range of a subarray, defined as the difference between the largest and smallest elements within the subarray. Calculate and return the sum of all subarray ranges of `nums`.
+
+A subarray is a contiguous, non-empty sequence of elements within the array.
+
+### Sample Test Cases
+
+**Input:** `nums = [1, 2, 3]`  
+**Output:** `4`  
+**Explanation:**
+- [1], range = 0
+- [2], range = 0
+- [3], range = 0
+- [1,2], range = 1
+- [2,3], range = 1
+- [1,2,3], range = 2
+- Sum = 0 + 0 + 0 + 1 + 1 + 2 = 4
+
+**Input:** `nums = [1, 3, 3]`  
+**Output:** `4`  
+**Explanation:**
+- [1], range = 0
+- [3], range = 0
+- [3], range = 0
+- [1,3], range = 2
+- [3,3], range = 0
+- [1,3,3], range = 2
+- Sum = 0 + 0 + 0 + 2 + 0 + 2 = 4
+
+---
+
+### Approach: Monotonic Stack (Optimized)
+
+**Intuition:**
+The key insight is that:
+- **Sum of ranges = Sum of all maximums - Sum of all minimums**
+
+For each element, we need to find:
+1. How many subarrays have this element as the **maximum**
+2. How many subarrays have this element as the **minimum**
+
+We use monotonic stacks to find:
+- **NSE (Next Smaller Element)** and **PSE (Previous Smaller Element)** for minimum contribution
+- **NGE (Next Greater Element)** and **PGE (Previous Greater Element)** for maximum contribution
+
+For an element at index `i`:
+- Number of subarrays where it's min/max = `(i - PSE[i]) × (NSE[i] - i)`
+- Contribution = `count × arr[i]`
+
+**Code:**
+
+```python
+def optimizedMin(n, arr):
+    """Calculate sum of minimum elements across all subarrays"""
+    NSE = [n] * n  # Next Smaller Element indices
+    PSE = [-1] * n  # Previous Smaller Element indices
+    stack = []
+    
+    # Find NSE for each element
+    for i in range(n):
+        while stack and arr[i] < arr[stack[-1]]:
+            index = stack.pop()
+            NSE[index] = i
+        stack.append(i)
+    
+    stack = []
+    
+    # Find PSE for each element
+    for i in range(n):
+        while stack and arr[i] < arr[stack[-1]]:
+            stack.pop()
+        if stack:
+            PSE[i] = stack[-1]
+        stack.append(i)
+    
+    # Calculate contribution of each element as minimum
+    ans = 0
+    for i in range(n):
+        left = i - PSE[i]  # Count of elements to the left
+        right = NSE[i] - i  # Count of elements to the right
+        total = (left * right) * arr[i]  # Total contribution
+        ans = ans + total
+    
+    return ans
+
+
+def optimizedMax(n, arr):
+    """Calculate sum of maximum elements across all subarrays"""
+    NGE = [n] * n  # Next Greater Element indices
+    PGE = [-1] * n  # Previous Greater Element indices
+    stack = []
+    
+    # Find NGE for each element
+    for i in range(n):
+        while stack and arr[i] > arr[stack[-1]]:
+            index = stack.pop()
+            NGE[index] = i
+        stack.append(i)
+    
+    stack = []
+    
+    # Find PGE for each element
+    for i in range(n):
+        while stack and arr[i] > arr[stack[-1]]:
+            stack.pop()
+        if stack:
+            PGE[i] = stack[-1]
+        stack.append(i)
+    
+    # Calculate contribution of each element as maximum
+    ans = 0
+    for i in range(n):
+        left = i - PGE[i]  # Count of elements to the left
+        right = NGE[i] - i  # Count of elements to the right
+        total = (left * right) * arr[i]  # Total contribution
+        ans = ans + total
+    
+    return ans
+
+
+class Solution:
+    def subArrayRanges(self, nums):
+        arr = nums
+        n = len(arr)
+        
+        # Sum of all maximums across subarrays
+        maxi = optimizedMax(n, arr)
+        
+        # Sum of all minimums across subarrays
+        mini = optimizedMin(n, arr)
+        
+        # Range sum = max sum - min sum
+        return maxi - mini
+```
+
+**Time Complexity:** O(n) - Each element pushed and popped from stack once  
+**Space Complexity:** O(n) - For NSE, PSE, NGE, PGE arrays and stack
+
+**Key Points:**
+- Monotonic stack efficiently finds next/previous smaller/greater elements
+- For minimums: Use strictly smaller comparison (`<`)
+- For maximums: Use strictly greater comparison (`>`)
+- The formula `(i - PSE[i]) × (NSE[i] - i)` counts all subarrays where element at `i` is min/max
+
+---
+
+## 11. Largest Rectangle in Histogram
 
 ### Problem
 Find the area of the largest rectangle in a histogram where each bar has width 1.
@@ -783,7 +935,7 @@ print(better(n, arr))
 
 ---
 
-## 11. Maximal Rectangle
+## 12. Maximal Rectangle
 
 ### Problem
 Find the largest rectangle containing only 1's in a binary matrix.
@@ -865,7 +1017,7 @@ print(solve(n, m, matrix))
 
 ---
 
-## 12. Next Greater Node in Linked List
+## 13. Next Greater Node in Linked List
 
 ### Problem
 For each node in linked list, find the value of the next greater node.
@@ -905,7 +1057,7 @@ def solve(head):
 
 ---
 
-## 13. Remove Nodes from Linked List
+## 14. Remove Nodes from Linked List
 
 ### Problem
 Remove nodes that have a greater value anywhere to the right.
@@ -945,7 +1097,7 @@ def solve(head):
 
 ---
 
-## 14. Steps to Make Array Non-decreasing
+## 15. Steps to Make Array Non-decreasing
 
 ### Problem
 Count steps to make array non-decreasing. In each step, remove all elements nums[i] where nums[i-1] > nums[i].
@@ -1039,34 +1191,265 @@ print(optimized(n, arr))
 
 ---
 
-## Summary of Techniques
 
-### Pattern Recognition Guide
 
-| Problem Type | Key Indicator | Approach |
-|-------------|---------------|----------|
-| **Next/Previous Greater/Smaller** | Need to find closest element with relation | Monotonic stack |
-| **Circular Array** | Array wraps around | Iterate 2×n with modulo |
-| **Distance/Days Count** | Count positions between elements | Store indices, calculate difference |
-| **Remove K Elements** | Make result smallest/largest | Monotonic stack, greedily remove |
-| **Lexicographical Order** | Keep only necessary characters | Track last position + visited |
-| **Pattern Finding (132)** | Find specific number relationships | Stack + track minimums |
-| **Subarray Contributions** | Each element contributes to multiple subarrays | PSE + NSE, multiply counts |
-| **Rectangle Problems** | Find max area with constraints | Convert to histogram |
-| **Eating/Removal Simulation** | Elements consume others over time | Track inherited time |
 
-### Time Complexity Summary
+## 16. Asteroid Collision
 
-- **Monotonic Stack Operations**: O(n) - each element pushed/popped once
-- **Brute Force Approaches**: Usually O(n²) or O(n³)
-- **Space Complexity**: Typically O(n) for stack storage
+### Problem Description
+You are given an integer array `asteroids` representing asteroids in a row. Each asteroid moves at the same speed. The absolute value represents size, and the sign represents direction (positive = right, negative = left).
 
-### Key Takeaways
+**Collision Rules:**
+- Same direction → no collision
+- Opposite directions → smaller explodes, larger continues
+- Equal size → both explode
+- Collisions resolved left to right
 
-1. **Monotonic Stack = O(n) solution** for next/previous greater/smaller problems
-2. **Each element is pushed and popped at most once** - that's why it's O(n)!
-3. **For circular arrays**: Iterate 2×n times using modulo
-4. **For contribution counting**: Use (left_count) × (right_count) formula
-5. **For optimization**: Try to reuse previous computations
-6. **Stack stores indices, not values** (usually) - for distance calculations
-7. **Traverse direction matters**: Right-to-left for different perspectives
+Return the state after all collisions.
+
+### Sample Test Cases
+
+**Input:** `asteroids = [1, 2, 3, -4, -2]`  
+**Output:** `[-4, -2]`  
+**Explanation:**
+- 3 and -4 collide → 3 explodes, -4 survives
+- -4 collides with 2 → 2 explodes
+- -4 collides with 1 → 1 explodes
+- -2 moves left, no collision
+- Final: [-4, -2]
+
+**Input:** `asteroids = [5, 10, -5, -10, 8, -8, -3, 12]`  
+**Output:** `[5, 12]`  
+**Explanation:**
+- 10 and -5 → -5 explodes
+- 10 and -10 → both explode
+- 8 and -8 → both explode
+- -3 and 5 → -3 explodes
+- 12 survives
+- Final: [5, 12]
+
+---
+
+### Approach: Stack Simulation
+
+**Intuition:**
+Use a stack to simulate the collisions:
+1. **Positive asteroid (→):** Always add to stack (moves right)
+2. **Negative asteroid (←):** May collide with positive asteroids in stack
+   - While stack top is positive and smaller → pop (explodes)
+   - If stack top equals size → both explode (pop, don't add)
+   - If stack is empty or top is negative → add to stack (no collision)
+   - If stack top is larger → current explodes (don't add)
+
+**Code:**
+
+```python
+class Solution:
+    def asteroidCollision(self, asteroids):
+        arr = asteroids
+        n = len(arr)
+        stack = []
+        
+        for i in range(n):
+            if arr[i] > 0:
+                # Positive asteroid: moving right, add to stack
+                stack.append(arr[i])
+            else:
+                # Negative asteroid: moving left, check for collisions
+                # Pop all smaller positive asteroids
+                while stack and stack[-1] > 0 and stack[-1] < abs(arr[i]):
+                    stack.pop()
+                
+                # Equal size: both explode
+                if stack and stack[-1] == abs(arr[i]):
+                    stack.pop()
+                # No collision: stack empty or top is also negative
+                elif not stack or stack[-1] < 0:
+                    stack.append(arr[i])
+                # Else: current asteroid explodes (larger positive in stack)
+        
+        return stack
+```
+
+**Time Complexity:** O(n) - Each asteroid pushed/popped at most once  
+**Space Complexity:** O(n) - Stack can hold all asteroids in worst case
+
+**Key Points:**
+- Only positive (→) and negative (←) asteroids collide
+- Two negatives or two positives never collide
+- Stack stores surviving asteroids moving right and all left-moving asteroids
+- Process left to right, handling collisions immediately
+
+---
+
+## 17. Celebrity Problem
+
+### Problem Description
+A celebrity is a person who:
+- Is known by everyone else
+- Knows nobody
+
+Given a square matrix `M` of size N×N where `M[i][j] = 1` if person `i` knows person `j`, find the celebrity or return -1 if none exists.
+
+### Sample Test Cases
+
+**Input:** `M = [[0,1,1,0], [0,0,0,0], [1,1,0,0], [0,1,1,0]]`  
+**Output:** `1`  
+**Explanation:** Person 1 knows nobody and is known by persons 0, 2, and 3.
+
+**Input:** `M = [[0,1], [1,0]]`  
+**Output:** `-1`  
+**Explanation:** Both know each other, so no celebrity.
+
+---
+
+### Approach 1: Brute Force (Count Arrays)
+
+**Intuition:**
+Track for each person:
+- `iknow[i]` = number of people person `i` knows
+- `knowme[i]` = number of people who know person `i`
+
+Celebrity must have: `iknow[i] = 0` and `knowme[i] = n-1`
+
+**Code:**
+
+```python
+def solve(matrix):
+    n, m = len(matrix), len(matrix[0])
+    iknow = [0] * n  # Count of people each person knows
+    knowme = [0] * n  # Count of people who know each person
+    
+    # Build the counts
+    for i in range(n):
+        for j in range(n):
+            if matrix[i][j] == 1:
+                knowme[j] += 1  # Person j is known by person i
+                iknow[i] += 1   # Person i knows person j
+    
+    # Find celebrity: knows nobody, known by everyone
+    for i in range(n):
+        if iknow[i] == 0 and knowme[i] == n - 1:
+            return i
+    
+    return -1
+```
+
+**Time Complexity:** O(n²) - Traverse entire matrix  
+**Space Complexity:** O(n) - Two arrays
+
+---
+
+### Approach 2: Two Pointers
+
+**Intuition:**
+Use elimination strategy with two pointers:
+- If `M[top][down] = 1` → top knows down → top can't be celebrity
+- If `M[down][top] = 1` → down knows top → down can't be celebrity
+- Otherwise → both know each other → eliminate both
+
+After elimination, verify the candidate.
+
+**Code:**
+
+```python
+def better(matrix):
+    n, m = len(matrix), len(matrix[0])
+    top = 0
+    down = m - 1
+    
+    # Eliminate candidates
+    while top < down:
+        if matrix[top][down] == 1:
+            top += 1  # top knows down, can't be celebrity
+        elif matrix[down][top] == 1:
+            down -= 1  # down knows top, can't be celebrity
+        else:
+            # Both know each other, eliminate both
+            top += 1
+            down -= 1
+    
+    # No candidate left
+    if top > down:
+        return -1
+    
+    # Verify the candidate
+    for i in range(n):
+        if i == top:
+            continue
+        # Check if i knows top and top doesn't know i
+        if not (matrix[i][top] == 1 and matrix[top][i] == 0):
+            return -1
+    
+    return top
+```
+
+**Time Complexity:** O(n) - Elimination O(n) + Verification O(n)  
+**Space Complexity:** O(1)
+
+---
+
+### Approach 3: Stack (Most Optimized)
+
+**Intuition:**
+Use a stack to eliminate candidates:
+1. Push all persons onto stack
+2. Pop two persons `a` and `b`:
+   - If `M[a][b] = 1` → a knows b → push b (a eliminated)
+   - If `M[b][a] = 1` → b knows a → push a (b eliminated)
+3. Last remaining person is potential celebrity
+4. Verify the candidate
+
+**Code:**
+
+```python
+def optimized(matrix):
+    n, m = len(matrix), len(matrix[0])
+    
+    # Initialize stack with all candidates
+    stack = [i for i in range(n)]
+    
+    # Eliminate candidates
+    while len(stack) > 1:
+        a = stack.pop()
+        b = stack.pop()
+        
+        if matrix[a][b] == 1:
+            # a knows b, so a can't be celebrity
+            stack.append(b)
+        elif matrix[b][a] == 1:
+            # b knows a, so b can't be celebrity
+            stack.append(a)
+        # If neither knows each other, both eliminated (neither pushed back)
+    
+    # No candidate left
+    if not stack:
+        return -1
+    
+    # Verify the candidate
+    a = stack[0]
+    for i in range(n):
+        if i == a:
+            continue
+        # Check: i knows a AND a doesn't know i
+        if not (matrix[i][a] == 1 and matrix[a][i] == 0):
+            return -1
+    
+    return a
+
+
+class Solution:
+    def celebrity(self, M):
+        return optimized(M)
+```
+
+**Time Complexity:** O(n) - Stack operations O(n) + Verification O(n)  
+**Space Complexity:** O(n) - Stack holds n elements initially
+
+**Key Points:**
+- Celebrity properties: knows nobody, known by everyone
+- Elimination strategy: If A knows B, A can't be celebrity
+- Always verify the final candidate
+- Stack approach is cleanest for understanding the elimination logic
+
+---
