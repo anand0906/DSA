@@ -14,8 +14,6 @@
 11. [Two Sum in BST](#11-two-sum-in-bst)
 12. [Recover BST (Two Nodes Swapped)](#12-recover-bst-two-nodes-swapped)
 13. [Largest BST in Binary Tree](#13-largest-bst-in-binary-tree)
-14. [Problems Comparison](#problems-comparison)
-
 ---
 
 ## 1. Search in BST
@@ -987,4 +985,510 @@ class BSTIterator:
 - **Space:** O(H) for stack
 
 ---
+
+## 11. Two Sum in BST
+
+### Problem Description
+Given the root of a binary search tree and an integer k, return true if there exist two elements in the BST such that their sum is equal to k, otherwise false.
+
+### Sample Test Cases
+
+**Example 1:**
+```
+Input: root = [5, 3, 6, 2, 4, null, 7], k = 9
+Output: true
+
+Tree Visualization:
+       5
+      / \
+     3   6
+    / \   \
+   2   4   7
+
+Inorder sequence: [2, 3, 4, 5, 6, 7]
+
+Valid pairs that sum to 9:
+- 2 + 7 = 9 ✓
+- 3 + 6 = 9 ✓
+- 4 + 5 = 9 ✓
+```
+
+**Example 2:**
+```
+Input: root = [5, 3, 6, 2, 4, null, 7], k = 14
+Output: false
+
+Tree Visualization:
+       5
+      / \
+     3   6
+    / \   \
+   2   4   7
+
+Inorder sequence: [2, 3, 4, 5, 6, 7]
+Maximum possible sum: 6 + 7 = 13 < 14
+No pair sums to 14 ✗
+```
+
+### Approach: Two Iterators (Two-Pointer Technique)
+
+**Intuition:**
+- Use BST iterator for ascending order (left → root → right)
+- Use BST iterator for descending order (right → root → left)
+- Apply classic two-pointer technique on sorted sequence
+- If sum < target: move left pointer forward (get larger value)
+- If sum > target: move right pointer backward (get smaller value)
+- Stop when pointers meet
+
+**Visual Process:**
+```
+Inorder: [2, 3, 4, 5, 6, 7], target = 9
+
+Step 1: left=2, right=7, sum=9 → FOUND! ✓
+
+If target = 10:
+Step 1: left=2, right=7, sum=9 < 10 → move left
+Step 2: left=3, right=7, sum=10 → FOUND! ✓
+
+If target = 14:
+Step 1: left=2, right=7, sum=9 < 14 → move left
+Step 2: left=3, right=7, sum=10 < 14 → move left
+Step 3: left=4, right=7, sum=11 < 14 → move left
+Step 4: left=5, right=7, sum=12 < 14 → move left
+Step 5: left=6, right=7, sum=13 < 14 → move left
+Step 6: left=7, right=7 (pointers meet) → NOT FOUND ✗
+```
+
+**Code:**
+```python
+class BSTIterator:
+    def __init__(self, root, reverse=False):
+        """
+        Initialize BST iterator.
+        reverse=False: Ascending order (normal inorder)
+        reverse=True: Descending order (reverse inorder)
+        """
+        self.reverse = reverse
+        self.stack = []
+        self.pushAll(root)
+    
+    def hasNext(self):
+        """Check if more elements available."""
+        return bool(self.stack)
+    
+    def next(self):
+        """
+        Get next element in sequence.
+        Pop from stack and prepare next elements.
+        """
+        node = self.stack.pop()
+        
+        # For ascending: process right subtree next
+        # For descending: process left subtree next
+        if self.reverse:
+            self.pushAll(node.left)
+        else:
+            self.pushAll(node.right)
+        
+        return node.data
+    
+    def pushAll(self, node):
+        """
+        Push all nodes in one direction onto stack.
+        Ascending: push all left nodes (smallest elements)
+        Descending: push all right nodes (largest elements)
+        """
+        temp = node
+        while temp:
+            self.stack.append(temp)
+            if self.reverse:
+                temp = temp.right
+            else:
+                temp = temp.left
+
+def solve(root, target):
+    """
+    Find if two sum exists using two-pointer technique.
+    Uses two iterators: one ascending, one descending.
+    """
+    # Initialize ascending (left pointer) and descending (right pointer) iterators
+    iterAsc = BSTIterator(root)
+    iterDesc = BSTIterator(root, True)
+    
+    # Get initial values from both ends
+    left, right = iterAsc.next(), iterDesc.next()
+    
+    # Two-pointer approach
+    while left < right:
+        sum_val = left + right
+        
+        if sum_val == target:
+            return True  # Found pair
+        
+        if sum_val < target:
+            # Need larger sum, move left pointer forward
+            left = iterAsc.next()
+        else:
+            # Need smaller sum, move right pointer backward
+            right = iterDesc.next()
+    
+    return False  # No pair found
+```
+
+**Complexity:**
+- **Time:** O(N) - each node visited at most once by iterators
+- **Space:** O(H) - two stacks, each storing at most H nodes
+
+---
+
+## 12. Recover BST (Two Nodes Swapped)
+
+### Problem Description
+Given the root of a BST where exactly two nodes were swapped by mistake, recover the tree without changing its structure.
+
+### Sample Test Cases
+
+**Example 1:**
+```
+Input: root = [1, 3, null, null, 2]
+Output: [3, 1, null, null, 2]
+
+Tree Visualization:
+Before (Invalid):          After (Valid):
+     1                          3
+      \                        /
+       3                      1
+      /                        \
+     2                          2
+
+Analysis:
+Inorder before: [1, 2, 3] ← looks sorted in values but structure wrong
+Issue: 3 > 1 but is right child with left child 2 where 2 < 3
+Violation: Node 1 and 3 are adjacent and swapped
+Solution: Swap values of nodes 1 and 3
+```
+
+**Example 2:**
+```
+Input: root = [3, 1, 4, null, null, 2]
+Output: [2, 1, 4, null, null, 3]
+
+Tree Visualization:
+Before (Invalid):          After (Valid):
+       3                          2
+      / \                        / \
+     1   4                      1   4
+        /                          /
+       2                          3
+
+Analysis:
+Inorder before: [1, 2, 3, 4] ← values sorted but structure invalid
+Issue: Value 2 in right subtree of 3 violates BST (2 < 3)
+Violations detected:
+  - First: 3 > 2 (prev=3, curr=2)
+  - Second: 4 > 3 would be violation if we track
+Node 3 and 2 are non-adjacent and swapped
+Solution: Swap values of nodes 3 and 2
+```
+
+### Approach 1: Sort and Replace
+
+**Intuition:**
+- Get inorder traversal (gives sorted values for valid BST)
+- Sort the inorder array to get correct sequence
+- Do another inorder and replace misplaced values
+
+### Approach 2: Find Violations (Optimal)
+
+**Intuition:**
+- In valid BST inorder: each value > previous value
+- When two nodes swapped, inorder has violations: curr < prev
+- **Adjacent swap**: One violation → swap first and first_next
+- **Non-adjacent swap**: Two violations → swap first and last
+
+**Visual Analysis:**
+```
+Case 1 - Adjacent Swap:
+Valid BST inorder: [1, 2, 3, 4, 5]
+After swapping 2 and 3: [1, 3, 2, 4, 5]
+                              ↑ violation (3 > 2)
+First violation: prev=3, curr=2
+No second violation
+Swap: first(3) and first_next(2)
+
+Case 2 - Non-Adjacent Swap:
+Valid BST inorder: [1, 2, 3, 4, 5]
+After swapping 2 and 5: [1, 5, 3, 4, 2]
+                              ↑ violation (5 > 3)
+                                    ↑ violation (4 > 2)
+First violation: prev=5, curr=3 → mark first=5, first_next=3
+Second violation: prev=4, curr=2 → mark last=2
+Swap: first(5) and last(2)
+```
+
+**Code:**
+```python
+def solve(root):
+    """
+    Recover BST by finding and swapping the two misplaced nodes.
+    Uses inorder traversal to detect violations.
+    """
+    
+    def inorder(node):
+        """
+        Perform inorder traversal and detect violations.
+        In valid BST: prev.data < node.data always
+        """
+        nonlocal prev, first, first_next, last
+        
+        if node is None:
+            return
+        
+        # Traverse left subtree
+        inorder(node.left)
+        
+        # Check for violation: current value < previous value
+        if prev and node.data < prev.data:
+            if first is None:
+                # First violation found
+                first = prev  # The larger value that's wrongly placed
+                first_next = node  # Potential smaller swapped value
+            else:
+                # Second violation found (non-adjacent swap case)
+                last = node  # The actual smaller swapped value
+        
+        # Update previous node for next comparison
+        prev = node
+        
+        # Traverse right subtree
+        inorder(node.right)
+    
+    # Initialize tracking variables
+    prev = None  # Previous node in inorder
+    first = None  # First wrongly placed node (larger value)
+    first_next = None  # Node right after first violation
+    last = None  # Second wrongly placed node (if non-adjacent)
+    
+    # Find the violations
+    inorder(root)
+    
+    # Swap based on violation pattern
+    if first and last:
+        # Two violations: non-adjacent swap
+        # Example: [1, 5, 3, 4, 2] → swap 5 and 2
+        first.data, last.data = last.data, first.data
+    elif first and first_next:
+        # One violation: adjacent swap
+        # Example: [1, 3, 2, 4, 5] → swap 3 and 2
+        first.data, first_next.data = first_next.data, first.data
+    
+    return root
+```
+
+**Complexity:**
+- **Time:** O(N) - single inorder traversal
+- **Space:** O(H) - recursion stack depth
+
+---
+
+## 13. Largest BST in Binary Tree
+
+### Problem Description
+Given a binary tree, find the size of the largest subtree which is also a BST.
+
+### Sample Test Cases
+
+**Example 1:**
+```
+Input: root = [2, 1, 3]
+Output: 3
+
+Tree Visualization:
+     2
+    / \
+   1   3
+
+Analysis:
+- Entire tree is a valid BST
+- Left subtree (1) < Root (2) < Right subtree (3) ✓
+- Size = 3 nodes
+```
+
+**Example 2:**
+```
+Input: root = [10, null, 20, null, 30, null, 40, null, 50]
+Output: 5
+
+Tree Visualization:
+    10
+      \
+       20
+         \
+          30
+            \
+             40
+               \
+                50
+
+Analysis:
+- This is a right-skewed tree
+- Forms a valid BST (all values increasing)
+- Size = 5 nodes
+```
+
+**Example 3 (Complex Case):**
+```
+Input: root = [10, 5, 15, 1, 8, null, 7]
+Output: 3
+
+Tree Visualization:
+        10
+       /  \
+      5    15
+     / \     \
+    1   8     7
+
+Analysis:
+Step-by-step validation:
+
+Full tree (root=10):
+- Left subtree max (8) < root (10) ✓
+- Right subtree: node 7 < 15 (invalid structure) ✗
+- NOT a valid BST
+
+Left subtree (root=5):
+- Left child (1) < root (5) ✓
+- Right child (8) > root (5) ✓
+- Valid BST with size 3 ✓
+
+Right subtree (root=15):
+- Right child (7) < root (15) ✗
+- NOT a valid BST
+
+Largest BST size = 3
+```
+
+### Approach 1: Brute Force
+
+**Intuition:**
+- For each node, validate if subtree rooted at it is BST
+- Count nodes in valid BST subtrees
+- Track maximum size found
+- Time: O(N²) - validate each of N nodes taking O(N) time
+
+### Approach 2: Post-Order with Info Passing (Optimal)
+
+**Intuition:**
+- Use post-order traversal (left → right → root)
+- For each node, return: {minVal, maxVal, maxSize}
+- Check if current subtree is valid BST:
+  - left.maxVal < node.data < right.minVal ✓
+  - If valid: size = left.size + right.size + 1
+  - If invalid: propagate max size from children
+
+**Visual Process:**
+```
+Tree:     10
+         /  \
+        5    15
+       / \     \
+      1   8     7
+
+Post-order traversal (bottom-up):
+
+Step 1: Node 1 (leaf)
+  Return: {min=1, max=1, size=1}
+
+Step 2: Node 8 (leaf)
+  Return: {min=8, max=8, size=1}
+
+Step 3: Node 5 (has children)
+  left = {min=1, max=1, size=1}
+  right = {min=8, max=8, size=1}
+  Check: 1 < 5 < 8 ✓ (valid BST)
+  Return: {min=1, max=8, size=3}
+
+Step 4: Node 7 (leaf)
+  Return: {min=7, max=7, size=1}
+
+Step 5: Node 15 (has right child)
+  left = null
+  right = {min=7, max=7, size=1}
+  Check: -∞ < 15 < 7 ✗ (invalid!)
+  Return: {min=-∞, max=∞, size=1} ← propagate max from children
+
+Step 6: Node 10 (root)
+  left = {min=1, max=8, size=3}
+  right = {min=-∞, max=∞, size=1}
+  Check: 8 < 10 < -∞ ✗ (invalid!)
+  Return: {min=-∞, max=∞, size=3} ← propagate max(3, 1)
+
+Answer: 3
+```
+
+**Code:**
+```python
+class Node:
+    def __init__(self, minVal, maxVal, maxSize):
+        """
+        Store information about a subtree.
+        minVal: Minimum value in the subtree
+        maxVal: Maximum value in the subtree
+        maxSize: Size of largest BST found in/under this subtree
+        """
+        self.minVal = minVal
+        self.maxVal = maxVal
+        self.maxSize = maxSize
+
+def solve(root):
+    """
+    Find largest BST subtree using post-order traversal.
+    Returns size of largest BST found.
+    """
+    
+    def largestBST(node):
+        """
+        Post-order traversal: process children before parent.
+        Returns Node object with min, max, and size information.
+        """
+        # Base case: null node
+        if node is None:
+            # Return values that won't interfere with parent validation
+            # min=+∞ ensures any parent value > min
+            # max=-∞ ensures any parent value < max
+            # size=0 as no nodes present
+            return Node(float('inf'), float('-inf'), 0)
+        
+        # Recursively get info from left and right children
+        left = largestBST(node.left)
+        right = largestBST(node.right)
+        
+        # Check if current subtree is a valid BST
+        # Condition: left's max < current < right's min
+        if left.maxVal < node.data < right.minVal:
+            # Valid BST rooted at current node
+            return Node(
+                min(node.data, left.minVal),  # Minimum of entire subtree
+                max(node.data, right.maxVal),  # Maximum of entire subtree
+                left.maxSize + right.maxSize + 1  # Total size
+            )
+        
+        # Current subtree is NOT a valid BST
+        # Return sentinel values with best size found in children
+        return Node(
+            float('-inf'),  # Sentinel: ensures parent validation fails
+            float('inf'),   # Sentinel: ensures parent validation fails
+            max(left.maxSize, right.maxSize)  # Propagate largest BST size
+        )
+    
+    # Start post-order traversal from root
+    return largestBST(root).maxSize
+```
+
+**Complexity:**
+- **Time:** O(N) - single post-order traversal, each node visited once
+- **Space:** O(H) - recursion stack depth equals tree height
+
+---
+
 
